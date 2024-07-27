@@ -1,0 +1,87 @@
+:root {
+  --primary-color: #f60;
+}
+
+body {
+  font-family: "Open Sans", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+  font-variation-settings:
+    "wdth" 100;
+
+  background-color: #f9f9f9;
+  color: #444;
+}
+
+body > * {
+  overflow-x: hidden;
+}
+
+@media screen and (min-width: 440px) {
+  body {
+    display: none;
+  }
+}
+
+#root {
+  overflow: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Saira", sans-serif;
+  font-weight: 700;
+  font-optical-sizing: auto;
+  font-style: normal;
+  font-variation-settings:
+    "wdth" 100;
+}
+
+button, .button {
+  font-family: "Open Sans", sans-serif;
+  text-decoration: none;
+  color: #444;
+  font-weight: 500;
+  border: 1px solid #444;
+  border-radius: 12px;
+  padding: 8px 16px;
+}
+
+button:hover, .button:hover {
+  background-color: #444;
+  color: #f9f9f9;
+}
+
+button.primary, .button.primary {
+  background-color: var(--primary-color);
+  color: #444;
+}
+
+button.secondary, .button.secondary {
+  background-color: #333;
+  color: #f9f9f9;
+}
+
+.app-body {
+  padding: 16px;
+  background-color: #fff;
+  min-height: calc(100vh - 76px);
+  border-radius: 32px 32px 0 0;
+  padding-bottom: 64px !important;
+}
+
+.app-main {
+  min-height: 100vh;
+  background-color: #f60;
+}
+
+.ripple-parent {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
