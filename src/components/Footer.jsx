@@ -10,9 +10,9 @@ export function Footer ({ active, ...props}) {
 
   function handleFooterClick(goTo) {
     if (active === goTo) return
-    
-    const newActive = goTo === 'home' ? '/' : goTo
-    navigate({ to: `/${newActive}` })
+
+    const to = goTo === 'home' ? '/' : `/${goTo}`
+    navigate({ to })
   }
 
   return (
