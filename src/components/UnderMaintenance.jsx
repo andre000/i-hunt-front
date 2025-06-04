@@ -2,9 +2,9 @@
 import { css } from '@emotion/react'
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 
-export function UnderMaintance() {
+export function UnderMaintenance() {
   return (
-    <div className="under-maintance" css={underMaintance}>
+    <div className="under-maintenance" css={underMaintenance}>
       <ExclamationTriangleIcon />
       <h1>Em manutenção</h1>
       <p>Estamos trabalhando para melhorar o sistema. Volte mais tarde.</p>
@@ -12,7 +12,7 @@ export function UnderMaintance() {
   )
 }
 
-const underMaintance = css`
+const underMaintenance = css`
   display: flex;
   flex-direction: column;
   justify-content: center;
