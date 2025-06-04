@@ -14,6 +14,7 @@ function ChatPage() {
   const [messages, setMessages] = useState([
     { from: 'bot', text: 'Ol\u00e1! Esta \u00e9 a sala de chat.' },
     { from: 'bot', text: 'Envie sua primeira mensagem!' },
+    { from: 'user', text: 'Oi, vamos conversar?' },
   ])
 
   const handleSubmit = (e) => {
@@ -62,7 +63,9 @@ const chatBody = css`
     flex-direction: column;
     gap: 8px;
     overflow-y: auto;
-    padding-bottom: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 0 0 8px;
   }
 
   .messages li {
