@@ -12,8 +12,6 @@ body {
 
   background-color: #d9d9d9;
   color: #444;
-  max-width: var(--max-width);
-  margin-inline: auto;
 }
 
 body > * {
@@ -22,6 +20,10 @@ body > * {
 
 #root {
   overflow: hidden;
+  max-width: var(--max-width);
+  margin-inline: auto;
+  position: relative;
+  background-color: #f9f9f9;
 }
 
 h1, h2, h3, h4, h5, h6 {
