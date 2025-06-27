@@ -50,7 +50,6 @@ const footer = css`
   padding-block: 16px;
   box-shadow: 0 -1px 20px 0px rgb(0 0 0 / 5%);
   max-width: var(--max-width);
-  transform: translateX(-50%);
   left: calc(50% - var(--max-width) / 2);
   transition: transform 0.3s ease-in-out;
 
