@@ -49,6 +49,8 @@ const footer = css`
   background-color: #fff;
   padding-block: 16px;
   box-shadow: 0 -1px 20px 0px rgb(0 0 0 / 5%);
+  max-width: var(--max-width);
+  margin-inline: auto;
 
   ul {
     display: flex;
