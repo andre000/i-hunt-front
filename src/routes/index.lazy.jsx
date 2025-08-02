@@ -1,6 +1,7 @@
 /** @jsxImportSource @emotion/react */
-import { createLazyFileRoute, Link, useLocation } from '@tanstack/react-router'
 import { useEffect } from 'react';
+import { createLazyFileRoute, Link, useLocation, useNavigate } from '@tanstack/react-router'
+import { useSelector } from 'react-redux'
 import anime from 'animejs/lib/anime.es.js';
 import { css } from '@emotion/react'
 import { Header } from '../components/Header';
@@ -14,6 +15,16 @@ export const Route = createLazyFileRoute('/')({
 
 function Index() {
   const location = useLocation()
+  const missions = useSelector(state => state.missions.list)
+
+  const featuredJobData = missions.find(mission => mission.isFeatured)
+  const nearbyJobsData = missions.filter(mission => mission.isNearUser)
+
+  const navigate = useNavigate()
+  const handleMissionClick = (mission) => {
+    navigate({to: `/task/$taskId`, params: { taskId: mission.id }})
+    console.log(`Mission clicked: ${mission.name}`)
+  }
 
   useEffect(() => {
     if (location.state?.referer !== 'login') return;
@@ -52,13 +63,13 @@ function Index() {
 
         <div className="home__body__counter">
           <div>
-            <h2>17</h2>
+            <h2>{missions.length}</h2>
             <p>caças disponíveis</p>
           </div>
           <Link to="/search">Ver todas</Link>
         </div>
 
-        <FeaturedJob />
+        <FeaturedJob data={featuredJobData} onClick={() => handleMissionClick(featuredJobData)} />
 
         <div className="home__body__nearby">
           <div className="home__body__nearby__header">
@@ -66,9 +77,9 @@ function Index() {
             <Link to="/search">Ver todas</Link>
           </div>
 
-          <ClosingJob onClick={() => console.log('closing job clicked')} />
-          <ClosingJob onClick={() => console.log('closing job clicked')} />
-          <ClosingJob onClick={() => console.log('closing job clicked')} />
+          {nearbyJobsData.map(job => (
+            <ClosingJob key={job.id} data={job} onClick={() => handleMissionClick(job)} />
+          ))}
         </div>
       </div>
       <Footer active="home" />
