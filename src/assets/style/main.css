@@ -47,26 +47,38 @@ h1, h2, h3, h4, h5, h6 {
 button, .button {
   font-family: "Open Sans", sans-serif;
   text-decoration: none;
-  color: #444;
+  color: #eee;
   font-weight: 500;
-  border: 1px solid #444;
   border-radius: 12px;
+  border: none;
+  cursor: pointer;
   padding: 8px 16px;
 }
 
 button:hover, .button:hover {
   background-color: #444;
   color: #f9f9f9;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 button.primary, .button.primary {
   background-color: var(--primary-color);
-  color: #444;
+  color: #eee;
 }
 
 button.secondary, .button.secondary {
   background-color: #333;
   color: #f9f9f9;
+}
+
+button.primary:hover, .button.primary:hover {
+  background-color: #e55;
+  color: #fff;
+}
+
+button.secondary:hover, .button.secondary:hover {
+  background-color: #555;
+  color: #fff;
 }
 
 .app-body {
