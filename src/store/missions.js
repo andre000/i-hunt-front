@@ -1,4 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit'
+import _missionDemo from './_mission-demo'
 
 /**
  * @typedef Mission
@@ -24,7 +25,9 @@ import { createSlice } from '@reduxjs/toolkit'
  * @property {Array<Mission>} missions - List of missions.
  */
 const initialState = {
-  missions: []
+  list: [
+    ..._missionDemo
+  ]
 }
 
 const missionsSlice = createSlice({
@@ -32,15 +35,15 @@ const missionsSlice = createSlice({
   initialState,
   reducers: {
     addMission: (state, action) => {
-      state.missions.push(action.payload)
+      state.list.push(action.payload)
     },
     removeMission: (state, action) => {
-      state.missions = state.missions.filter(mission => mission.id !== action.payload.id)
+      state.list = state.list.filter(mission => mission.id !== action.payload.id)
     },
     updateMission: (state, action) => {
-      const index = state.missions.findIndex(mission => mission.id === action.payload.id)
+      const index = state.list.findIndex(mission => mission.id === action.payload.id)
       if (index !== -1) {
-        state.missions[index] = { ...state.missions[index], ...action.payload }
+        state.list[index] = { ...state.list[index], ...action.payload }
       }
     },
   },
