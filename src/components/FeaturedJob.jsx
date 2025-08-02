@@ -1,38 +1,58 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react'
 import { FireIcon, MapPinIcon, BookmarkIcon } from '@heroicons/react/24/outline'
+import { useRef } from 'react';
+import PropTypes from 'prop-types'
+  import { ripple } from '../utils/ripple';
+export function FeaturedJob({ data, onClick }) {
+  const featuredRef = useRef(null)
+  const handleClick = (e) => {
+    ripple(featuredRef.current, e)
+      .then(() => onClick())
+  }
 
-export function FeaturedJob() {
   return (
-    <div className="job" css={featuredJob}>
+    <div className="job" css={featuredJob} onClick={handleClick} ref={featuredRef}>
       <div className="job__title">
         <div className="job__title__group">
           <i>
             <FireIcon />
           </i>
           <h3>
-            Caça
-            <span>Risco médio</span>
+            {data.name}
+            <span>{data.risk}</span>
           </h3>
         </div>
         <BookmarkIcon />
       </div>
       <div className="job__tags">
-        <span>Combate</span>
-        <span>Caça</span>
+        {data.tags.map(tag => (
+          <span key={tag}>{tag}</span>
+        ))}
       </div>
       <div className="job__details">
         <div className="job__details__location">
           <MapPinIcon />
-          <span>São Paulo, SP</span>
+          <span>{data.location}</span>
         </div>
         <div className="job__details__value">
-          <span>R$ 1.000,00</span>
+          <span>R$ {data.value.toFixed(2).replace('.', ',')}</span>
         </div>
       </div>
     </div>
   )
 }
+
+FeaturedJob.propTypes = {
+  data: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    risk: PropTypes.string.isRequired,
+    tags: PropTypes.arrayOf(PropTypes.string).isRequired,
+    location: PropTypes.string.isRequired,
+    value: PropTypes.number.isRequired,
+  }).isRequired,
+  onClick: PropTypes.func.isRequired,
+};
 
 const featuredJob = css`
   background-color: #eee;
@@ -41,6 +61,7 @@ const featuredJob = css`
   border-radius: 32px;
   font-size: 14px;
   font-weight: 700;
+  cursor: pointer;
 
   svg {
     width: 21px;
