@@ -3,7 +3,6 @@ import { createLazyFileRoute } from '@tanstack/react-router'
 import { Header } from '../../components/Header';
 import { Footer } from '../../components/Footer'
 import { css } from '@emotion/react'
-import { ClosingJob } from '../../components/ClosingJob'
 
 export const Route = createLazyFileRoute('/profile/')({
   component: ProfilePage
@@ -14,7 +13,7 @@ function ProfilePage() {
     <main className='app-main'>
       <Header />
       <div className="app-body" css={profileBody}>
-        <img className='profile__avatar' src='https://via.placeholder.com/96' alt='Avatar' />
+        <img className='profile__avatar' src='https://placehold.co/400' alt='Avatar' />
         <h2>Hunter Doe</h2>
         <p>hunter@example.com</p>
         <button className='button primary'>Editar perfil</button>
@@ -22,16 +21,14 @@ function ProfilePage() {
         <section className='hunts'>
           <h3>Caças ativas</h3>
           <div className='hunts__list'>
-            <ClosingJob onClick={() => {}} />
-            <ClosingJob onClick={() => {}} />
+
           </div>
         </section>
 
         <section className='hunts'>
           <h3>Caças anteriores</h3>
           <div className='hunts__list'>
-            <ClosingJob onClick={() => {}} />
-            <ClosingJob onClick={() => {}} />
+
           </div>
         </section>
       </div>
