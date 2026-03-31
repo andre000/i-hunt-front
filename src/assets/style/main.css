@@ -112,7 +112,7 @@ button.secondary:hover, .button.secondary:hover {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: #f60;
+  background: linear-gradient(to bottom, #f60 120px, #f9f9f9 120px);
   max-width: var(--max-width);
 }
 

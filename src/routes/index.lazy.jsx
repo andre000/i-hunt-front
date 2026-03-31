@@ -33,10 +33,6 @@ function Index() {
       duration: 500,
       easing: 'easeInOutSine',
     }).add({
-      targets: "main",
-      backgroundColor: ['#333', '#f60']
-    })
-    .add({
       targets: ".home__header",
       opacity: [0, 1],
       translateY: [20, 0],
