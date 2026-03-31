@@ -3,7 +3,8 @@ import { css } from '@emotion/react'
 import { FireIcon, MapPinIcon, BookmarkIcon } from '@heroicons/react/24/outline'
 import { useRef } from 'react';
 import PropTypes from 'prop-types'
-  import { ripple } from '../utils/ripple';
+import { ripple } from '../utils/ripple';
+
 export function FeaturedJob({ data, onClick }) {
   const featuredRef = useRef(null)
   const handleClick = (e) => {
