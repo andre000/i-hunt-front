@@ -1,79 +1,375 @@
-import { createLazyFileRoute } from '@tanstack/react-router'
 /** @jsxImportSource @emotion/react */
-import { Header } from '../../components/Header';
+import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
+import { useSelector } from 'react-redux'
+import { Header } from '../../components/Header'
 import { Footer } from '../../components/Footer'
 import { css } from '@emotion/react'
+import { MapPinIcon, StarIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import { StarIcon as StarSolid } from '@heroicons/react/24/solid'
 
 export const Route = createLazyFileRoute('/profile/')({
-  component: ProfilePage
+  component: ProfilePage,
 })
 
+// ─── Risk badge colors ────────────────────────────────────────────────────────
+
+const RISK_COLOR = { baixo: '#22c55e', médio: '#f59e0b', alto: '#ef4444' }
+
+// ─── Sub-component: compact mission card ─────────────────────────────────────
+
+function ProfileMissionCard({ mission, onClick }) {
+  const daysLeft = Math.ceil((mission.expiresDate - Date.now()) / (1000 * 60 * 60 * 24))
+  const riskColor = RISK_COLOR[mission.risk] ?? '#aaa'
+
+  return (
+    <div css={missionCard} onClick={onClick}>
+      <div className='mc__body'>
+        <p className='mc__name'>{mission.name}</p>
+        <div className='mc__meta'>
+          <MapPinIcon />
+          <span>{mission.location}</span>
+        </div>
+      </div>
+      <div className='mc__right'>
+        <span className='mc__value'>R$ {mission.value.toFixed(2).replace('.', ',')}</span>
+        <span className='mc__risk' style={{ backgroundColor: riskColor }}>{mission.risk}</span>
+        {mission.status === 'active' && daysLeft > 0 && (
+          <span className='mc__days'>{daysLeft}d</span>
+        )}
+      </div>
+      <ChevronRightIcon className='mc__arrow' />
+    </div>
+  )
+}
+
+// ─── Sub-component: star rating ───────────────────────────────────────────────
+
+function StarRating({ value }) {
+  return (
+    <div css={starRow}>
+      {Array.from({ length: 5 }, (_, i) =>
+        i < Math.floor(value)
+          ? <StarSolid key={i} />
+          : <StarIcon key={i} />
+      )}
+      <span>{value.toFixed(1)}</span>
+    </div>
+  )
+}
+
+// ─── Sub-component: hunt section ─────────────────────────────────────────────
+
+function HuntSection({ title, missions, navigate }) {
+  const isActive = title.toLowerCase().includes('ativa')
+  return (
+    <section css={huntSection}>
+      <div className='hs__header'>
+        <h3>{title}</h3>
+        {missions.length > 0 && <span className='hs__badge'>{missions.length}</span>}
+      </div>
+      {missions.length === 0 ? (
+        <p css={emptyState}>
+          {isActive ? 'Nenhuma caça ativa no momento.' : 'Nenhuma caça anterior ainda.'}
+        </p>
+      ) : (
+        <div className='hs__list'>
+          {missions.map(m => (
+            <ProfileMissionCard
+              key={m.id}
+              mission={m}
+              onClick={() => navigate({ to: `/task/${m.id}` })}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
+
 function ProfilePage() {
+  const navigate = useNavigate()
+  const user = useSelector(state => state.user)
+  const rawMissions = useSelector(state => state.missions)
+
+  const missions = Array.isArray(rawMissions)
+    ? rawMissions
+    : rawMissions?.list ?? Object.values(rawMissions)
+
+  const myMissions = missions.filter(m => m.assigned)
+  const activeMissions = myMissions.filter(m => m.status === 'active')
+  const completedMissions = myMissions.filter(m => m.status === 'completed')
+  const totalEarned = completedMissions.reduce((sum, m) => sum + m.value, 0)
+
   return (
     <main className='app-main'>
       <Header />
-      <div className="app-body" css={profileBody}>
-        <img className='profile__avatar' src='https://placehold.co/400' alt='Avatar' />
-        <h2>Hunter Doe</h2>
-        <p>hunter@example.com</p>
-        <button className='button primary'>Editar perfil</button>
+      <div className='app-body' css={profileBody}>
 
-        <section className='hunts'>
-          <h3>Caças ativas</h3>
-          <div className='hunts__list'>
-
+        {/* ── Avatar + identity ── */}
+        <div css={identity}>
+          <div className='id__avatar-wrap'>
+            <img className='id__avatar' src={user.avatarUrl} alt='Avatar' />
           </div>
-        </section>
+          <h2 className='id__name'>{user.name}</h2>
+          <p className='id__email'>{user.email}</p>
+          <StarRating value={user.rating} />
+          <button className='button primary' style={{ marginTop: 4 }}>Editar perfil</button>
+        </div>
 
-        <section className='hunts'>
-          <h3>Caças anteriores</h3>
-          <div className='hunts__list'>
-
+        {/* ── Stats row ── */}
+        <div css={statsRow}>
+          <div className='stat'>
+            <span className='stat__num'>{activeMissions.length}</span>
+            <span className='stat__label'>Ativas</span>
           </div>
-        </section>
+          <div className='stat stat--divider'>
+            <span className='stat__num'>{completedMissions.length}</span>
+            <span className='stat__label'>Completas</span>
+          </div>
+          <div className='stat'>
+            <span className='stat__num'>R$ {totalEarned.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</span>
+            <span className='stat__label'>Ganhos</span>
+          </div>
+        </div>
+
+        {/* ── Hunt lists ── */}
+        <HuntSection title='Caças ativas' missions={activeMissions} navigate={navigate} />
+        <HuntSection title='Caças anteriores' missions={completedMissions} navigate={navigate} />
+
       </div>
       <Footer active='profile' />
     </main>
   )
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const profileBody = css`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 24px;
+  gap: 24px;
+  padding: 24px 20px;
+`
 
-  .profile__avatar {
-    width: 96px;
-    height: 96px;
+const identity = css`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+
+  .id__avatar-wrap {
+    width: 112px;
+    height: 112px;
+    border-radius: 50%;
+    padding: 3px;
+    background: linear-gradient(135deg, #f60, #ff9940);
+    box-shadow: 0 4px 16px rgba(255, 102, 0, 0.35);
+  }
+
+  .id__avatar {
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
     object-fit: cover;
+    border: 3px solid #fff;
   }
 
-  h2 {
-    font-size: 20px;
+  .id__name {
+    font-family: "Saira", sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-top: 4px;
   }
 
-  p {
-    font-size: 14px;
-    color: #777;
+  .id__email {
+    font-size: 13px;
+    color: #888;
+  }
+`
+
+const starRow = css`
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #f60;
+
+  svg {
+    width: 16px;
+    height: 16px;
   }
 
-  .hunts {
-    width: 100%;
+  span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    margin-left: 4px;
+  }
+`
+
+const statsRow = css`
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+  .stat {
+    flex: 1;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 16px 8px;
+
+    &--divider {
+      border-left: 1px solid #eee;
+      border-right: 1px solid #eee;
+    }
+
+    &__num {
+      font-family: "Saira", sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #f60;
+    }
+
+    &__label {
+      font-size: 11px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+`
+
+const huntSection = css`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  .hs__header {
+    display: flex;
+    align-items: center;
     gap: 8px;
 
     h3 {
+      font-family: "Saira", sans-serif;
       font-size: 16px;
+      font-weight: 700;
+      color: #1a1a1a;
     }
+  }
 
-    .hunts__list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+  .hs__badge {
+    background: #f60;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 99px;
+    padding: 1px 7px;
+  }
+
+  .hs__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+`
+
+const emptyState = css`
+  font-size: 13px;
+  color: #bbb;
+  text-align: center;
+  padding: 20px 0;
+`
+
+const missionCard = css`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+
+  &:active {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .mc__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .mc__name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mc__meta {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    color: #999;
+    font-size: 12px;
+
+    svg {
+      width: 12px;
+      height: 12px;
+      flex-shrink: 0;
     }
+  }
+
+  .mc__right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .mc__value {
+    font-size: 13px;
+    font-weight: 700;
+    color: #f60;
+  }
+
+  .mc__risk {
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    border-radius: 99px;
+    padding: 1px 7px;
+    text-transform: capitalize;
+  }
+
+  .mc__days {
+    font-size: 10px;
+    color: #aaa;
+  }
+
+  .mc__arrow {
+    width: 16px;
+    height: 16px;
+    color: #ccc;
+    flex-shrink: 0;
   }
 `
