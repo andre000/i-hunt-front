@@ -21,7 +21,8 @@ export function ClosingJob({ onClick, data }) {
 
   return (
     <div className="closing" css={closingJob} ref={closingRef} onClick={handleClick}>
-      <div className="closing__icon">
+      <div css={closingContent}>
+        <div className="closing__icon">
         <ClockIcon />
       </div>
 
@@ -32,6 +33,7 @@ export function ClosingJob({ onClick, data }) {
 
       <div className="closing__menu">
         <EllipsisVerticalIcon />
+      </div>
       </div>
     </div>
   )
@@ -48,14 +50,20 @@ ClosingJob.propTypes = {
   }).isRequired
 }
 
+const closingContent = css`
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+`
+
 const closingJob = css`
   padding: 16px;
   border: 1px solid #eee;
   border-radius: 16px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
 
   .closing {
     &__icon {

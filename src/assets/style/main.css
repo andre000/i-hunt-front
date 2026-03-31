@@ -95,6 +95,17 @@ button.secondary:hover, .button.secondary:hover {
   max-width: var(--max-width);
 }
 
+@keyframes page-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .app-main {
   flex: 1;
   min-height: 0;
@@ -103,6 +114,10 @@ button.secondary:hover, .button.secondary:hover {
   overflow: hidden;
   background-color: #f60;
   max-width: var(--max-width);
+}
+
+.app-body {
+  animation: page-slide-up 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .ripple-parent {

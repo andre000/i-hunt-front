@@ -1,20 +1,12 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react'
 import { FireIcon, MapPinIcon, BookmarkIcon } from '@heroicons/react/24/outline'
-import { useRef } from 'react';
 import PropTypes from 'prop-types'
-import { ripple } from '../utils/ripple';
 
 export function FeaturedJob({ data, onClick }) {
-  const featuredRef = useRef(null)
-  const handleClick = (e) => {
-    ripple(featuredRef.current, e)
-      .then(() => onClick())
-  }
-
   return (
-    <div className="job" css={featuredJob} onClick={handleClick} ref={featuredRef}>
-      <div className="job__title">
+    <div className="job" css={featuredJob} onClick={onClick}>
+        <div className="job__title">
         <div className="job__title__group">
           <i>
             <FireIcon />
