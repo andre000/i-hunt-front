@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createSync, createSyncLoop, readInvite } from './sync'
+import { createSync, createSyncLoop, inviteLink, readInvite } from './sync'
 import { validCampaign } from './fixtures'
 
 const CAMPAIGN_URL = 'https://pub-123.r2.dev/campanha.json'
@@ -418,5 +418,25 @@ describe('clearHunterId', () => {
     sync.clearHunterId()
 
     expect(createSync({ fetch: online({}), storage }).getHunterId()).toBeNull()
+  })
+})
+
+describe('inviteLink', () => {
+  it('builds a link that readInvite reads back', () => {
+    const link = inviteLink('https://ihunt.example', CAMPAIGN_URL)
+
+    expect(link).toBe(`https://ihunt.example/?campanha=${encodeURIComponent(CAMPAIGN_URL)}`)
+    expect(readInvite(new URL(link).search)).toBe(CAMPAIGN_URL)
+  })
+})
+
+describe('getCampaignUrl', () => {
+  it('returns the accepted campaign URL or null', () => {
+    const sync = createSync({ fetch: online({}), storage: memoryStorage() })
+    expect(sync.getCampaignUrl()).toBeNull()
+
+    sync.acceptInvite(CAMPAIGN_URL)
+
+    expect(sync.getCampaignUrl()).toBe(CAMPAIGN_URL)
   })
 })

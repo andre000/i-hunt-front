@@ -17,6 +17,7 @@
     "@tanstack/react-router": "^1.40.0",
     "ajv": "^8",
     "ajv-formats": "^3",
+    "ajv-i18n": "^4",
     "animejs": "^3.2.2",
     "prop-types": "^15.8.1",
     "react": "^18.3.1",

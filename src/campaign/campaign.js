@@ -1,5 +1,6 @@
 import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
+import localize from 'ajv-i18n/localize/pt-BR'
 import schema from './campaign.schema.json'
 
 const ajv = new Ajv({ allErrors: true })
@@ -7,6 +8,7 @@ addFormats(ajv)
 const validate = ajv.compile(schema)
 
 function schemaErrors() {
+  localize(validate.errors)
   return validate.errors.map(error => ({
     path: error.params.missingProperty
       ? `${error.instancePath}/${error.params.missingProperty}`
@@ -204,5 +206,20 @@ export function hunterProfile(campaign, hunterId) {
     earnings: completed.reduce((total, mission) => total + mission.value / mission.hunters.length, 0),
     inProgress: missions.filter(mission => mission.status === 'in-progress'),
     completed,
+  }
+}
+
+export function gmView(campaign) {
+  const date = campaign.campaign.date
+  return {
+    date,
+    hunters: campaign.hunters.map(hunter => ({
+      hunter,
+      earnings: hunterProfile(campaign, hunter.id).earnings,
+    })),
+    missions: campaign.missions.map(mission => ({
+      ...missionView(campaign, mission),
+      scheduled: isScheduled(mission, date),
+    })),
   }
 }

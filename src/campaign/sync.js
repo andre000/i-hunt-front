@@ -16,6 +16,10 @@ export function readInvite(search) {
   }
 }
 
+export function inviteLink(appOrigin, campaignUrl) {
+  return `${appOrigin}/?campanha=${encodeURIComponent(campaignUrl)}`
+}
+
 function attempt(action) {
   try {
     return action()
@@ -123,6 +127,9 @@ export function createSync({ fetch, storage }) {
       const updated = [...new Set([...getReadMessageIds(), ...ids])]
       store.set(READ_MESSAGES_KEY, JSON.stringify(updated))
       return updated
+    },
+    getCampaignUrl() {
+      return store.get(CAMPAIGN_URL_KEY)
     },
     getHunterId() {
       return store.get(HUNTER_ID_KEY)
