@@ -130,6 +130,9 @@ export function createSync({ fetch, storage }) {
     setHunterId(hunterId) {
       store.set(HUNTER_ID_KEY, hunterId)
     },
+    clearHunterId() {
+      store.remove(HUNTER_ID_KEY)
+    },
     load() {
       const url = store.get(CAMPAIGN_URL_KEY)
       return url ? load(url) : Promise.resolve({ status: 'no-campaign' })

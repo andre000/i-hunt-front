@@ -408,3 +408,15 @@ describe('read messages', () => {
     expect(sync.getReadMessageIds()).toEqual([])
   })
 })
+
+describe('clearHunterId', () => {
+  it('forgets the chosen hunter on this device', () => {
+    const storage = memoryStorage()
+    const sync = createSync({ fetch: online({}), storage })
+    sync.setHunterId('ana')
+
+    sync.clearHunterId()
+
+    expect(createSync({ fetch: online({}), storage }).getHunterId()).toBeNull()
+  })
+})

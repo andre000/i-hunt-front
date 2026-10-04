@@ -2,7 +2,7 @@ export function validCampaign() {
   return {
     campaign: { name: 'Noite em Porto Alegre', date: '2026-10-04T21:00:00-03:00' },
     hunters: [
-      { id: 'ana', name: 'Ana' },
+      { id: 'ana', name: 'Ana', avatar: 'https://example.com/ana.png', rating: 4.5 },
       { id: 'beto', name: 'Beto' },
     ],
     npcs: [

@@ -43,6 +43,14 @@
           "name": {
             "type": "string",
             "minLength": 1
+          },
+          "avatar": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 5
           }
         }
       }
