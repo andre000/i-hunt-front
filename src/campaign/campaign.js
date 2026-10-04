@@ -17,8 +17,11 @@ function schemaErrors() {
   }))
 }
 
+const listOf = (value) => (Array.isArray(value) ? value : [])
+const objectsIn = (value) => listOf(value).map((item, index) => ({ item, index })).filter(({ item }) => item && typeof item === 'object')
+
 function unknownHunterErrors(hunterIds, ids, path) {
-  return ids
+  return listOf(ids)
     .map((hunterId, index) => ({ hunterId, index }))
     .filter(({ hunterId }) => !hunterIds.has(hunterId))
     .map(({ hunterId, index }) => ({
@@ -28,17 +31,18 @@ function unknownHunterErrors(hunterIds, ids, path) {
 }
 
 function referenceErrors(raw) {
-  const hunterIds = new Set(raw.hunters.map(hunter => hunter.id))
-  const npcIds = new Set((raw.npcs ?? []).map(npc => npc.id))
+  if (!raw || typeof raw !== 'object') return []
+  const hunterIds = new Set(objectsIn(raw.hunters).map(({ item }) => item.id))
+  const npcIds = new Set(objectsIn(raw.npcs).map(({ item }) => item.id))
 
-  const missionErrors = raw.missions.flatMap((mission, missionIndex) =>
+  const missionErrors = objectsIn(raw.missions).flatMap(({ item: mission, index }) =>
     ['nearHunters', 'hunters'].flatMap(field =>
-      unknownHunterErrors(hunterIds, mission[field] ?? [], `/missions/${missionIndex}/${field}`)
+      unknownHunterErrors(hunterIds, mission[field], `/missions/${index}/${field}`)
     )
   )
 
-  const messageErrors = (raw.messages ?? []).flatMap((message, index) => [
-    ...(npcIds.has(message.npc)
+  const messageErrors = objectsIn(raw.messages).flatMap(({ item: message, index }) => [
+    ...(message.npc === undefined || npcIds.has(message.npc)
       ? []
       : [{ path: `/messages/${index}/npc`, message: `NPC "${message.npc}" não existe em /npcs` }]),
     ...(message.to === 'all' ? [] : unknownHunterErrors(hunterIds, message.to, `/messages/${index}/to`)),
@@ -59,9 +63,7 @@ function normalizeMission(mission) {
 }
 
 export function parseCampaign(raw) {
-  if (!validate(raw)) return { ok: false, errors: schemaErrors() }
-
-  const errors = referenceErrors(raw)
+  const errors = [...(validate(raw) ? [] : schemaErrors()), ...referenceErrors(raw)]
   if (errors.length > 0) return { ok: false, errors }
 
   return {

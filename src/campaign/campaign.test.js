@@ -539,3 +539,37 @@ describe('gmView', () => {
     ])
   })
 })
+
+describe('reporting every error at once', () => {
+  it('reports schema and reference errors together', () => {
+    const raw = validCampaign()
+    raw.missions[0].value = 'cem'
+    raw.missions[1].hunters = ['zeca']
+
+    const paths = parseCampaign(raw).errors.map(error => error.path)
+
+    expect(paths).toEqual(expect.arrayContaining(['/missions/0/value', '/missions/1/hunters/0']))
+  })
+
+  it.each([
+    ['hunters is not a list', raw => { raw.hunters = 'ana' }],
+    ['a mission is not an object', raw => { raw.missions[0] = null }],
+    ['nearHunters is not a list', raw => { raw.missions[0].nearHunters = 'ana' }],
+    ['a message is not an object', raw => { raw.messages[0] = 7 }],
+    ['recipients are not a list', raw => { raw.messages[0].to = 3 }],
+  ])('does not crash when %s', (_, breakIt) => {
+    const raw = validCampaign()
+    breakIt(raw)
+
+    expect(parseCampaign(raw).ok).toBe(false)
+  })
+})
+
+describe('a message without NPC', () => {
+  it('reports only the missing field', () => {
+    const raw = validCampaign()
+    delete raw.messages[0].npc
+
+    expect(parseCampaign(raw).errors.map(e => e.path)).toEqual(['/messages/0/npc'])
+  })
+})

@@ -31,7 +31,7 @@ export const switchCampaign = createAsyncThunk(
   },
 )
 
-export function initialCampaignState({ hunterId = null, pendingInvite = null, readMessageIds = [] } = {}) {
+export function initialCampaignState({ hunterId = null, pendingInvite = null, readMessageIds = [], campaignUrl = null } = {}) {
   return {
     status: 'loading',
     data: null,
@@ -42,6 +42,7 @@ export function initialCampaignState({ hunterId = null, pendingInvite = null, re
     hunterId,
     pendingInvite,
     readMessageIds,
+    campaignUrl,
   }
 }
 
@@ -76,8 +77,8 @@ const campaignSlice = createSlice({
       .addCase(markConversationRead.fulfilled, (state, { payload }) => {
         state.readMessageIds = payload
       })
-      .addCase(switchCampaign.pending, (state) => {
-        Object.assign(state, initialCampaignState())
+      .addCase(switchCampaign.pending, (state, { meta }) => {
+        Object.assign(state, initialCampaignState({ campaignUrl: meta.arg }))
       })
       .addCase(switchCampaign.fulfilled, (state, { payload }) => {
         applyLoadResult(state, payload)

@@ -11,6 +11,7 @@ export function createAppStore({ sync, pendingInvite = null }) {
         hunterId: sync.getHunterId(),
         pendingInvite,
         readMessageIds: sync.getReadMessageIds(),
+        campaignUrl: sync.getCampaignUrl(),
       }),
     },
     middleware: (getDefaultMiddleware) =>

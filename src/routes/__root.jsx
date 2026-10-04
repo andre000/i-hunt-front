@@ -1,4 +1,4 @@
-import { createRootRoute, Outlet } from '@tanstack/react-router'
+import { createRootRoute, Outlet, useLocation } from '@tanstack/react-router'
 import { useSelector } from 'react-redux'
 import { CampaignStatus } from '../components/CampaignStatus'
 import { HunterChoice } from '../components/HunterChoice'
@@ -13,6 +13,7 @@ export const Route = createRootRoute({
 
 function Root() {
   const { status, data, hunterId, pendingInvite } = useSelector(state => state.campaign)
+  const pathname = useLocation({ select: location => location.pathname })
 
   if (pendingInvite) {
     return <InviteConfirmation />
@@ -22,6 +23,8 @@ function Root() {
     return <CampaignStatus title="Carregando campanha…" />
   }
 
+  const isGmView = pathname === '/gm' || pathname.startsWith('/gm/')
+
   if (status === 'no-campaign') {
     return (
       <CampaignStatus
@@ -29,6 +32,10 @@ function Root() {
         text="Peça o Convite ao GM e abra o link dele neste aparelho."
       />
     )
+  }
+
+  if (isGmView) {
+    return <Outlet />
   }
 
   if (status !== 'ready') {

@@ -22,6 +22,7 @@ const IndexLazyImport = createFileRoute('/')()
 const SearchIndexLazyImport = createFileRoute('/search/')()
 const ProfileIndexLazyImport = createFileRoute('/profile/')()
 const LoginIndexLazyImport = createFileRoute('/login/')()
+const GmIndexLazyImport = createFileRoute('/gm/')()
 const ChatIndexLazyImport = createFileRoute('/chat/')()
 
 // Create/Update Routes
@@ -45,6 +46,11 @@ const LoginIndexLazyRoute = LoginIndexLazyImport.update({
   path: '/login/',
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/login/index.lazy').then((d) => d.Route))
+
+const GmIndexLazyRoute = GmIndexLazyImport.update({
+  path: '/gm/',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/gm/index.lazy').then((d) => d.Route))
 
 const ChatIndexLazyRoute = ChatIndexLazyImport.update({
   path: '/chat/',
@@ -93,6 +99,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatIndexLazyImport
       parentRoute: typeof rootRoute
     }
+    '/gm/': {
+      id: '/gm/'
+      path: '/gm'
+      fullPath: '/gm'
+      preLoaderRoute: typeof GmIndexLazyImport
+      parentRoute: typeof rootRoute
+    }
     '/login/': {
       id: '/login/'
       path: '/login'
@@ -124,6 +137,7 @@ export const routeTree = rootRoute.addChildren({
   ChatChatIdRoute,
   MissionMissionIdRoute,
   ChatIndexLazyRoute,
+  GmIndexLazyRoute,
   LoginIndexLazyRoute,
   ProfileIndexLazyRoute,
   SearchIndexLazyRoute,
@@ -141,6 +155,7 @@ export const routeTree = rootRoute.addChildren({
         "/chat/$chatId",
         "/mission/$missionId",
         "/chat/",
+        "/gm/",
         "/login/",
         "/profile/",
         "/search/"
@@ -157,6 +172,9 @@ export const routeTree = rootRoute.addChildren({
     },
     "/chat/": {
       "filePath": "chat/index.lazy.jsx"
+    },
+    "/gm/": {
+      "filePath": "gm/index.lazy.jsx"
     },
     "/login/": {
       "filePath": "login/index.lazy.jsx"
