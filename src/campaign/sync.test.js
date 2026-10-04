@@ -59,7 +59,7 @@ async function loadedSync(storage = memoryStorage()) {
   return { sync, fetch, storage }
 }
 
-describe('createSync', () => {
+describe('loading the campaign', () => {
   it('reports no campaign when no invite was ever accepted', async () => {
     const fetch = respondWith(validCampaign())
     const sync = createSync({ fetch, storage: memoryStorage() })
@@ -88,7 +88,9 @@ describe('createSync', () => {
 
     expect((await reopened.load()).status).toBe('ready')
   })
+})
 
+describe('the chosen hunter', () => {
   it('remembers the chosen hunter', () => {
     const storage = memoryStorage()
     createSync({ fetch: respondWith({}), storage }).setHunterId('ana')
@@ -115,7 +117,9 @@ describe('createSync', () => {
 
     expect(sync.getHunterId()).toBe('ana')
   })
+})
 
+describe('load errors without a saved version', () => {
   it('reports an HTTP error', async () => {
     const sync = createSync({ fetch: respondWith('Not Found', { status: 404 }), storage: memoryStorage() })
     sync.acceptInvite(CAMPAIGN_URL)
@@ -164,7 +168,7 @@ describe('createSync', () => {
   })
 })
 
-describe('keeping the last valid campaign', () => {
+describe('updates on top of a saved version', () => {
   it('shows new content the GM published', async () => {
     const { sync, fetch } = await loadedSync()
 
@@ -197,7 +201,9 @@ describe('keeping the last valid campaign', () => {
     expect(result.campaign.campaign.name).toBe('Noite em Porto Alegre')
     expect(result.errors).toEqual([{ path: '', message: expect.stringMatching(/JSON/) }])
   })
+})
 
+describe('offline and server errors with a saved version', () => {
   it('shows the last valid version offline', async () => {
     const { sync, fetch } = await loadedSync()
 

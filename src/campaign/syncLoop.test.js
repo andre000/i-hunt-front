@@ -1,28 +1,28 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createSyncLoop } from './syncLoop'
 
-describe('createSyncLoop', () => {
-  function fakeEnvironment() {
-    const timers = []
-    const returnHandlers = []
-    return {
-      timers,
-      returnHandlers,
-      setInterval: vi.fn((run, ms) => timers.push({ run, ms }) - 1),
-      clearInterval: vi.fn((id) => { timers[id] = null }),
-      onReturn: vi.fn((run) => {
-        returnHandlers.push(run)
-        return () => returnHandlers.splice(returnHandlers.indexOf(run), 1)
-      }),
-    }
+function fakeEnvironment() {
+  const timers = []
+  const returnHandlers = []
+  return {
+    timers,
+    returnHandlers,
+    setInterval: vi.fn((run, ms) => timers.push({ run, ms }) - 1),
+    clearInterval: vi.fn((id) => { timers[id] = null }),
+    onReturn: vi.fn((run) => {
+      returnHandlers.push(run)
+      return () => returnHandlers.splice(returnHandlers.indexOf(run), 1)
+    }),
   }
+}
 
-  function deferred() {
-    let resolve
-    const promise = new Promise(r => { resolve = r })
-    return { promise, resolve }
-  }
+function deferred() {
+  let resolve
+  const promise = new Promise(r => { resolve = r })
+  return { promise, resolve }
+}
 
+describe('createSyncLoop triggers', () => {
   it('loads right away and hands over the result', async () => {
     const env = fakeEnvironment()
     const onResult = vi.fn()
@@ -56,7 +56,9 @@ describe('createSyncLoop', () => {
 
     await vi.waitFor(() => expect(load).toHaveBeenCalledTimes(2))
   })
+})
 
+describe('createSyncLoop guards', () => {
   it('does not start a second load while one is running', async () => {
     const env = fakeEnvironment()
     const pending = deferred()

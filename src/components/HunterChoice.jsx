@@ -22,42 +22,48 @@ const sloganArray = [
 
 const randomSlogan = sloganArray[Math.floor(Math.random() * sloganArray.length)];
 
+function revealChoices() {
+  anime({
+    targets: ".login h1, .login .button",
+    opacity: [0, 1],
+    translateY: [20, 0],
+    duration: 1000,
+    delay: anime.stagger(1000, {start: 2000}),
+    easing: 'easeInOutSine',
+  });
+}
+
+function playEnterTransition() {
+  return anime.timeline({
+    duration: 1000,
+    easing: 'easeInOutSine',
+  })
+  .add({
+    targets: ".login__enter",
+    width: "100%",
+    height: "100%",
+    opacity: [0, 1],
+    duration: 200,
+    endDelay: 200,
+    translateX: ["-50%", "-50%"],
+    translateY: ["-50%", "-50%"],
+  })
+  .add({
+    targets: ".login__enter",
+    scale: [1, 500],
+  })
+  .finished
+}
+
 export function HunterChoice () {
   const hunters = useSelector(state => state.campaign.data.hunters)
   const dispatch = useDispatch()
 
-  useEffect(() => {
-    anime({
-      targets: ".login h1, .login .button",
-      opacity: [0, 1],
-      translateY: [20, 0],
-      duration: 1000,
-      delay: anime.stagger(1000, {start: 2000}),
-      easing: 'easeInOutSine',
-    });
-  }, [])
+  useEffect(revealChoices, [])
 
   const navigate = useNavigate()
   const handleChoose = (hunterId) => {
-    anime.timeline({
-      duration: 1000,
-      easing: 'easeInOutSine',
-    })
-    .add({
-      targets: ".login__enter",
-      width: "100%",
-      height: "100%",
-      opacity: [0, 1],
-      duration: 200,
-      endDelay: 200,
-      translateX: ["-50%", "-50%"],
-      translateY: ["-50%", "-50%"],
-    })
-    .add({
-      targets: ".login__enter",
-      scale: [1, 500],
-    })
-    .finished.then(() => {
+    playEnterTransition().then(() => {
       dispatch(chooseHunter(hunterId))
       navigate({ to: '/', state: { referer: 'login' }})
     })

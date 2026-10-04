@@ -45,6 +45,103 @@ InviteBox.propTypes = {
   campaignUrl: PropTypes.string.isRequired,
 }
 
+function JsonErrors({ errors, hasValidVersion }) {
+  return (
+    <section className="gm__errors" role="alert">
+      <h2>O JSON publicado tem erros</h2>
+      <p>
+        {hasValidVersion
+          ? 'Os jogadores continuam vendo a última versão válida.'
+          : 'Os jogadores não conseguem abrir a campanha até o JSON ser corrigido.'}
+      </p>
+      <ul>
+        {errors.map(({ path, message }, index) => (
+          <li key={`${path}-${index}`}>
+            <code>{path || '(arquivo)'}</code> {message}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+JsonErrors.propTypes = {
+  errors: PropTypes.arrayOf(PropTypes.shape({
+    path: PropTypes.string.isRequired,
+    message: PropTypes.string.isRequired,
+  })).isRequired,
+  hasValidVersion: PropTypes.bool.isRequired,
+}
+
+function HunterList({ hunters }) {
+  return (
+    <section>
+      <h2>Hunters ({hunters.length})</h2>
+      <ul className="gm__list">
+        {hunters.map(({ hunter, earnings }) => (
+          <li key={hunter.id}>
+            <Avatar person={hunter} size={36} />
+            <span className="gm__name">{hunter.name}</span>
+            <span className="gm__meta">
+              {hunter.rating !== undefined ? `${hunter.rating.toFixed(1)} ★ · ` : ''}
+              {formatBRL(earnings)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+HunterList.propTypes = {
+  hunters: PropTypes.arrayOf(PropTypes.shape({
+    hunter: PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+      rating: PropTypes.number,
+    }).isRequired,
+    earnings: PropTypes.number.isRequired,
+  })).isRequired,
+}
+
+function MissionList({ missions, date }) {
+  return (
+    <section>
+      <h2>Missões ({missions.length})</h2>
+      <ul className="gm__list">
+        {missions.map(mission => (
+          <li key={mission.id}>
+            <span className="gm__name">
+              {mission.name}
+              {mission.scheduled && (
+                <span className="gm__scheduled">
+                  Agendada · {relativeToCampaign(mission.postedAt, date)}
+                </span>
+              )}
+            </span>
+            <span className="gm__meta">
+              {MISSION_STATUS_LABEL[mission.status]}
+              {mission.hunterNames.length > 0 && ` · ${mission.hunterNames.join(', ')}`}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+MissionList.propTypes = {
+  missions: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    status: PropTypes.string.isRequired,
+    scheduled: PropTypes.bool.isRequired,
+    postedAt: PropTypes.string,
+    hunterNames: PropTypes.arrayOf(PropTypes.string).isRequired,
+  })).isRequired,
+  date: PropTypes.string.isRequired,
+}
+
 function GmPage() {
   const { status, data, errors, error, campaignUrl } = useSelector(state => state.campaign)
   const view = data ? gmView(data) : null
@@ -57,23 +154,7 @@ function GmPage() {
         {view && <p className="gm__date">Data da campanha: {dateFormat.format(new Date(view.date))}</p>}
       </header>
 
-      {errors.length > 0 && (
-        <section className="gm__errors" role="alert">
-          <h2>O JSON publicado tem erros</h2>
-          <p>
-            {data
-              ? 'Os jogadores continuam vendo a última versão válida.'
-              : 'Os jogadores não conseguem abrir a campanha até o JSON ser corrigido.'}
-          </p>
-          <ul>
-            {errors.map(({ path, message }, index) => (
-              <li key={`${path}-${index}`}>
-                <code>{path || '(arquivo)'}</code> {message}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {errors.length > 0 && <JsonErrors errors={errors} hasValidVersion={Boolean(data)} />}
 
       {status === 'error' && (
         <section className="gm__errors" role="alert">
@@ -89,47 +170,8 @@ function GmPage() {
         </section>
       )}
 
-      {view && (
-        <>
-          <section>
-            <h2>Hunters ({view.hunters.length})</h2>
-            <ul className="gm__list">
-              {view.hunters.map(({ hunter, earnings }) => (
-                <li key={hunter.id}>
-                  <Avatar person={hunter} size={36} />
-                  <span className="gm__name">{hunter.name}</span>
-                  <span className="gm__meta">
-                    {hunter.rating !== undefined ? `${hunter.rating.toFixed(1)} ★ · ` : ''}
-                    {formatBRL(earnings)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section>
-            <h2>Missões ({view.missions.length})</h2>
-            <ul className="gm__list">
-              {view.missions.map(mission => (
-                <li key={mission.id}>
-                  <span className="gm__name">
-                    {mission.name}
-                    {mission.scheduled && (
-                      <span className="gm__scheduled">
-                        Agendada · {relativeToCampaign(mission.postedAt, view.date)}
-                      </span>
-                    )}
-                  </span>
-                  <span className="gm__meta">
-                    {MISSION_STATUS_LABEL[mission.status]}
-                    {mission.hunterNames.length > 0 && ` · ${mission.hunterNames.join(', ')}`}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        </>
-      )}
+      {view && <HunterList hunters={view.hunters} />}
+      {view && <MissionList missions={view.missions} date={view.date} />}
     </main>
   )
 }

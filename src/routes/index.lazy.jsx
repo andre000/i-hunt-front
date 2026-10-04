@@ -4,6 +4,7 @@ import { createLazyFileRoute, Link, useLocation, useNavigate } from '@tanstack/r
 import { useSelector } from 'react-redux'
 import anime from 'animejs/lib/anime.es.js';
 import { css } from '@emotion/react'
+import PropTypes from 'prop-types'
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer'
 import { FeaturedMission } from '../components/FeaturedMission';
@@ -13,6 +14,51 @@ import { homeView } from '../campaign/missions';
 export const Route = createLazyFileRoute('/')({
   component: Index,
 })
+
+function playHomeEntrance() {
+  anime.timeline({
+    duration: 500,
+    easing: 'easeInOutSine',
+  }).add({
+    targets: ".home__header",
+    opacity: [0, 1],
+    translateY: [20, 0],
+  })
+  .add({
+    targets: ".home__body",
+    opacity: [0, 1],
+    translateY: ["100vw", 0],
+  })
+  .add({
+    targets: "footer",
+    translateY: [20, 0],
+    opacity: [0, 1],
+  })
+}
+
+function NearbySection({ missions, onMissionClick }) {
+  return (
+    <div className="home__body__nearby">
+      <div className="home__body__nearby__header">
+        <h2>Caças próximas</h2>
+        <Link to="/search">Ver todas</Link>
+      </div>
+
+      {missions.length === 0 && (
+        <p className="home__body__nearby__empty">Nenhuma caça perto de você agora.</p>
+      )}
+
+      {missions.map(mission => (
+        <NearbyMission key={mission.id} data={mission} onClick={() => onMissionClick(mission)} />
+      ))}
+    </div>
+  )
+}
+
+NearbySection.propTypes = {
+  missions: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string.isRequired })).isRequired,
+  onMissionClick: PropTypes.func.isRequired,
+}
 
 function Index() {
   const location = useLocation()
@@ -25,26 +71,7 @@ function Index() {
   }
 
   useEffect(() => {
-    if (location.state?.referer !== 'login') return;
-
-    anime.timeline({
-      duration: 500,
-      easing: 'easeInOutSine',
-    }).add({
-      targets: ".home__header",
-      opacity: [0, 1],
-      translateY: [20, 0],
-    })
-    .add({
-      targets: ".home__body",
-      opacity: [0, 1],
-      translateY: ["100vw", 0],
-    })
-    .add({
-      targets: "footer",
-      translateY: [20, 0],
-      opacity: [0, 1],
-    })
+    if (location.state?.referer === 'login') playHomeEntrance()
   }, [location.state?.referer])
 
   return (
@@ -67,20 +94,7 @@ function Index() {
           <FeaturedMission data={featuredMission} onClick={() => handleMissionClick(featuredMission)} />
         )}
 
-        <div className="home__body__nearby">
-          <div className="home__body__nearby__header">
-            <h2>Caças próximas</h2>
-            <Link to="/search">Ver todas</Link>
-          </div>
-
-          {nearbyMissions.length === 0 && (
-            <p className="home__body__nearby__empty">Nenhuma caça perto de você agora.</p>
-          )}
-
-          {nearbyMissions.map(mission => (
-            <NearbyMission key={mission.id} data={mission} onClick={() => handleMissionClick(mission)} />
-          ))}
-        </div>
+        <NearbySection missions={nearbyMissions} onMissionClick={handleMissionClick} />
       </div>
       <Footer active="home" />
     </main>
