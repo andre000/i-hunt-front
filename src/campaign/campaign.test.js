@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { findHunter, findMission, homeView, parseCampaign } from './campaign'
+import {
+  findHunter,
+  findMission,
+  homeView,
+  missionDetail,
+  parseCampaign,
+  relativeToCampaign,
+  visibleMissions,
+} from './campaign'
 import { validCampaign } from './fixtures'
 
 function parsed(raw = validCampaign()) {
@@ -94,7 +102,7 @@ describe('homeView', () => {
 
     expect(view.featured.id).toBe('m1')
     expect(view.nearby.map(m => m.id)).toEqual(['m2'])
-    expect(view.total).toBe(3)
+    expect(view.available).toBe(3)
   })
 
   it('lists only missions near the chosen hunter', () => {
@@ -135,5 +143,169 @@ describe('findHunter and findMission', () => {
     expect(findHunter(campaign, 'carla')).toBeNull()
     expect(findHunter(campaign, null)).toBeNull()
     expect(findMission(campaign, 'm9')).toBeNull()
+  })
+})
+
+const CAMPAIGN_DATE = '2026-10-04T21:00:00-03:00'
+
+function campaignWith(...missions) {
+  const raw = validCampaign()
+  raw.missions = missions.map((mission, index) => ({
+    id: `x${index}`,
+    name: `Missão ${index}`,
+    location: 'Centro',
+    value: 100,
+    risk: 'baixo',
+    ...mission,
+  }))
+  return parsed(raw)
+}
+
+function statusOf(mission) {
+  return visibleMissions(campaignWith(mission))[0].status
+}
+
+describe('mission fields in the schema', () => {
+  it('accepts hunters, result, deadline and postedAt', () => {
+    const result = parseCampaign({
+      ...validCampaign(),
+      missions: [{
+        id: 'm1', name: 'Caça', location: 'Centro', value: 10, risk: 'baixo',
+        hunters: ['ana'], result: 'concluída',
+        deadline: '2026-10-06T12:00:00-03:00', postedAt: '2026-10-01T09:00:00-03:00',
+      }],
+    })
+
+    expect(result.ok).toBe(true)
+  })
+
+  it('reports a result outside the allowed values', () => {
+    const raw = validCampaign()
+    raw.missions[0].result = 'abandonada'
+
+    expect(parseCampaign(raw).errors).toContainEqual(expect.objectContaining({ path: '/missions/0/result' }))
+  })
+
+  it('reports an invalid deadline', () => {
+    const raw = validCampaign()
+    raw.missions[0].deadline = 'sexta'
+
+    expect(parseCampaign(raw).errors).toContainEqual(expect.objectContaining({ path: '/missions/0/deadline' }))
+  })
+
+  it('reports a hunter on a mission that does not exist', () => {
+    const raw = validCampaign()
+    raw.missions[0].hunters = ['carla']
+
+    expect(parseCampaign(raw).errors).toEqual([
+      { path: '/missions/0/hunters/0', message: 'hunter "carla" não existe em /hunters' },
+    ])
+  })
+})
+
+describe('mission status', () => {
+  it('is available with no hunters and no result', () => {
+    expect(statusOf({})).toBe('available')
+  })
+
+  it('is in progress with hunters on it', () => {
+    expect(statusOf({ hunters: ['ana'] })).toBe('in-progress')
+  })
+
+  it('is completed or failed when the GM sets the result', () => {
+    expect(statusOf({ hunters: ['ana'], result: 'concluída' })).toBe('completed')
+    expect(statusOf({ hunters: ['ana'], result: 'fracassada' })).toBe('failed')
+  })
+
+  it('is expired when an available mission passes its deadline on the campaign date', () => {
+    expect(statusOf({ deadline: '2026-10-04T20:59:00-03:00' })).toBe('expired')
+  })
+
+  it('is still available before the deadline on the campaign date', () => {
+    expect(statusOf({ deadline: '2026-10-04T21:01:00-03:00' })).toBe('available')
+  })
+
+  it('does not expire while hunters are on it', () => {
+    expect(statusOf({ hunters: ['ana'], deadline: '2026-10-01T00:00:00-03:00' })).toBe('in-progress')
+  })
+
+  it('compares deadlines across time zones', () => {
+    expect(statusOf({ deadline: '2026-10-04T23:30:00Z' })).toBe('expired')
+    expect(statusOf({ deadline: '2026-10-05T00:30:00Z' })).toBe('available')
+  })
+})
+
+describe('scheduled missions', () => {
+  const campaign = () => campaignWith(
+    { id: 'now', postedAt: '2026-10-04T20:00:00-03:00', featured: true, nearHunters: ['ana'] },
+    { id: 'later', postedAt: '2026-10-04T22:00:00-03:00', featured: true, nearHunters: ['ana'] },
+    { id: 'always' },
+  )
+
+  it('are hidden from the visible missions', () => {
+    expect(visibleMissions(campaign()).map(m => m.id)).toEqual(['now', 'always'])
+  })
+
+  it('never become the featured mission or a nearby mission', () => {
+    const raw = campaign()
+    raw.missions[0].featured = false
+    raw.missions[0].nearHunters = []
+
+    const view = homeView(raw, 'ana')
+
+    expect(view.featured).toBeNull()
+    expect(view.nearby).toEqual([])
+  })
+
+  it('are not found in the mission detail', () => {
+    expect(missionDetail(campaign(), 'later')).toBeNull()
+    expect(missionDetail(campaign(), 'now').id).toBe('now')
+  })
+
+  it('are not counted', () => {
+    expect(homeView(campaign(), 'ana').available).toBe(2)
+  })
+})
+
+describe('home with mission status', () => {
+  it('shows only open missions and counts only available ones', () => {
+    const campaign = campaignWith(
+      { id: 'done', featured: true, hunters: ['ana'], result: 'concluída', nearHunters: ['ana'] },
+      { id: 'busy', hunters: ['beto'], nearHunters: ['ana'] },
+      { id: 'late', deadline: '2026-10-01T00:00:00-03:00', nearHunters: ['ana'] },
+      { id: 'open', featured: true, nearHunters: ['ana'] },
+      { id: 'far' },
+    )
+
+    const view = homeView(campaign, 'ana')
+
+    expect(view.featured.id).toBe('open')
+    expect(view.nearby.map(m => m.id)).toEqual(['busy'])
+    expect(view.available).toBe(2)
+  })
+})
+
+describe('missionDetail', () => {
+  it('shows the status and the names of the hunters on the mission', () => {
+    const campaign = campaignWith({ id: 'm', hunters: ['beto', 'ana'] })
+
+    expect(missionDetail(campaign, 'm')).toMatchObject({ status: 'in-progress', hunterNames: ['Beto', 'Ana'] })
+  })
+
+  it('returns null for an unknown mission', () => {
+    expect(missionDetail(campaignWith({}), 'nada')).toBeNull()
+  })
+})
+
+describe('relativeToCampaign', () => {
+  it.each([
+    ['2026-10-07T21:00:00-03:00', 'em 3 dias'],
+    ['2026-10-06T21:00:00-03:00', 'depois de amanhã'],
+    ['2026-10-05T21:00:00-03:00', 'amanhã'],
+    ['2026-10-04T23:00:00-03:00', 'em 2 horas'],
+    ['2026-10-04T20:30:00-03:00', 'há 30 minutos'],
+    ['2026-10-01T21:00:00-03:00', 'há 3 dias'],
+  ])('describes %s relative to the campaign date', (date, text) => {
+    expect(relativeToCampaign(date, CAMPAIGN_DATE)).toBe(text)
   })
 })
