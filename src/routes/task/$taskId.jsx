@@ -5,6 +5,7 @@ import { updateMission } from '../../store/missions'
 import { Footer } from '../../components/Footer'
 import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
+import { formatBRL } from '../../utils/format'
 import {
   ArrowLeftIcon,
   MapPinIcon,
@@ -125,7 +126,7 @@ function TaskComponent() {
             <InfoCard
               icon={BanknotesIcon}
               label="Recompensa"
-              value={`R$ ${value.toFixed(2).replace('.', ',')}`}
+              value={formatBRL(value)}
             />
             <InfoCard
               icon={CalendarIcon}

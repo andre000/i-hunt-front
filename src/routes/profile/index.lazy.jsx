@@ -3,6 +3,7 @@ import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
 import { useSelector } from 'react-redux'
 import { Header } from '../../components/Header'
 import { Footer } from '../../components/Footer'
+import { formatBRL } from '../../utils/format'
 import { css } from '@emotion/react'
 import { MapPinIcon, StarIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { StarIcon as StarSolid } from '@heroicons/react/24/solid'
@@ -31,7 +32,7 @@ function ProfileMissionCard({ mission, onClick }) {
         </div>
       </div>
       <div className='mc__right'>
-        <span className='mc__value'>R$ {mission.value.toFixed(2).replace('.', ',')}</span>
+        <span className='mc__value'>{formatBRL(mission.value)}</span>
         <span className='mc__risk' style={{ backgroundColor: riskColor }}>{mission.risk}</span>
         {mission.status === 'active' && daysLeft > 0 && (
           <span className='mc__days'>{daysLeft}d</span>

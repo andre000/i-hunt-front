@@ -2,6 +2,7 @@
 import { css } from '@emotion/react'
 import { FireIcon, MapPinIcon, BookmarkIcon } from '@heroicons/react/24/outline'
 import PropTypes from 'prop-types'
+import { formatBRL } from '../utils/format'
 
 export function FeaturedJob({ data, onClick }) {
   return (
@@ -29,7 +30,7 @@ export function FeaturedJob({ data, onClick }) {
           <span>{data.location}</span>
         </div>
         <div className="job__details__value">
-          <span>R$ {data.value.toFixed(2).replace('.', ',')}</span>
+          <span>{formatBRL(data.value)}</span>
         </div>
       </div>
     </div>
