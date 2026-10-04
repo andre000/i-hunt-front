@@ -5,6 +5,7 @@ import { css } from '@emotion/react'
 import { Footer } from '../../components/Footer'
 import { Avatar } from '../../components/Avatar'
 import { inbox } from '../../campaign/messages'
+import { rowButton, stackedText } from '../../components/styles'
 import { relativeToCampaign } from '../../campaign/time'
 
 export const Route = createLazyFileRoute('/chat/')({
@@ -31,17 +32,17 @@ function InboxPage() {
               <li key={npc.id}>
                 <button
                   type='button'
-                  className={unread > 0 ? 'is-unread' : undefined}
+                  className='inbox__item'
                   onClick={() => navigate({ to: '/chat/$chatId', params: { chatId: npc.id } })}
                 >
                   <Avatar person={npc} />
                   <span className='item__content'>
                     <span className='item__top'>
                       <span className='item__name'>{npc.name}</span>
-                      <span className='item__time'>{relativeToCampaign(lastMessage.sentAt, data.campaign.date)}</span>
+                      <span className={unread > 0 ? 'item__time item__time--unread' : 'item__time'}>{relativeToCampaign(lastMessage.sentAt, data.campaign.date)}</span>
                     </span>
                     <span className='item__bottom'>
-                      <span className='item__text'>{lastMessage.text}</span>
+                      <span className={unread > 0 ? 'item__text item__text--unread' : 'item__text'}>{lastMessage.text}</span>
                       {unread > 0 && (
                         <span className='item__badge' aria-label={`${unread} não lidas`}>{unread}</span>
                       )}
@@ -85,31 +86,20 @@ const bodyStyle = css`
     padding: 0;
   }
 
-  button {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  .inbox__item {
+    ${rowButton}
     padding: 12px 24px;
     border: none;
     border-radius: 0;
-    background-color: #fff;
-    color: #333;
-    text-align: left;
-    cursor: pointer;
   }
 
-  button:hover {
+  .inbox__item:hover {
     background-color: #f7f7f7;
     color: #333;
   }
 
   .item__content {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    ${stackedText}
   }
 
   .item__top,
@@ -138,12 +128,12 @@ const bodyStyle = css`
     text-overflow: ellipsis;
   }
 
-  .is-unread .item__text {
+  .item__text--unread {
     color: #333;
     font-weight: 600;
   }
 
-  .is-unread .item__time {
+  .item__time--unread {
     color: #f60;
     font-weight: 700;
   }

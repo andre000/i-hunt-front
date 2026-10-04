@@ -10,6 +10,7 @@ import { Footer } from '../../components/Footer'
 import { MISSION_STATUS_LABEL, RISKS, missionList } from '../../campaign/missions'
 import { relativeToCampaign } from '../../campaign/time'
 import { formatBRL } from '../../utils/format'
+import { rowButton, stackedText } from '../../components/styles'
 
 export const Route = createLazyFileRoute('/search/')({
   component: SearchPage,
@@ -88,6 +89,7 @@ function SearchPage() {
               <li key={mission.id}>
                 <button
                   type="button"
+                  className="search__item"
                   onClick={() => navigate({ to: '/mission/$missionId', params: { missionId: mission.id } })}
                 >
                   <span className="item__body">
@@ -172,26 +174,15 @@ const searchBody = css`
     gap: 12px;
   }
 
-  .search__list button {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  .search__item {
+    ${rowButton}
     padding: 16px;
     border: 1px solid #eee;
     border-radius: 16px;
-    background-color: #fff;
-    text-align: left;
-    cursor: pointer;
-    color: #333;
   }
 
   .item__body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
+    ${stackedText}
   }
 
   .item__name {

@@ -51,7 +51,7 @@ function ConversationPage() {
 
       <ol css={messagesStyle}>
         {thread.messages.map(message => (
-          <li key={message.id}>
+          <li key={message.id} className='message'>
             <p>{message.text}</p>
             <time dateTime={message.sentAt}>{relativeToCampaign(message.sentAt, data.campaign.date)}</time>
           </li>
@@ -68,7 +68,7 @@ const pageStyle = css`
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f2f2f2;
+  background-color: var(--surface-sunken);
 `
 
 const headerStyle = css`
@@ -108,7 +108,7 @@ const messagesStyle = css`
   flex-direction: column;
   gap: 8px;
 
-  li:not([aria-hidden]) {
+  .message {
     align-self: flex-start;
     max-width: 80%;
     background-color: #fff;

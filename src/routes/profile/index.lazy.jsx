@@ -131,7 +131,7 @@ function ProfilePage() {
       <div className='app-body' css={profileBody}>
         <div css={identity}>
           <div className='id__avatar-wrap'>
-            <Avatar person={hunter} size={106} />
+            <Avatar person={hunter} size={106} className='id__avatar' />
           </div>
           <h2 className='id__name'>{hunter.name}</h2>
           {hunter.rating !== undefined && <StarRating value={hunter.rating} />}
@@ -199,7 +199,7 @@ const identity = css`
     box-shadow: 0 4px 16px rgba(255, 102, 0, 0.35);
   }
 
-  .id__avatar-wrap > span {
+  .id__avatar {
     border: 3px solid #fff;
   }
 

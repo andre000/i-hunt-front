@@ -11,12 +11,12 @@ function initials(name) {
     .join('')
 }
 
-export function Avatar({ person, size = 48 }) {
+export function Avatar({ person, size = 48, className }) {
   const [failedUrl, setFailedUrl] = useState(null)
   const showImage = person.avatar && person.avatar !== failedUrl
 
   return (
-    <span css={avatar(size)}>
+    <span css={avatar(size)} className={className}>
       {showImage
         ? <img src={person.avatar} alt="" onError={() => setFailedUrl(person.avatar)} />
         : initials(person.name)}
@@ -30,6 +30,7 @@ Avatar.propTypes = {
     avatar: PropTypes.string,
   }).isRequired,
   size: PropTypes.number,
+  className: PropTypes.string,
 }
 
 const avatar = (size) => css`

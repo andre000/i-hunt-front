@@ -208,7 +208,7 @@ const gmPage = css`
 
   .gm__errors {
     border: 1px solid #fca5a5;
-    background-color: #fef2f2;
+    background-color: var(--danger-surface);
     border-radius: 12px;
     padding: 16px;
 

@@ -85,6 +85,7 @@ export function HunterChoice () {
           <li key={hunter.id}>
             <button type='button' onClick={() => handleChoose(hunter.id)} className='button secondary'>
               {hunter.name}
+              <span className='login__arrow' aria-hidden='true'>→</span>
             </button>
           </li>
         ))}
@@ -165,8 +166,7 @@ const hunterChoice = css`
     pointer-events: none;
   }
 
-  .button::before {
-    content: '→';
+  .login__arrow {
     position: absolute;
     right: 16px;
   }

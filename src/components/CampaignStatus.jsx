@@ -2,10 +2,11 @@
 import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
 import Logo from './Logo'
+import { centeredScreen } from './styles'
 
 export function CampaignStatus({ title, text }) {
   return (
-    <main css={campaignStatus}>
+    <main css={[centeredScreen, campaignStatus]}>
       <Logo />
       <h1>{title}</h1>
       {text && <p>{text}</p>}
@@ -19,14 +20,6 @@ CampaignStatus.propTypes = {
 }
 
 const campaignStatus = css`
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 16px;
-  padding: 24px;
-  color: #333;
-
   h1 {
     font-size: 1.6rem;
     line-height: 1.2;

@@ -41,7 +41,7 @@ function NearbySection({ missions, onMissionClick }) {
     <div className="home__body__nearby">
       <div className="home__body__nearby__header">
         <h2>Caças próximas</h2>
-        <Link to="/search">Ver todas</Link>
+        <Link to="/search" className="home__see-all">Ver todas</Link>
       </div>
 
       {missions.length === 0 && (
@@ -153,31 +153,23 @@ const homeBody = css`
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
 
-    .home__body__nearby__header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+  .home__body__nearby__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 
-      a {
-        color: #f60;
-        font-size: 12px;
-        font-weight: 700;
-        text-decoration: none;
-      }
-    }
+  .home__see-all {
+    color: #f60;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+  }
 
-    .home__body__nearby__empty {
-      font-size: 14px;
-      color: #777;
-    }
-
-    .home__body__nearby__list {
-      border-color: #eee;
-      border-width: 1px;
-      border-style: solid;
-      border-radius: 16px;
-      padding: 16px;
-    }
+  .home__body__nearby__empty {
+    font-size: 14px;
+    color: #777;
   }
 `

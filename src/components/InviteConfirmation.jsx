@@ -2,6 +2,7 @@
 import { css } from '@emotion/react'
 import { useDispatch, useSelector } from 'react-redux'
 import Logo from './Logo'
+import { centeredScreen } from './styles'
 import { keepCurrentCampaign, switchCampaign } from '../store/campaign'
 
 export function InviteConfirmation() {
@@ -10,7 +11,7 @@ export function InviteConfirmation() {
   const currentName = useSelector(state => state.campaign.data?.campaign.name)
 
   return (
-    <main css={inviteConfirmation}>
+    <main css={[centeredScreen, inviteConfirmation]}>
       <Logo />
       <h1>Trocar de campanha?</h1>
       <p>
@@ -29,14 +30,6 @@ export function InviteConfirmation() {
 }
 
 const inviteConfirmation = css`
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 16px;
-  padding: 24px;
-  color: #333;
-
   h1 {
     font-size: 1.6rem;
     line-height: 1.2;

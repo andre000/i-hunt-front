@@ -7,31 +7,31 @@ import { ripple } from '../utils/ripple';
 import { MISSION_STATUS_LABEL } from '../campaign/missions';
 
 export function NearbyMission({ onClick, data }) {
-  const closingRef = useRef(null)
+  const cardRef = useRef(null)
   const [disabled, setDisabled] = useState(false)
 
   const handleClick = (e) => {
     if (disabled) return;
     setDisabled(true)
-    ripple(closingRef.current, e)
+    ripple(cardRef.current, e)
       .then(() => onClick())
       .finally(() => setDisabled(false))
   }
 
   return (
-    <div className="closing" css={nearbyMission} ref={closingRef} onClick={handleClick}>
-      <div css={closingContent}>
-        <div className="closing__icon">
-        <MapPinIcon />
+    <div className="nearby" css={nearbyMission} ref={cardRef} onClick={handleClick}>
+      <div css={cardContent}>
+        <div className="nearby__icon">
+        <MapPinIcon className="nearby__glyph" />
       </div>
 
-      <div className="closing__info">
-        <h4>{data.name}</h4>
-        <p>{data.location} ● {MISSION_STATUS_LABEL[data.status]}</p>
+      <div className="nearby__info">
+        <h4 className="nearby__name">{data.name}</h4>
+        <p className="nearby__meta">{data.location} ● {MISSION_STATUS_LABEL[data.status]}</p>
       </div>
 
-      <div className="closing__menu">
-        <EllipsisVerticalIcon />
+      <div className="nearby__menu">
+        <EllipsisVerticalIcon className="nearby__glyph" />
       </div>
       </div>
     </div>
@@ -47,7 +47,7 @@ NearbyMission.propTypes = {
   }).isRequired
 }
 
-const closingContent = css`
+const cardContent = css`
   position: relative;
   z-index: 1;
   display: flex;
@@ -62,41 +62,33 @@ const nearbyMission = css`
   border-radius: 16px;
   display: flex;
 
-  .closing {
-    &__icon {
-      background-color: #eee;
-      color: #fff;
-      padding: 8px;
-      border-radius: 50%;
+  .nearby__icon {
+    background-color: #eee;
+    color: #fff;
+    padding: 8px;
+    border-radius: 50%;
+  }
 
-      svg {
-        width: 24px;
-        height: 24px;
-        stroke: #333;
-      }
-    }
+  .nearby__info {
+    flex-grow: 1;
+  }
 
-    &__info {
-      flex-grow: 1;
+  .nearby__name {
+    line-height: 1;
+  }
 
-      h4 {
-        line-height: 1;
-      }
+  .nearby__meta {
+    color: #777;
+    font-size: 12px;
+  }
 
-      p {
-        color: #777;
-        font-size: 12px;
-      }
-    }
+  .nearby__menu {
+    color: #333;
+  }
 
-    &__menu {
-      color: #333;
-      
-      svg {
-        width: 24px;
-        height: 24px;
-        stroke: #333
-      }
-    }
+  .nearby__glyph {
+    width: 24px;
+    height: 24px;
+    stroke: #333;
   }
 `
