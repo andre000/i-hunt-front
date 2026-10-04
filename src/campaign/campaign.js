@@ -100,7 +100,7 @@ export const RISKS = ['baixo', 'médio', 'alto']
 
 const time = (isoDate) => new Date(isoDate).getTime()
 
-export function missionStatus(mission, campaignDate) {
+function missionStatus(mission, campaignDate) {
   if (mission.result === 'concluída') return 'completed'
   if (mission.result === 'fracassada') return 'failed'
   if (mission.hunters.length > 0) return 'in-progress'

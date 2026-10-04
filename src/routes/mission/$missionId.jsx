@@ -48,38 +48,87 @@ InfoCard.propTypes = {
   value: PropTypes.string.isRequired,
 }
 
+function MissionNotFound() {
+  return (
+    <main className="app-main">
+      <div css={notFoundStyle}>
+        <button css={backBtn} onClick={() => history.back()}>
+          <ArrowLeftIcon />
+        </button>
+        <div className="nf__content">
+          <p className="nf__title">Missão não encontrada</p>
+          <p className="nf__sub">A missão que você procura não existe ou foi removida.</p>
+          <button className="button secondary" onClick={() => history.back()}>
+            Voltar
+          </button>
+        </div>
+      </div>
+      <Footer active="home" />
+    </main>
+  )
+}
+
+function MissionFacts({ mission, campaignDate }) {
+  const { location, value, deadline, postedAt } = mission
+  return (
+    <div css={infoGrid}>
+      <InfoCard icon={MapPinIcon} label="Localização" value={location} />
+      <InfoCard icon={BanknotesIcon} label="Recompensa" value={formatBRL(value)} />
+      {deadline && (
+        <InfoCard icon={CalendarIcon} label="Prazo" value={relativeToCampaign(deadline, campaignDate)} />
+      )}
+      {postedAt && (
+        <InfoCard icon={ClockIcon} label="Publicada" value={relativeToCampaign(postedAt, campaignDate)} />
+      )}
+    </div>
+  )
+}
+
+MissionFacts.propTypes = {
+  mission: PropTypes.shape({
+    location: PropTypes.string.isRequired,
+    value: PropTypes.number.isRequired,
+    deadline: PropTypes.string,
+    postedAt: PropTypes.string,
+  }).isRequired,
+  campaignDate: PropTypes.string.isRequired,
+}
+
+function MissionHunters({ hunterNames }) {
+  return (
+    <section css={huntersSection}>
+      <h2>
+        <UserGroupIcon /> Hunters na missão
+      </h2>
+      {hunterNames.length === 0 ? (
+        <p>Nenhum hunter nesta missão ainda.</p>
+      ) : (
+        <ul>
+          {hunterNames.map(hunterName => (
+            <li key={hunterName}>{hunterName}</li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+MissionHunters.propTypes = {
+  hunterNames: PropTypes.arrayOf(PropTypes.string).isRequired,
+}
+
 function MissionComponent() {
   const { missionId } = Route.useParams()
   const campaign = useSelector(state => state.campaign.data)
   const mission = missionDetail(campaign, missionId)
 
-  if (!mission) {
-    return (
-      <main className="app-main">
-        <div css={notFoundStyle}>
-          <button css={backBtn} onClick={() => history.back()}>
-            <ArrowLeftIcon />
-          </button>
-          <div className="nf__content">
-            <p className="nf__title">Missão não encontrada</p>
-            <p className="nf__sub">A missão que você procura não existe ou foi removida.</p>
-            <button className="button secondary" onClick={() => history.back()}>
-              Voltar
-            </button>
-          </div>
-        </div>
-        <Footer active="home" />
-      </main>
-    )
-  }
+  if (!mission) return <MissionNotFound />
 
-  const { name, description, location, value, tags, risk, status, hunterNames, deadline, postedAt } = mission
-  const campaignDate = campaign.campaign.date
+  const { name, description, tags, risk, status, hunterNames } = mission
 
   return (
     <main className="app-main">
       <div css={detailBody}>
-        {/* Hero */}
         <div css={heroSection}>
           <img src="https://placehold.co/600x400" alt={name} css={heroImg} />
           <button css={backBtn} onClick={() => history.back()}>
@@ -88,24 +137,21 @@ function MissionComponent() {
         </div>
 
         <div css={contentSection}>
-          {/* Cabeçalho */}
           <div css={missionHeader}>
             <h1>{name}</h1>
             <div css={badgeRow}>
               <span css={badge(STATUS_COLOR[status])}>
                 {MISSION_STATUS_LABEL[status]}
               </span>
-              <span css={badge(RISK_COLOR[risk] ?? '#9ca3af')}>
-                <FireIcon /> {RISK_LABEL[risk] ?? risk}
+              <span css={badge(RISK_COLOR[risk])}>
+                <FireIcon /> {RISK_LABEL[risk]}
               </span>
             </div>
           </div>
 
-          {/* Descrição */}
           {description && <p css={descriptionText}>{description}</p>}
 
-          {/* Tags */}
-          {tags?.length > 0 && (
+          {tags.length > 0 && (
             <div css={tagsRow}>
               {tags.map(tag => (
                 <span key={tag} css={tagPill}>{tag}</span>
@@ -113,36 +159,8 @@ function MissionComponent() {
             </div>
           )}
 
-          {/* Info Cards */}
-          <div css={infoGrid}>
-            <InfoCard icon={MapPinIcon} label="Localização" value={location} />
-            <InfoCard
-              icon={BanknotesIcon}
-              label="Recompensa"
-              value={formatBRL(value)}
-            />
-            {deadline && (
-              <InfoCard icon={CalendarIcon} label="Prazo" value={relativeToCampaign(deadline, campaignDate)} />
-            )}
-            {postedAt && (
-              <InfoCard icon={ClockIcon} label="Publicada" value={relativeToCampaign(postedAt, campaignDate)} />
-            )}
-          </div>
-
-          <section css={huntersSection}>
-            <h2>
-              <UserGroupIcon /> Hunters na missão
-            </h2>
-            {hunterNames.length === 0 ? (
-              <p>Nenhum hunter nesta missão ainda.</p>
-            ) : (
-              <ul>
-                {hunterNames.map(hunterName => (
-                  <li key={hunterName}>{hunterName}</li>
-                ))}
-              </ul>
-            )}
-          </section>
+          <MissionFacts mission={mission} campaignDate={campaign.campaign.date} />
+          <MissionHunters hunterNames={hunterNames} />
         </div>
       </div>
       <Footer active="home" />

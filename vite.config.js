@@ -26,10 +26,13 @@ function publishCampaignSchema() {
 // https://vitejs.dev/config/
 export default defineConfig({
   test: {
-    environment: 'node',
+    projects: [
+      { extends: true, test: { name: 'unit', include: ['**/*.test.js'], environment: 'node' } },
+      { extends: true, test: { name: 'screens', include: ['**/*.test.jsx'], environment: 'jsdom' } },
+    ],
   },
   plugins: [
-    TanStackRouterVite(),
+    TanStackRouterVite({ routeFileIgnorePattern: '\\.test\\.' }),
     react(),
     svgr(),
     VitePWA(pwaOptions),
