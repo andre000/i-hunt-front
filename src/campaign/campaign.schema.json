@@ -2,197 +2,100 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "campaign.schema.json",
   "title": "Campanha iHunt",
+  "description": "Arquivo da campanha que o GM publica no R2 e que o app #iHunt lê. O app só lê este arquivo; tudo o que os jogadores veem vem daqui.",
   "type": "object",
-  "required": [
-    "campaign",
-    "hunters",
-    "missions"
-  ],
+  "required": ["campaign", "hunters", "missions"],
   "properties": {
+    "$schema": {
+      "description": "Endereço deste schema, para o editor validar o arquivo. Ex.: \"https://<endereço do app>/campaign.schema.json\".",
+      "type": "string"
+    },
     "campaign": {
+      "description": "Dados gerais da campanha.",
       "type": "object",
-      "required": [
-        "name",
-        "date"
-      ],
+      "required": ["name", "date"],
       "properties": {
-        "name": {
-          "type": "string",
-          "minLength": 1
-        },
+        "name": { "description": "Nome da campanha.", "type": "string", "minLength": 1 },
         "date": {
+          "description": "Data da campanha: o \"agora\" da ficção, com fuso. Prazos e horários são comparados com ela, não com o relógio real. Avance esta data para liberar conteúdo agendado. Ex.: \"2026-10-04T21:00:00-03:00\".",
           "type": "string",
           "format": "date-time"
         }
       }
     },
     "hunters": {
+      "description": "Os hunters da campanha. Cada jogador escolhe um deles no app.",
       "type": "array",
       "minItems": 1,
       "items": {
+        "description": "Um hunter.",
         "type": "object",
-        "required": [
-          "id",
-          "name"
-        ],
+        "required": ["id", "name"],
         "properties": {
-          "id": {
-            "type": "string",
-            "minLength": 1
-          },
-          "name": {
-            "type": "string",
-            "minLength": 1
-          },
-          "avatar": {
-            "type": "string"
-          },
-          "rating": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 5
-          }
+          "id": { "description": "Identificador único do hunter, usado em missões e mensagens. Ex.: \"ana\".", "type": "string", "minLength": 1 },
+          "name": { "description": "Nome do hunter.", "type": "string", "minLength": 1 },
+          "avatar": { "description": "Endereço de uma imagem do hunter. Sem ela, o app mostra as iniciais.", "type": "string" },
+          "rating": { "description": "Avaliação do hunter no app, de 0 a 5. Sem ela, as estrelas não aparecem.", "type": "number", "minimum": 0, "maximum": 5 }
         }
       }
     },
     "missions": {
+      "description": "As missões da campanha, na ordem em que aparecem na lista.",
       "type": "array",
       "items": {
+        "description": "Uma missão. O estado é calculado: Concluída ou Fracassada pelo resultado; Em andamento quando tem hunters; Expirada quando o prazo passou da data da campanha sem hunters; Disponível no resto.",
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "location",
-          "value",
-          "risk"
-        ],
+        "required": ["id", "name", "location", "value", "risk"],
         "properties": {
-          "id": {
-            "type": "string",
-            "minLength": 1
-          },
-          "name": {
-            "type": "string",
-            "minLength": 1
-          },
-          "description": {
-            "type": "string"
-          },
-          "location": {
-            "type": "string"
-          },
-          "value": {
-            "type": "number",
-            "minimum": 0
-          },
-          "risk": {
-            "enum": [
-              "baixo",
-              "médio",
-              "alto"
-            ]
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "featured": {
-            "type": "boolean"
-          },
-          "nearHunters": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "hunters": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "result": {
-            "enum": [
-              "concluída",
-              "fracassada"
-            ]
-          },
-          "deadline": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "postedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
+          "id": { "description": "Identificador único da missão. Ex.: \"lobisomem-bom-fim\".", "type": "string", "minLength": 1 },
+          "name": { "description": "Nome da missão.", "type": "string", "minLength": 1 },
+          "description": { "description": "Texto da missão, como o cliente escreveu no app.", "type": "string" },
+          "location": { "description": "Local da missão.", "type": "string" },
+          "value": { "description": "Valor pago pela missão, em reais. Quando Concluída, é dividido igualmente entre os hunters dela.", "type": "number", "minimum": 0 },
+          "risk": { "description": "Risco da missão.", "enum": ["baixo", "médio", "alto"] },
+          "tags": { "description": "Etiquetas livres mostradas na missão.", "type": "array", "items": { "description": "Uma etiqueta.", "type": "string" } },
+          "featured": { "description": "Missão em destaque na home. Se houver mais de uma, vale a primeira aberta.", "type": "boolean" },
+          "nearHunters": { "description": "Ids dos hunters para quem a missão aparece como \"perto\" na home.", "type": "array", "items": { "description": "Id de um hunter.", "type": "string" } },
+          "hunters": { "description": "Ids dos hunters que estão na missão. Com hunters, ela fica Em andamento.", "type": "array", "items": { "description": "Id de um hunter.", "type": "string" } },
+          "result": { "description": "Resultado definido pelo GM ao fim da missão.", "enum": ["concluída", "fracassada"] },
+          "deadline": { "description": "Prazo da missão, com fuso. Se a data da campanha passar dele com a missão Disponível, ela fica Expirada.", "type": "string", "format": "date-time" },
+          "postedAt": { "description": "Horário da ficção em que a missão aparece. Se for depois da data da campanha, a missão fica agendada (oculta para os jogadores). Sem ele, aparece sempre.", "type": "string", "format": "date-time" }
         }
       }
     },
     "npcs": {
+      "description": "Os NPCs que mandam mensagens aos hunters.",
       "type": "array",
       "items": {
+        "description": "Um NPC.",
         "type": "object",
-        "required": [
-          "id",
-          "name"
-        ],
+        "required": ["id", "name"],
         "properties": {
-          "id": {
-            "type": "string",
-            "minLength": 1
-          },
-          "name": {
-            "type": "string",
-            "minLength": 1
-          },
-          "avatar": {
-            "type": "string"
-          }
+          "id": { "description": "Identificador único do NPC, usado nas mensagens. Ex.: \"dona-rosa\".", "type": "string", "minLength": 1 },
+          "name": { "description": "Nome do NPC.", "type": "string", "minLength": 1 },
+          "avatar": { "description": "Endereço de uma imagem do NPC. Sem ela, o app mostra as iniciais.", "type": "string" }
         }
       }
     },
     "messages": {
+      "description": "Mensagens dos NPCs para os hunters. Só vão do NPC para os hunters.",
       "type": "array",
       "items": {
+        "description": "Uma mensagem.",
         "type": "object",
-        "required": [
-          "id",
-          "npc",
-          "to",
-          "sentAt",
-          "text"
-        ],
+        "required": ["id", "npc", "to", "sentAt", "text"],
         "properties": {
-          "id": {
-            "type": "string",
-            "minLength": 1
-          },
-          "npc": {
-            "type": "string"
-          },
+          "id": { "description": "Identificador único da mensagem. Não mude depois de publicar: é por ele que o app sabe o que já foi lido.", "type": "string", "minLength": 1 },
+          "npc": { "description": "Id do NPC que manda a mensagem.", "type": "string" },
           "to": {
+            "description": "Destinatários: \"all\" para todos os hunters, ou uma lista de ids de hunters.",
             "oneOf": [
-              {
-                "const": "all"
-              },
-              {
-                "type": "array",
-                "minItems": 1,
-                "items": {
-                  "type": "string"
-                }
-              }
+              { "const": "all" },
+              { "type": "array", "minItems": 1, "items": { "type": "string" } }
             ]
           },
-          "sentAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "text": {
-            "type": "string"
-          }
+          "sentAt": { "description": "Horário da ficção da mensagem, com fuso. Se for depois da data da campanha, a mensagem fica agendada.", "type": "string", "format": "date-time" },
+          "text": { "description": "Texto da mensagem.", "type": "string" }
         }
       }
     }

@@ -1,0 +1,107 @@
+{
+  "$schema": "./campaign.schema.json",
+  "campaign": {
+    "name": "Noites de Porto Alegre",
+    "date": "2026-10-10T22:00:00-03:00"
+  },
+  "hunters": [
+    { "id": "ana", "name": "Ana Souza", "rating": 4.6 },
+    { "id": "beto", "name": "Beto Lima", "rating": 3.9 },
+    { "id": "carla", "name": "Carla Mendes" }
+  ],
+  "npcs": [
+    { "id": "dona-rosa", "name": "Dona Rosa" },
+    { "id": "padre-julio", "name": "Padre Júlio" }
+  ],
+  "missions": [
+    {
+      "id": "lobisomem-bom-fim",
+      "name": "Lobisomem no Bom Fim",
+      "description": "Algo anda atacando cachorros no parque da Redenção. Paga bem, sem perguntas.",
+      "location": "Bom Fim",
+      "value": 1200,
+      "risk": "alto",
+      "tags": ["lobisomem", "noturno"],
+      "featured": true,
+      "nearHunters": ["ana", "carla"],
+      "deadline": "2026-10-13T06:00:00-03:00",
+      "postedAt": "2026-10-10T18:00:00-03:00"
+    },
+    {
+      "id": "fantasma-t5",
+      "name": "Fantasma no ônibus T5",
+      "description": "Passageiros relatam uma mulher que some entre uma parada e outra.",
+      "location": "Centro Histórico",
+      "value": 350,
+      "risk": "baixo",
+      "nearHunters": ["beto"],
+      "hunters": ["beto", "carla"]
+    },
+    {
+      "id": "vampiro-cidade-baixa",
+      "name": "Vampiro na Cidade Baixa",
+      "location": "Cidade Baixa",
+      "value": 900,
+      "risk": "médio",
+      "hunters": ["ana", "beto"],
+      "result": "concluída"
+    },
+    {
+      "id": "carniçal-cemiterio",
+      "name": "Carniçal no cemitério",
+      "location": "Azenha",
+      "value": 600,
+      "risk": "alto",
+      "hunters": ["carla"],
+      "result": "fracassada"
+    },
+    {
+      "id": "poltergeist-moinhos",
+      "name": "Poltergeist em Moinhos",
+      "location": "Moinhos de Vento",
+      "value": 250,
+      "risk": "baixo",
+      "deadline": "2026-10-09T12:00:00-03:00"
+    },
+    {
+      "id": "culto-guaiba",
+      "name": "Culto às margens do Guaíba",
+      "description": "Liberada quando o GM avançar a data da campanha.",
+      "location": "Orla do Guaíba",
+      "value": 2000,
+      "risk": "alto",
+      "nearHunters": ["ana", "beto", "carla"],
+      "postedAt": "2026-10-11T20:00:00-03:00"
+    }
+  ],
+  "messages": [
+    {
+      "id": "rosa-1",
+      "npc": "dona-rosa",
+      "to": "all",
+      "sentAt": "2026-10-10T19:30:00-03:00",
+      "text": "Meninos, os cachorros do parque sumiram de novo. Alguém pega esse serviço?"
+    },
+    {
+      "id": "julio-1",
+      "npc": "padre-julio",
+      "to": ["ana"],
+      "sentAt": "2026-10-10T20:15:00-03:00",
+      "text": "Ana, passe na igreja antes de ir ao parque. Tenho algo para você."
+    },
+    {
+      "id": "rosa-2",
+      "npc": "dona-rosa",
+      "to": ["beto", "carla"],
+      "sentAt": "2026-10-10T21:40:00-03:00",
+      "text": "O motorista do T5 jura que viu a mulher de novo hoje."
+    },
+    {
+      "id": "julio-2",
+      "npc": "padre-julio",
+      "to": "all",
+      "sentAt": "2026-10-11T19:00:00-03:00",
+      "text": "Vi luzes no Guaíba. Não vão sozinhos."
+    }
+  ]
+}
