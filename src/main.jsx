@@ -5,7 +5,9 @@ import ReactDOM from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { createAppStore } from './store'
 import { campaignLoaded } from './store/campaign'
-import { createSync, createSyncLoop, readInvite } from './campaign/sync'
+import { createSync } from './campaign/sync'
+import { createSyncLoop } from './campaign/syncLoop'
+import { readInvite } from './campaign/invite'
 import { Provider } from 'react-redux'
 
 // Import the generated route tree

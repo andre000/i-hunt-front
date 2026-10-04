@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createSync, createSyncLoop, inviteLink, readInvite } from './sync'
+import { createSync } from './sync'
 import { validCampaign } from './fixtures'
 
 const CAMPAIGN_URL = 'https://pub-123.r2.dev/campanha.json'
@@ -58,21 +58,6 @@ async function loadedSync(storage = memoryStorage()) {
   await sync.load()
   return { sync, fetch, storage }
 }
-
-describe('readInvite', () => {
-  it('reads the campaign URL from the invite link', () => {
-    expect(readInvite(`?campanha=${encodeURIComponent(CAMPAIGN_URL)}`)).toBe(CAMPAIGN_URL)
-  })
-
-  it('returns null without the invite parameter', () => {
-    expect(readInvite('')).toBeNull()
-    expect(readInvite('?outra=1')).toBeNull()
-  })
-
-  it.each(['javascript:alert(1)', 'ftp://x/c.json', 'nao-e-url'])('ignores %s', (url) => {
-    expect(readInvite(`?campanha=${encodeURIComponent(url)}`)).toBeNull()
-  })
-})
 
 describe('createSync', () => {
   it('reports no campaign when no invite was ever accepted', async () => {
@@ -291,89 +276,6 @@ describe('offerInvite', () => {
   })
 })
 
-describe('createSyncLoop', () => {
-  function fakeEnvironment() {
-    const timers = []
-    const returnHandlers = []
-    return {
-      timers,
-      returnHandlers,
-      setInterval: vi.fn((run, ms) => timers.push({ run, ms }) - 1),
-      clearInterval: vi.fn((id) => { timers[id] = null }),
-      onReturn: vi.fn((run) => {
-        returnHandlers.push(run)
-        return () => returnHandlers.splice(returnHandlers.indexOf(run), 1)
-      }),
-    }
-  }
-
-  function deferred() {
-    let resolve
-    const promise = new Promise(r => { resolve = r })
-    return { promise, resolve }
-  }
-
-  it('loads right away and hands over the result', async () => {
-    const env = fakeEnvironment()
-    const onResult = vi.fn()
-    const load = vi.fn(async () => ({ status: 'ready' }))
-
-    createSyncLoop({ load, onResult, ...env }).start()
-    await vi.waitFor(() => expect(onResult).toHaveBeenCalledWith({ status: 'ready' }))
-
-    expect(load).toHaveBeenCalledTimes(1)
-  })
-
-  it('loads again every 30 seconds', async () => {
-    const env = fakeEnvironment()
-    const load = vi.fn(async () => ({}))
-    createSyncLoop({ load, onResult: () => {}, ...env }).start()
-    await vi.waitFor(() => expect(load).toHaveBeenCalledTimes(1))
-
-    expect(env.timers[0].ms).toBe(30000)
-    env.timers[0].run()
-
-    await vi.waitFor(() => expect(load).toHaveBeenCalledTimes(2))
-  })
-
-  it('loads again when the player comes back to the app', async () => {
-    const env = fakeEnvironment()
-    const load = vi.fn(async () => ({}))
-    createSyncLoop({ load, onResult: () => {}, ...env }).start()
-    await vi.waitFor(() => expect(load).toHaveBeenCalledTimes(1))
-
-    env.returnHandlers[0]()
-
-    await vi.waitFor(() => expect(load).toHaveBeenCalledTimes(2))
-  })
-
-  it('does not start a second load while one is running', async () => {
-    const env = fakeEnvironment()
-    const pending = deferred()
-    const load = vi.fn(() => pending.promise)
-    const onResult = vi.fn()
-    createSyncLoop({ load, onResult, ...env }).start()
-
-    env.timers[0].run()
-    env.returnHandlers[0]()
-    pending.resolve({})
-    await vi.waitFor(() => expect(onResult).toHaveBeenCalledTimes(1))
-
-    expect(load).toHaveBeenCalledTimes(1)
-  })
-
-  it('stops the timer and the return listener', async () => {
-    const env = fakeEnvironment()
-    const loop = createSyncLoop({ load: async () => ({}), onResult: () => {}, ...env })
-    loop.start()
-
-    loop.stop()
-
-    expect(env.clearInterval).toHaveBeenCalledWith(0)
-    expect(env.returnHandlers).toEqual([])
-  })
-})
-
 describe('read messages', () => {
   it('starts with nothing read', () => {
     const sync = createSync({ fetch: online({}), storage: memoryStorage() })
@@ -418,15 +320,6 @@ describe('clearHunterId', () => {
     sync.clearHunterId()
 
     expect(createSync({ fetch: online({}), storage }).getHunterId()).toBeNull()
-  })
-})
-
-describe('inviteLink', () => {
-  it('builds a link that readInvite reads back', () => {
-    const link = inviteLink('https://ihunt.example', CAMPAIGN_URL)
-
-    expect(link).toBe(`https://ihunt.example/?campanha=${encodeURIComponent(CAMPAIGN_URL)}`)
-    expect(readInvite(new URL(link).search)).toBe(CAMPAIGN_URL)
   })
 })
 

@@ -6,7 +6,7 @@ import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
 import { Avatar } from '../../components/Avatar'
 import { MISSION_STATUS_LABEL, gmView, relativeToCampaign } from '../../campaign/campaign'
-import { inviteLink } from '../../campaign/sync'
+import { inviteLink } from '../../campaign/invite'
 import { formatBRL } from '../../utils/format'
 
 export const Route = createLazyFileRoute('/gm/')({
