@@ -2,6 +2,7 @@ import { parseCampaign } from './campaign'
 
 const CAMPAIGN_URL_KEY = 'ihunt.campaignUrl'
 const HUNTER_ID_KEY = 'ihunt.hunterId'
+const LAST_CAMPAIGN_KEY = 'ihunt.lastCampaign'
 
 export function readInvite(search) {
   const value = new URLSearchParams(search).get('campanha')
@@ -42,33 +43,73 @@ function safeStorage(storage) {
 export function createSync({ fetch, storage }) {
   const store = safeStorage(storage)
 
-  async function read(url) {
+  async function fetchCampaign(url) {
     let response
     try {
       response = await fetch(url, { cache: 'no-store' })
     } catch (error) {
-      return { status: 'error', error: error.message }
+      return { failure: 'offline', error: error.message }
     }
-    if (!response.ok) return { status: 'error', error: `HTTP ${response.status}` }
+    if (!response.ok) return { failure: 'http', error: `HTTP ${response.status}` }
 
     let raw
     try {
       raw = JSON.parse(await response.text())
     } catch (error) {
-      return { status: 'invalid', errors: [{ path: '', message: `JSON inválido: ${error.message}` }] }
+      return { failure: 'invalid', errors: [{ path: '', message: `JSON inválido: ${error.message}` }] }
     }
 
     const result = parseCampaign(raw)
     return result.ok
-      ? { status: 'ready', campaign: result.campaign }
-      : { status: 'invalid', errors: result.errors }
+      ? { raw, campaign: result.campaign }
+      : { failure: 'invalid', errors: result.errors }
+  }
+
+  function lastValidCampaign(url) {
+    const saved = attempt(() => JSON.parse(store.get(LAST_CAMPAIGN_KEY)))
+    if (saved?.url !== url) return null
+    const result = parseCampaign(saved.raw)
+    return result.ok ? result.campaign : null
+  }
+
+  async function load(url) {
+    const fetched = await fetchCampaign(url)
+
+    if (!fetched.failure) {
+      store.set(LAST_CAMPAIGN_KEY, JSON.stringify({ url, raw: fetched.raw }))
+      return { status: 'ready', campaign: fetched.campaign, offline: false, updateError: null, errors: [] }
+    }
+
+    const last = lastValidCampaign(url)
+    if (!last) {
+      return fetched.failure === 'invalid'
+        ? { status: 'invalid', errors: fetched.errors }
+        : { status: 'error', error: fetched.error }
+    }
+
+    return {
+      status: 'ready',
+      campaign: last,
+      offline: fetched.failure === 'offline',
+      updateError: fetched.failure === 'http' ? fetched.error : null,
+      errors: fetched.errors ?? [],
+    }
+  }
+
+  function acceptInvite(url) {
+    if (store.get(CAMPAIGN_URL_KEY) === url) return
+    store.set(CAMPAIGN_URL_KEY, url)
+    store.remove(HUNTER_ID_KEY)
+    store.remove(LAST_CAMPAIGN_KEY)
   }
 
   return {
-    acceptInvite(url) {
-      if (store.get(CAMPAIGN_URL_KEY) === url) return
-      store.set(CAMPAIGN_URL_KEY, url)
-      store.remove(HUNTER_ID_KEY)
+    acceptInvite,
+    offerInvite(url) {
+      const current = store.get(CAMPAIGN_URL_KEY)
+      if (current && current !== url) return 'needs-confirmation'
+      acceptInvite(url)
+      return 'accepted'
     },
     getHunterId() {
       return store.get(HUNTER_ID_KEY)
@@ -78,7 +119,35 @@ export function createSync({ fetch, storage }) {
     },
     load() {
       const url = store.get(CAMPAIGN_URL_KEY)
-      return url ? read(url) : Promise.resolve({ status: 'no-campaign' })
+      return url ? load(url) : Promise.resolve({ status: 'no-campaign' })
+    },
+  }
+}
+
+export function createSyncLoop({ load, onResult, setInterval, clearInterval, onReturn, intervalMs = 30000 }) {
+  let running = false
+  let timer = null
+  let stopListening = null
+
+  async function run() {
+    if (running) return
+    running = true
+    try {
+      onResult(await load())
+    } finally {
+      running = false
+    }
+  }
+
+  return {
+    start() {
+      run()
+      timer = setInterval(run, intervalMs)
+      stopListening = onReturn(run)
+    },
+    stop() {
+      clearInterval(timer)
+      stopListening?.()
     },
   }
 }
