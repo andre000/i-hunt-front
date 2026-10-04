@@ -1,10 +1,20 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import { conversation } from '../campaign/campaign'
 
 export const chooseHunter = createAsyncThunk(
   'campaign/chooseHunter',
   (hunterId, { extra }) => {
     extra.sync.setHunterId(hunterId)
     return hunterId
+  },
+)
+
+export const markConversationRead = createAsyncThunk(
+  'campaign/markConversationRead',
+  (npcId, { extra, getState }) => {
+    const { data, hunterId } = getState().campaign
+    const ids = conversation(data, hunterId, npcId)?.messages.map(message => message.id) ?? []
+    return extra.sync.markMessagesRead(ids)
   },
 )
 
@@ -16,7 +26,7 @@ export const switchCampaign = createAsyncThunk(
   },
 )
 
-export function initialCampaignState({ hunterId = null, pendingInvite = null } = {}) {
+export function initialCampaignState({ hunterId = null, pendingInvite = null, readMessageIds = [] } = {}) {
   return {
     status: 'loading',
     data: null,
@@ -26,6 +36,7 @@ export function initialCampaignState({ hunterId = null, pendingInvite = null } =
     updateError: null,
     hunterId,
     pendingInvite,
+    readMessageIds,
   }
 }
 
@@ -53,6 +64,9 @@ const campaignSlice = createSlice({
     builder
       .addCase(chooseHunter.fulfilled, (state, { payload }) => {
         state.hunterId = payload
+      })
+      .addCase(markConversationRead.fulfilled, (state, { payload }) => {
+        state.readMessageIds = payload
       })
       .addCase(switchCampaign.pending, (state) => {
         Object.assign(state, initialCampaignState())

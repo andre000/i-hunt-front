@@ -9,7 +9,11 @@ export function createAppStore({ sync, pendingInvite = null }) {
       user: userReducer,
     },
     preloadedState: {
-      campaign: initialCampaignState({ hunterId: sync.getHunterId(), pendingInvite }),
+      campaign: initialCampaignState({
+        hunterId: sync.getHunterId(),
+        pendingInvite,
+        readMessageIds: sync.getReadMessageIds(),
+      }),
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({ thunk: { extraArgument: { sync } } }),

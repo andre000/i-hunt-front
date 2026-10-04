@@ -1,12 +1,15 @@
 /** @jsxImportSource @emotion/react */
 import PropTypes from 'prop-types'; 
 import { useNavigate } from '@tanstack/react-router'
+import { useSelector } from 'react-redux'
+import { unreadTotal } from '../campaign/campaign'
 import { css } from '@emotion/react'
 import { HomeIcon, MagnifyingGlassIcon, ChatBubbleLeftIcon, UserIcon } from '@heroicons/react/24/outline'
 import { HomeIcon as HomeIconFull, MagnifyingGlassIcon as MagnifyingGlassIconFull, ChatBubbleLeftIcon as ChatBubbleLeftIconFull, UserIcon as UserIconFull} from '@heroicons/react/24/solid'
 
 export function Footer ({ active, ...props}) {
   const navigate = useNavigate()
+  const unread = useSelector(state => unreadTotal(state.campaign.data, state.campaign.hunterId, state.campaign.readMessageIds))
 
   function handleFooterClick(goTo) {
     if (active === goTo) return
@@ -25,8 +28,9 @@ export function Footer ({ active, ...props}) {
           <li onClick={() => handleFooterClick('search')}>
             { active === 'search' ? <MagnifyingGlassIconFull fill='#f60'/> : <MagnifyingGlassIcon /> }
           </li>
-          <li onClick={() => handleFooterClick('chat')}>
+          <li className='footer__chat' onClick={() => handleFooterClick('chat')}>
             { active === 'chat' ? <ChatBubbleLeftIconFull fill='#f60'/> : <ChatBubbleLeftIcon /> }
+            {unread > 0 && <span className='footer__badge' aria-label={`${unread} mensagens não lidas`}>{unread}</span>}
           </li>
           <li onClick={() => handleFooterClick('profile')}>
             { active === 'profile' ? <UserIconFull fill='#f60'/> : <UserIcon /> }
@@ -69,6 +73,27 @@ const footer = css`
     li {
       height: 24px;
       width: 24px;
+    }
+
+    .footer__chat {
+      position: relative;
+    }
+
+    .footer__badge {
+      position: absolute;
+      top: -6px;
+      right: -10px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      background-color: #f60;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   }
 `
