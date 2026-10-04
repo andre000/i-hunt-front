@@ -9,6 +9,11 @@ export const chooseHunter = createAsyncThunk(
   },
 )
 
+export const forgetHunter = createAsyncThunk(
+  'campaign/forgetHunter',
+  (_, { extra }) => extra.sync.clearHunterId(),
+)
+
 export const markConversationRead = createAsyncThunk(
   'campaign/markConversationRead',
   (npcId, { extra, getState }) => {
@@ -64,6 +69,9 @@ const campaignSlice = createSlice({
     builder
       .addCase(chooseHunter.fulfilled, (state, { payload }) => {
         state.hunterId = payload
+      })
+      .addCase(forgetHunter.fulfilled, (state) => {
+        state.hunterId = null
       })
       .addCase(markConversationRead.fulfilled, (state, { payload }) => {
         state.readMessageIds = payload

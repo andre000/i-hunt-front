@@ -1,6 +1,9 @@
 /** @jsxImportSource @emotion/react */
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
+import { Avatar } from '../../components/Avatar'
+import { MISSION_STATUS_LABEL, hunterProfile } from '../../campaign/campaign'
+import { forgetHunter } from '../../store/campaign'
 import { Header } from '../../components/Header'
 import { Footer } from '../../components/Footer'
 import { formatBRL } from '../../utils/format'
@@ -20,7 +23,6 @@ const RISK_COLOR = { baixo: '#22c55e', médio: '#f59e0b', alto: '#ef4444' }
 // ─── Sub-component: compact mission card ─────────────────────────────────────
 
 function ProfileMissionCard({ mission, onClick }) {
-  const daysLeft = Math.ceil((mission.expiresDate - Date.now()) / (1000 * 60 * 60 * 24))
   const riskColor = RISK_COLOR[mission.risk] ?? '#aaa'
 
   return (
@@ -35,9 +37,7 @@ function ProfileMissionCard({ mission, onClick }) {
       <div className='mc__right'>
         <span className='mc__value'>{formatBRL(mission.value)}</span>
         <span className='mc__risk' style={{ backgroundColor: riskColor }}>{mission.risk}</span>
-        {mission.status === 'active' && daysLeft > 0 && (
-          <span className='mc__days'>{daysLeft}d</span>
-        )}
+        <span className='mc__days'>{MISSION_STATUS_LABEL[mission.status]}</span>
       </div>
       <ChevronRightIcon className='mc__arrow' />
     </div>
@@ -50,11 +50,7 @@ const missionShape = PropTypes.shape({
   location: PropTypes.string.isRequired,
   value: PropTypes.number.isRequired,
   risk: PropTypes.string.isRequired,
-  status: PropTypes.string.isRequired,
-  expiresDate: PropTypes.oneOfType([
-    PropTypes.number,
-    PropTypes.instanceOf(Date),
-  ]).isRequired,
+  status: PropTypes.oneOf(Object.keys(MISSION_STATUS_LABEL)).isRequired,
 })
 
 ProfileMissionCard.propTypes = {
@@ -83,8 +79,7 @@ StarRating.propTypes = {
 
 // ─── Sub-component: hunt section ─────────────────────────────────────────────
 
-function HuntSection({ title, missions, navigate }) {
-  const isActive = title.toLowerCase().includes('ativa')
+function HuntSection({ title, emptyText, missions, navigate }) {
   return (
     <section css={huntSection}>
       <div className='hs__header'>
@@ -93,7 +88,7 @@ function HuntSection({ title, missions, navigate }) {
       </div>
       {missions.length === 0 ? (
         <p css={emptyState}>
-          {isActive ? 'Nenhuma caça ativa no momento.' : 'Nenhuma caça anterior ainda.'}
+          {emptyText}
         </p>
       ) : (
         <div className='hs__list'>
@@ -112,6 +107,7 @@ function HuntSection({ title, missions, navigate }) {
 
 HuntSection.propTypes = {
   title: PropTypes.string.isRequired,
+  emptyText: PropTypes.string.isRequired,
   missions: PropTypes.arrayOf(missionShape).isRequired,
   navigate: PropTypes.func.isRequired,
 }
@@ -120,50 +116,56 @@ HuntSection.propTypes = {
 
 function ProfilePage() {
   const navigate = useNavigate()
-  const user = useSelector(state => state.user)
-  const missions = useSelector(state => state.campaign.data.missions)
+  const dispatch = useDispatch()
+  const { data, hunterId } = useSelector(state => state.campaign)
+  const profile = hunterProfile(data, hunterId)
 
-  const myMissions = missions.filter(m => m.assigned)
-  const activeMissions = myMissions.filter(m => m.status === 'active')
-  const completedMissions = myMissions.filter(m => m.status === 'completed')
-  const totalEarned = completedMissions.reduce((sum, m) => sum + m.value, 0)
+  if (!profile) return null
+
+  const { hunter, earnings, inProgress, completed } = profile
 
   return (
     <main className='app-main'>
       <Header />
       <div className='app-body' css={profileBody}>
-
-        {/* ── Avatar + identity ── */}
         <div css={identity}>
           <div className='id__avatar-wrap'>
-            <img className='id__avatar' src={user.avatarUrl} alt='Avatar' />
+            <Avatar person={hunter} size={106} />
           </div>
-          <h2 className='id__name'>{user.name}</h2>
-          <p className='id__email'>{user.email}</p>
-          <StarRating value={user.rating} />
-          <button className='button primary' style={{ marginTop: 4 }}>Editar perfil</button>
+          <h2 className='id__name'>{hunter.name}</h2>
+          {hunter.rating !== undefined && <StarRating value={hunter.rating} />}
+          <button className='button secondary' style={{ marginTop: 4 }} onClick={() => dispatch(forgetHunter())}>
+            Trocar de hunter
+          </button>
         </div>
 
-        {/* ── Stats row ── */}
         <div css={statsRow}>
           <div className='stat'>
-            <span className='stat__num'>{activeMissions.length}</span>
-            <span className='stat__label'>Ativas</span>
+            <span className='stat__num'>{inProgress.length}</span>
+            <span className='stat__label'>Em andamento</span>
           </div>
           <div className='stat stat--divider'>
-            <span className='stat__num'>{completedMissions.length}</span>
-            <span className='stat__label'>Completas</span>
+            <span className='stat__num'>{completed.length}</span>
+            <span className='stat__label'>Concluídas</span>
           </div>
           <div className='stat'>
-            <span className='stat__num'>R$ {totalEarned.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</span>
+            <span className='stat__num'>{formatBRL(earnings)}</span>
             <span className='stat__label'>Ganhos</span>
           </div>
         </div>
 
-        {/* ── Hunt lists ── */}
-        <HuntSection title='Caças ativas' missions={activeMissions} navigate={navigate} />
-        <HuntSection title='Caças anteriores' missions={completedMissions} navigate={navigate} />
-
+        <HuntSection
+          title='Em andamento'
+          emptyText='Nenhuma caça em andamento.'
+          missions={inProgress}
+          navigate={navigate}
+        />
+        <HuntSection
+          title='Concluídas'
+          emptyText='Nenhuma caça concluída ainda.'
+          missions={completed}
+          navigate={navigate}
+        />
       </div>
       <Footer active='profile' />
     </main>
@@ -196,11 +198,7 @@ const identity = css`
     box-shadow: 0 4px 16px rgba(255, 102, 0, 0.35);
   }
 
-  .id__avatar {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
+  .id__avatar-wrap > span {
     border: 3px solid #fff;
   }
 
@@ -210,11 +208,6 @@ const identity = css`
     font-weight: 700;
     color: #1a1a1a;
     margin-top: 4px;
-  }
-
-  .id__email {
-    font-size: 13px;
-    color: #888;
   }
 `
 

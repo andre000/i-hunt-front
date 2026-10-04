@@ -3,7 +3,7 @@ import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
 import { useSelector } from 'react-redux'
 import { css } from '@emotion/react'
 import { Footer } from '../../components/Footer'
-import { NpcAvatar } from '../../components/NpcAvatar'
+import { Avatar } from '../../components/Avatar'
 import { inbox, relativeToCampaign } from '../../campaign/campaign'
 
 export const Route = createLazyFileRoute('/chat/')({
@@ -33,7 +33,7 @@ function InboxPage() {
                   className={unread > 0 ? 'is-unread' : undefined}
                   onClick={() => navigate({ to: '/chat/$chatId', params: { chatId: npc.id } })}
                 >
-                  <NpcAvatar npc={npc} />
+                  <Avatar person={npc} />
                   <span className='item__content'>
                     <span className='item__top'>
                       <span className='item__name'>{npc.name}</span>

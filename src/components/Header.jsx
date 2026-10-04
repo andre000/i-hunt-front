@@ -12,9 +12,11 @@ export function Header (props) {
     <header {...props} css={header} >
       <div>
         <h3>Olá {hunter?.name ?? 'Hunter'}</h3>
-        <span className="header__stars">
-          4.5 <StarIcon fill="#fff" />
-        </span>
+        {hunter?.rating !== undefined && (
+          <span className="header__stars">
+            {hunter.rating.toFixed(1)} <StarIcon fill="#fff" />
+          </span>
+        )}
       </div>
       <BellIcon className="bell" />
     </header>

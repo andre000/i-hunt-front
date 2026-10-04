@@ -11,21 +11,21 @@ function initials(name) {
     .join('')
 }
 
-export function NpcAvatar({ npc, size = 48 }) {
+export function Avatar({ person, size = 48 }) {
   const [failedUrl, setFailedUrl] = useState(null)
-  const showImage = npc.avatar && npc.avatar !== failedUrl
+  const showImage = person.avatar && person.avatar !== failedUrl
 
   return (
     <span css={avatar(size)}>
       {showImage
-        ? <img src={npc.avatar} alt="" onError={() => setFailedUrl(npc.avatar)} />
-        : initials(npc.name)}
+        ? <img src={person.avatar} alt="" onError={() => setFailedUrl(person.avatar)} />
+        : initials(person.name)}
     </span>
   )
 }
 
-NpcAvatar.propTypes = {
-  npc: PropTypes.shape({
+Avatar.propTypes = {
+  person: PropTypes.shape({
     name: PropTypes.string.isRequired,
     avatar: PropTypes.string,
   }).isRequired,

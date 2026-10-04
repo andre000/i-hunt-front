@@ -4,7 +4,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useDispatch, useSelector } from 'react-redux'
 import { css } from '@emotion/react'
 import { ChevronLeftIcon } from '@heroicons/react/24/outline'
-import { NpcAvatar } from '../../components/NpcAvatar'
+import { Avatar } from '../../components/Avatar'
 import { conversation, relativeToCampaign } from '../../campaign/campaign'
 import { markConversationRead } from '../../store/campaign'
 
@@ -44,7 +44,7 @@ function ConversationPage() {
         <button type='button' onClick={goBack} aria-label='Voltar'>
           <ChevronLeftIcon width={24} />
         </button>
-        <NpcAvatar npc={thread.npc} size={40} />
+        <Avatar person={thread.npc} size={40} />
         <h2>{thread.npc.name}</h2>
       </header>
 
