@@ -17,8 +17,8 @@ import {
   BanknotesIcon,
 } from '@heroicons/react/24/outline'
 
-export const Route = createFileRoute('/task/$taskId')({
-  component: TaskComponent,
+export const Route = createFileRoute('/mission/$missionId')({
+  component: MissionComponent,
 })
 
 const STATUS_LABEL = { active: 'Ativa', completed: 'Concluída', pending: 'Pendente' }
@@ -44,10 +44,10 @@ InfoCard.propTypes = {
   value: PropTypes.string.isRequired,
 }
 
-function TaskComponent() {
+function MissionComponent() {
   const dispatch = useDispatch()
-  const { taskId } = Route.useParams()
-  const mission = useSelector(state => state.missions.list.find(m => m.id === taskId))
+  const { missionId } = Route.useParams()
+  const mission = useSelector(state => state.missions.list.find(m => m.id === missionId))
 
   if (!mission) {
     return (
@@ -58,7 +58,7 @@ function TaskComponent() {
           </button>
           <div className="nf__content">
             <p className="nf__title">Missão não encontrada</p>
-            <p className="nf__sub">A tarefa que você procura não existe ou foi removida.</p>
+            <p className="nf__sub">A missão que você procura não existe ou foi removida.</p>
             <button className="button secondary" onClick={() => history.back()}>
               Voltar
             </button>

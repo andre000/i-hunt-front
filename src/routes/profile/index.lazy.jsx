@@ -101,7 +101,7 @@ function HuntSection({ title, missions, navigate }) {
             <ProfileMissionCard
               key={m.id}
               mission={m}
-              onClick={() => navigate({ to: `/task/${m.id}` })}
+              onClick={() => navigate({ to: '/mission/$missionId', params: { missionId: m.id } })}
             />
           ))}
         </div>

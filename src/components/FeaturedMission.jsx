@@ -4,11 +4,11 @@ import { FireIcon, MapPinIcon, BookmarkIcon } from '@heroicons/react/24/outline'
 import PropTypes from 'prop-types'
 import { formatBRL } from '../utils/format'
 
-export function FeaturedJob({ data, onClick }) {
+export function FeaturedMission({ data, onClick }) {
   return (
-    <div className="job" css={featuredJob} onClick={onClick}>
-        <div className="job__title">
-        <div className="job__title__group">
+    <div className="mission" css={featuredMission} onClick={onClick}>
+        <div className="mission__title">
+        <div className="mission__title__group">
           <i>
             <FireIcon />
           </i>
@@ -19,17 +19,17 @@ export function FeaturedJob({ data, onClick }) {
         </div>
         <BookmarkIcon />
       </div>
-      <div className="job__tags">
+      <div className="mission__tags">
         {data.tags.map(tag => (
           <span key={tag}>{tag}</span>
         ))}
       </div>
-      <div className="job__details">
-        <div className="job__details__location">
+      <div className="mission__details">
+        <div className="mission__details__location">
           <MapPinIcon />
           <span>{data.location}</span>
         </div>
-        <div className="job__details__value">
+        <div className="mission__details__value">
           <span>{formatBRL(data.value)}</span>
         </div>
       </div>
@@ -37,7 +37,7 @@ export function FeaturedJob({ data, onClick }) {
   )
 }
 
-FeaturedJob.propTypes = {
+FeaturedMission.propTypes = {
   data: PropTypes.shape({
     name: PropTypes.string.isRequired,
     risk: PropTypes.string.isRequired,
@@ -48,7 +48,7 @@ FeaturedJob.propTypes = {
   onClick: PropTypes.func.isRequired,
 };
 
-const featuredJob = css`
+const featuredMission = css`
   background-color: #eee;
   color: #333;
   padding: 24px;
@@ -62,7 +62,7 @@ const featuredJob = css`
     height: 21px;
   }
 
-  .job {
+  .mission {
     &__title {
       display: flex;
       justify-content: space-between;

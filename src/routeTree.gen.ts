@@ -13,7 +13,7 @@ import { createFileRoute } from '@tanstack/react-router'
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as TaskTaskIdImport } from './routes/task/$taskId'
+import { Route as MissionMissionIdImport } from './routes/mission/$missionId'
 import { Route as ChatChatIdImport } from './routes/chat/$chatId'
 
 // Create Virtual Routes
@@ -57,8 +57,8 @@ const ChatIndexLazyRoute = ChatIndexLazyImport.update({
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/chat/index.lazy').then((d) => d.Route))
 
-const TaskTaskIdRoute = TaskTaskIdImport.update({
-  path: '/task/$taskId',
+const MissionMissionIdRoute = MissionMissionIdImport.update({
+  path: '/mission/$missionId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -92,11 +92,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatChatIdImport
       parentRoute: typeof rootRoute
     }
-    '/task/$taskId': {
-      id: '/task/$taskId'
-      path: '/task/$taskId'
-      fullPath: '/task/$taskId'
-      preLoaderRoute: typeof TaskTaskIdImport
+    '/mission/$missionId': {
+      id: '/mission/$missionId'
+      path: '/mission/$missionId'
+      fullPath: '/mission/$missionId'
+      preLoaderRoute: typeof MissionMissionIdImport
       parentRoute: typeof rootRoute
     }
     '/chat/': {
@@ -136,7 +136,7 @@ export const routeTree = rootRoute.addChildren({
   IndexLazyRoute,
   AboutLazyRoute,
   ChatChatIdRoute,
-  TaskTaskIdRoute,
+  MissionMissionIdRoute,
   ChatIndexLazyRoute,
   LoginIndexLazyRoute,
   ProfileIndexLazyRoute,
@@ -154,7 +154,7 @@ export const routeTree = rootRoute.addChildren({
         "/",
         "/about",
         "/chat/$chatId",
-        "/task/$taskId",
+        "/mission/$missionId",
         "/chat/",
         "/login/",
         "/profile/",
@@ -170,8 +170,8 @@ export const routeTree = rootRoute.addChildren({
     "/chat/$chatId": {
       "filePath": "chat/$chatId.jsx"
     },
-    "/task/$taskId": {
-      "filePath": "task/$taskId.jsx"
+    "/mission/$missionId": {
+      "filePath": "mission/$missionId.jsx"
     },
     "/chat/": {
       "filePath": "chat/index.lazy.jsx"

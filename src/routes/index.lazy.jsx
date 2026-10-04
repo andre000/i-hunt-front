@@ -6,8 +6,8 @@ import anime from 'animejs/lib/anime.es.js';
 import { css } from '@emotion/react'
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer'
-import { FeaturedJob } from '../components/FeaturedJob';
-import { ClosingJob } from '../components/ClosingJob';
+import { FeaturedMission } from '../components/FeaturedMission';
+import { ClosingMission } from '../components/ClosingMission';
 
 export const Route = createLazyFileRoute('/')({
   component: Index,
@@ -17,13 +17,12 @@ function Index() {
   const location = useLocation()
   const missions = useSelector(state => state.missions.list)
 
-  const featuredJobData = missions.find(mission => mission.isFeatured)
-  const nearbyJobsData = missions.filter(mission => mission.isNearUser)
+  const featuredMission = missions.find(mission => mission.isFeatured)
+  const nearbyMissions = missions.filter(mission => mission.isNearUser)
 
   const navigate = useNavigate()
   const handleMissionClick = (mission) => {
-    navigate({to: `/task/$taskId`, params: { taskId: mission.id }})
-    console.log(`Mission clicked: ${mission.name}`)
+    navigate({ to: '/mission/$missionId', params: { missionId: mission.id } })
   }
 
   useEffect(() => {
@@ -65,7 +64,7 @@ function Index() {
           <Link to="/search">Ver todas</Link>
         </div>
 
-        <FeaturedJob data={featuredJobData} onClick={() => handleMissionClick(featuredJobData)} />
+        <FeaturedMission data={featuredMission} onClick={() => handleMissionClick(featuredMission)} />
 
         <div className="home__body__nearby">
           <div className="home__body__nearby__header">
@@ -73,8 +72,8 @@ function Index() {
             <Link to="/search">Ver todas</Link>
           </div>
 
-          {nearbyJobsData.map(job => (
-            <ClosingJob key={job.id} data={job} onClick={() => handleMissionClick(job)} />
+          {nearbyMissions.map(mission => (
+            <ClosingMission key={mission.id} data={mission} onClick={() => handleMissionClick(mission)} />
           ))}
         </div>
       </div>

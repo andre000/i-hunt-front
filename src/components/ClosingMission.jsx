@@ -5,7 +5,7 @@ import { css } from '@emotion/react'
 import { ClockIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline'
 import { ripple } from '../utils/ripple';
 
-export function ClosingJob({ onClick, data }) {
+export function ClosingMission({ onClick, data }) {
   const closingRef = useRef(null)
   const [disabled, setDisabled] = useState(false)
 
@@ -20,7 +20,7 @@ export function ClosingJob({ onClick, data }) {
   const daysLeft = Math.ceil((data.expiresDate - Date.now()) / (1000 * 60 * 60 * 24))
 
   return (
-    <div className="closing" css={closingJob} ref={closingRef} onClick={handleClick}>
+    <div className="closing" css={closingMission} ref={closingRef} onClick={handleClick}>
       <div css={closingContent}>
         <div className="closing__icon">
         <ClockIcon />
@@ -39,7 +39,7 @@ export function ClosingJob({ onClick, data }) {
   )
 }
 
-ClosingJob.propTypes = {
+ClosingMission.propTypes = {
   onClick: PropTypes.func.isRequired,
   data: PropTypes.shape({
     expiresDate: PropTypes.oneOfType([
@@ -59,7 +59,7 @@ const closingContent = css`
   flex: 1;
 `
 
-const closingJob = css`
+const closingMission = css`
   padding: 16px;
   border: 1px solid #eee;
   border-radius: 16px;
