@@ -3,6 +3,7 @@ import { parseCampaign } from './campaign'
 const CAMPAIGN_URL_KEY = 'ihunt.campaignUrl'
 const HUNTER_ID_KEY = 'ihunt.hunterId'
 const LAST_CAMPAIGN_KEY = 'ihunt.lastCampaign'
+const READ_MESSAGES_KEY = 'ihunt.readMessages'
 
 export function readInvite(search) {
   const value = new URLSearchParams(search).get('campanha')
@@ -101,6 +102,12 @@ export function createSync({ fetch, storage }) {
     store.set(CAMPAIGN_URL_KEY, url)
     store.remove(HUNTER_ID_KEY)
     store.remove(LAST_CAMPAIGN_KEY)
+    store.remove(READ_MESSAGES_KEY)
+  }
+
+  function getReadMessageIds() {
+    const saved = attempt(() => JSON.parse(store.get(READ_MESSAGES_KEY)))
+    return Array.isArray(saved) ? saved : []
   }
 
   return {
@@ -110,6 +117,12 @@ export function createSync({ fetch, storage }) {
       if (current && current !== url) return 'needs-confirmation'
       acceptInvite(url)
       return 'accepted'
+    },
+    getReadMessageIds,
+    markMessagesRead(ids) {
+      const updated = [...new Set([...getReadMessageIds(), ...ids])]
+      store.set(READ_MESSAGES_KEY, JSON.stringify(updated))
+      return updated
     },
     getHunterId() {
       return store.get(HUNTER_ID_KEY)

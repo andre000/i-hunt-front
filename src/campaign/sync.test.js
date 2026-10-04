@@ -373,3 +373,38 @@ describe('createSyncLoop', () => {
     expect(env.returnHandlers).toEqual([])
   })
 })
+
+describe('read messages', () => {
+  it('starts with nothing read', () => {
+    const sync = createSync({ fetch: online({}), storage: memoryStorage() })
+
+    expect(sync.getReadMessageIds()).toEqual([])
+  })
+
+  it('remembers read messages across app openings without duplicates', () => {
+    const storage = memoryStorage()
+    const sync = createSync({ fetch: online({}), storage })
+
+    sync.markMessagesRead(['msg1', 'msg2'])
+    const updated = sync.markMessagesRead(['msg2', 'msg4'])
+
+    expect(updated).toEqual(['msg1', 'msg2', 'msg4'])
+    expect(createSync({ fetch: online({}), storage }).getReadMessageIds()).toEqual(['msg1', 'msg2', 'msg4'])
+  })
+
+  it('forgets read messages when a different campaign is accepted', () => {
+    const sync = createSync({ fetch: online({}), storage: memoryStorage() })
+    sync.acceptInvite(CAMPAIGN_URL)
+    sync.markMessagesRead(['msg1'])
+
+    sync.acceptInvite('https://pub-123.r2.dev/outra.json')
+
+    expect(sync.getReadMessageIds()).toEqual([])
+  })
+
+  it('treats corrupted saved data as nothing read', () => {
+    const sync = createSync({ fetch: online({}), storage: memoryStorage({ 'ihunt.readMessages': '{oops' }) })
+
+    expect(sync.getReadMessageIds()).toEqual([])
+  })
+})

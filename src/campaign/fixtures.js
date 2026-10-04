@@ -5,6 +5,17 @@ export function validCampaign() {
       { id: 'ana', name: 'Ana' },
       { id: 'beto', name: 'Beto' },
     ],
+    npcs: [
+      { id: 'dona-rosa', name: 'Dona Rosa' },
+      { id: 'padre', name: 'Padre Júlio', avatar: 'https://example.com/padre.png' },
+    ],
+    messages: [
+      { id: 'msg1', npc: 'dona-rosa', to: 'all', sentAt: '2026-10-04T18:00:00-03:00', text: 'Tem algo no parque.' },
+      { id: 'msg2', npc: 'padre', to: ['ana'], sentAt: '2026-10-04T19:00:00-03:00', text: 'Ana, venha à igreja.' },
+      { id: 'msg3', npc: 'dona-rosa', to: ['beto'], sentAt: '2026-10-04T19:30:00-03:00', text: 'Beto, só para você.' },
+      { id: 'msg4', npc: 'dona-rosa', to: ['ana'], sentAt: '2026-10-04T20:00:00-03:00', text: 'Ana, cuidado.' },
+      { id: 'msg5', npc: 'padre', to: 'all', sentAt: '2026-10-04T23:00:00-03:00', text: 'Ainda não.' },
+    ],
     missions: [
       {
         id: 'm1',
