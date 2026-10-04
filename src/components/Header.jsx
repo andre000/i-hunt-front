@@ -2,12 +2,16 @@
 import { css } from '@emotion/react'
 import { BellIcon } from '@heroicons/react/24/outline'
 import { StarIcon } from '@heroicons/react/24/solid'
+import { useSelector } from 'react-redux'
+import { findHunter } from '../campaign/campaign'
 
 export function Header (props) {
+  const hunter = useSelector(state => findHunter(state.campaign.data, state.campaign.hunterId))
+
   return (
     <header {...props} css={header} >
       <div>
-        <h3>Olá Hunter</h3>
+        <h3>Olá {hunter?.name ?? 'Hunter'}</h3>
         <span className="header__stars">
           4.5 <StarIcon fill="#fff" />
         </span>

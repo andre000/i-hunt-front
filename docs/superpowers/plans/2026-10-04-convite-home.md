@@ -23,6 +23,7 @@
 - Detalhe da missão mostra só os campos do schema v1 (estado, prazo e hunters voltam no #13). O botão "Aceitar Missão" sai junto, porque não há mais `assigned`.
 - Perfil continua com o usuário fixo até o #17 e lê as missões da campanha (listas vazias até o schema ter hunters na missão).
 - Header mostra "Olá <nome do hunter>".
+- Sem hunter escolhido, o portão do `__root.jsx` mostra a escolha do hunter no lugar (sem redirecionar): redirecionar para a rota lazy `/login` deixava a tela em branco. A rota `/login` continua existindo e usa o mesmo componente `HunterChoice`.
 
 ## Interfaces
 

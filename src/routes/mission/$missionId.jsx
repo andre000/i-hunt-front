@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { createFileRoute } from '@tanstack/react-router'
-import { useSelector, useDispatch } from 'react-redux'
-import { updateMission } from '../../store/missions'
+import { useSelector } from 'react-redux'
+import { findMission } from '../../campaign/campaign'
 import { Footer } from '../../components/Footer'
 import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
@@ -9,10 +9,6 @@ import { formatBRL } from '../../utils/format'
 import {
   ArrowLeftIcon,
   MapPinIcon,
-  CalendarIcon,
-  ClockIcon,
-  UserIcon,
-  CheckCircleIcon,
   FireIcon,
   BanknotesIcon,
 } from '@heroicons/react/24/outline'
@@ -21,8 +17,6 @@ export const Route = createFileRoute('/mission/$missionId')({
   component: MissionComponent,
 })
 
-const STATUS_LABEL = { active: 'Ativa', completed: 'Concluída', pending: 'Pendente' }
-const STATUS_COLOR = { active: '#22c55e', completed: '#9ca3af', pending: '#f59e0b' }
 const RISK_LABEL = { baixo: 'Baixo', médio: 'Médio', alto: 'Alto' }
 const RISK_COLOR = { baixo: '#22c55e', médio: '#f59e0b', alto: '#ef4444' }
 
@@ -45,9 +39,8 @@ InfoCard.propTypes = {
 }
 
 function MissionComponent() {
-  const dispatch = useDispatch()
   const { missionId } = Route.useParams()
-  const mission = useSelector(state => state.missions.list.find(m => m.id === missionId))
+  const mission = useSelector(state => findMission(state.campaign.data, missionId))
 
   if (!mission) {
     return (
@@ -69,14 +62,7 @@ function MissionComponent() {
     )
   }
 
-  const { id, name, description, location, value, tags, status, risk, createdDate, expiresDate, createdBy, assigned } = mission
-
-  const daysLeft = Math.ceil((expiresDate - Date.now()) / (1000 * 60 * 60 * 24))
-  const canAccept = !assigned && status === 'active'
-
-  const handleAccept = () => {
-    dispatch(updateMission({ id, assigned: true }))
-  }
+  const { name, description, location, value, tags, risk } = mission
 
   return (
     <main className="app-main">
@@ -94,22 +80,14 @@ function MissionComponent() {
           <div css={missionHeader}>
             <h1>{name}</h1>
             <div css={badgeRow}>
-              <span css={badge(STATUS_COLOR[status] ?? '#9ca3af')}>
-                {STATUS_LABEL[status] ?? status}
-              </span>
               <span css={badge(RISK_COLOR[risk] ?? '#9ca3af')}>
                 <FireIcon /> {RISK_LABEL[risk] ?? risk}
               </span>
-              {assigned && (
-                <span css={badge('#22c55e')}>
-                  <CheckCircleIcon /> Aceita
-                </span>
-              )}
             </div>
           </div>
 
           {/* Descrição */}
-          <p css={descriptionText}>{description}</p>
+          {description && <p css={descriptionText}>{description}</p>}
 
           {/* Tags */}
           {tags?.length > 0 && (
@@ -128,33 +106,6 @@ function MissionComponent() {
               label="Recompensa"
               value={formatBRL(value)}
             />
-            <InfoCard
-              icon={CalendarIcon}
-              label="Expira em"
-              value={daysLeft > 0 ? `${daysLeft} dia${daysLeft !== 1 ? 's' : ''}` : 'Expirada'}
-            />
-            <InfoCard
-              icon={ClockIcon}
-              label="Criada em"
-              value={new Date(createdDate).toLocaleDateString('pt-BR')}
-            />
-            {createdBy && (
-              <InfoCard icon={UserIcon} label="Criada por" value={createdBy} />
-            )}
-          </div>
-
-          {/* Ação */}
-          <div css={actionRow}>
-            {canAccept ? (
-              <button className="button primary" css={acceptBtn} onClick={handleAccept}>
-                Aceitar Missão
-              </button>
-            ) : assigned ? (
-              <div css={acceptedBadge}>
-                <CheckCircleIcon />
-                Missão Aceita
-              </div>
-            ) : null}
           </div>
         </div>
       </div>
@@ -338,39 +289,6 @@ const infoCard = css`
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-`
-
-const actionRow = css`
-  margin-top: 4px;
-`
-
-const acceptBtn = css`
-  width: 100%;
-  padding: 14px;
-  font-size: 15px;
-  font-weight: 700;
-  border-radius: 16px;
-  letter-spacing: 0.3px;
-`
-
-const acceptedBadge = css`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background-color: #f0fdf4;
-  color: #22c55e;
-  border: 1px solid #bbf7d0;
-  border-radius: 16px;
-  padding: 14px;
-  font-size: 15px;
-  font-weight: 700;
-
-  svg {
-    width: 20px;
-    height: 20px;
-    stroke: #22c55e;
   }
 `
 

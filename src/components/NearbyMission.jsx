@@ -2,10 +2,10 @@
 import { useRef, useState } from 'react';
 import PropTypes from 'prop-types'
 import { css } from '@emotion/react'
-import { ClockIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline'
+import { MapPinIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline'
 import { ripple } from '../utils/ripple';
 
-export function ClosingMission({ onClick, data }) {
+export function NearbyMission({ onClick, data }) {
   const closingRef = useRef(null)
   const [disabled, setDisabled] = useState(false)
 
@@ -17,18 +17,16 @@ export function ClosingMission({ onClick, data }) {
       .finally(() => setDisabled(false))
   }
 
-  const daysLeft = Math.ceil((data.expiresDate - Date.now()) / (1000 * 60 * 60 * 24))
-
   return (
-    <div className="closing" css={closingMission} ref={closingRef} onClick={handleClick}>
+    <div className="closing" css={nearbyMission} ref={closingRef} onClick={handleClick}>
       <div css={closingContent}>
         <div className="closing__icon">
-        <ClockIcon />
+        <MapPinIcon />
       </div>
 
       <div className="closing__info">
-        <h4>Caça vencendo</h4>
-        <p>{data.location} ● {daysLeft} dias</p>
+        <h4>{data.name}</h4>
+        <p>{data.location}</p>
       </div>
 
       <div className="closing__menu">
@@ -39,13 +37,10 @@ export function ClosingMission({ onClick, data }) {
   )
 }
 
-ClosingMission.propTypes = {
+NearbyMission.propTypes = {
   onClick: PropTypes.func.isRequired,
   data: PropTypes.shape({
-    expiresDate: PropTypes.oneOfType([
-      PropTypes.number,
-      PropTypes.instanceOf(Date)
-    ]).isRequired,
+    name: PropTypes.string.isRequired,
     location: PropTypes.string.isRequired
   }).isRequired
 }
@@ -59,7 +54,7 @@ const closingContent = css`
   flex: 1;
 `
 
-const closingMission = css`
+const nearbyMission = css`
   padding: 16px;
   border: 1px solid #eee;
   border-radius: 16px;

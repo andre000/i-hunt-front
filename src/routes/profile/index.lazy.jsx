@@ -121,11 +121,7 @@ HuntSection.propTypes = {
 function ProfilePage() {
   const navigate = useNavigate()
   const user = useSelector(state => state.user)
-  const rawMissions = useSelector(state => state.missions)
-
-  const missions = Array.isArray(rawMissions)
-    ? rawMissions
-    : rawMissions?.list ?? Object.values(rawMissions)
+  const missions = useSelector(state => state.campaign.data.missions)
 
   const myMissions = missions.filter(m => m.assigned)
   const activeMissions = myMissions.filter(m => m.status === 'active')

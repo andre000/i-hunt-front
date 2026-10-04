@@ -7,7 +7,8 @@ import { css } from '@emotion/react'
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer'
 import { FeaturedMission } from '../components/FeaturedMission';
-import { ClosingMission } from '../components/ClosingMission';
+import { NearbyMission } from '../components/NearbyMission';
+import { homeView } from '../campaign/campaign';
 
 export const Route = createLazyFileRoute('/')({
   component: Index,
@@ -15,10 +16,8 @@ export const Route = createLazyFileRoute('/')({
 
 function Index() {
   const location = useLocation()
-  const missions = useSelector(state => state.missions.list)
-
-  const featuredMission = missions.find(mission => mission.isFeatured)
-  const nearbyMissions = missions.filter(mission => mission.isNearUser)
+  const { data, hunterId } = useSelector(state => state.campaign)
+  const { featured: featuredMission, nearby: nearbyMissions, total } = homeView(data, hunterId)
 
   const navigate = useNavigate()
   const handleMissionClick = (mission) => {
@@ -58,13 +57,15 @@ function Index() {
 
         <div className="home__body__counter">
           <div>
-            <h2>{missions.length}</h2>
+            <h2>{total}</h2>
             <p>caças disponíveis</p>
           </div>
           <Link to="/search">Ver todas</Link>
         </div>
 
-        <FeaturedMission data={featuredMission} onClick={() => handleMissionClick(featuredMission)} />
+        {featuredMission && (
+          <FeaturedMission data={featuredMission} onClick={() => handleMissionClick(featuredMission)} />
+        )}
 
         <div className="home__body__nearby">
           <div className="home__body__nearby__header">
@@ -72,8 +73,12 @@ function Index() {
             <Link to="/search">Ver todas</Link>
           </div>
 
+          {nearbyMissions.length === 0 && (
+            <p className="home__body__nearby__empty">Nenhuma caça perto de você agora.</p>
+          )}
+
           {nearbyMissions.map(mission => (
-            <ClosingMission key={mission.id} data={mission} onClick={() => handleMissionClick(mission)} />
+            <NearbyMission key={mission.id} data={mission} onClick={() => handleMissionClick(mission)} />
           ))}
         </div>
       </div>
@@ -146,6 +151,11 @@ const homeBody = css`
         font-weight: 700;
         text-decoration: none;
       }
+    }
+
+    .home__body__nearby__empty {
+      font-size: 14px;
+      color: #777;
     }
 
     .home__body__nearby__list {

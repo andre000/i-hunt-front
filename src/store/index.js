@@ -1,10 +1,17 @@
 import { configureStore } from '@reduxjs/toolkit'
-import missionsReducer from './missions'
+import campaignReducer, { initialCampaignState } from './campaign'
 import userReducer from './user'
 
-export const store = configureStore({
-  reducer: {
-    missions: missionsReducer,
-    user: userReducer,
-  },
-})
+export function createAppStore({ sync }) {
+  return configureStore({
+    reducer: {
+      campaign: campaignReducer,
+      user: userReducer,
+    },
+    preloadedState: {
+      campaign: initialCampaignState(sync.getHunterId()),
+    },
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({ thunk: { extraArgument: { sync } } }),
+  })
+}
