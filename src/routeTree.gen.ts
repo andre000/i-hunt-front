@@ -18,7 +18,6 @@ import { Route as ChatChatIdImport } from './routes/chat/$chatId'
 
 // Create Virtual Routes
 
-const AboutLazyImport = createFileRoute('/about')()
 const IndexLazyImport = createFileRoute('/')()
 const SearchIndexLazyImport = createFileRoute('/search/')()
 const ProfileIndexLazyImport = createFileRoute('/profile/')()
@@ -26,11 +25,6 @@ const LoginIndexLazyImport = createFileRoute('/login/')()
 const ChatIndexLazyImport = createFileRoute('/chat/')()
 
 // Create/Update Routes
-
-const AboutLazyRoute = AboutLazyImport.update({
-  path: '/about',
-  getParentRoute: () => rootRoute,
-} as any).lazy(() => import('./routes/about.lazy').then((d) => d.Route))
 
 const IndexLazyRoute = IndexLazyImport.update({
   path: '/',
@@ -76,13 +70,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexLazyImport
-      parentRoute: typeof rootRoute
-    }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutLazyImport
       parentRoute: typeof rootRoute
     }
     '/chat/$chatId': {
@@ -134,7 +121,6 @@ declare module '@tanstack/react-router' {
 
 export const routeTree = rootRoute.addChildren({
   IndexLazyRoute,
-  AboutLazyRoute,
   ChatChatIdRoute,
   MissionMissionIdRoute,
   ChatIndexLazyRoute,
@@ -152,7 +138,6 @@ export const routeTree = rootRoute.addChildren({
       "filePath": "__root.jsx",
       "children": [
         "/",
-        "/about",
         "/chat/$chatId",
         "/mission/$missionId",
         "/chat/",
@@ -163,9 +148,6 @@ export const routeTree = rootRoute.addChildren({
     },
     "/": {
       "filePath": "index.lazy.jsx"
-    },
-    "/about": {
-      "filePath": "about.lazy.jsx"
     },
     "/chat/$chatId": {
       "filePath": "chat/$chatId.jsx"
