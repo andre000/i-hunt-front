@@ -1,4 +1,4 @@
-import { parseCampaign } from './campaign'
+import { parseCampaign } from './parseCampaign'
 import { fetchCampaign } from './fetchCampaign'
 import { attempt, safeStorage } from './storage'
 

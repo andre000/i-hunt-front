@@ -3,7 +3,7 @@ import { css } from '@emotion/react'
 import { BellIcon } from '@heroicons/react/24/outline'
 import { StarIcon } from '@heroicons/react/24/solid'
 import { useSelector } from 'react-redux'
-import { findHunter } from '../campaign/campaign'
+import { findHunter } from '../campaign/hunters'
 
 export function Header (props) {
   const hunter = useSelector(state => findHunter(state.campaign.data, state.campaign.hunterId))

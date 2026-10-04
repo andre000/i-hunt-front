@@ -2,7 +2,7 @@
 import PropTypes from 'prop-types'; 
 import { useNavigate } from '@tanstack/react-router'
 import { useSelector } from 'react-redux'
-import { unreadTotal } from '../campaign/campaign'
+import { unreadTotal } from '../campaign/messages'
 import { css } from '@emotion/react'
 import { HomeIcon, MagnifyingGlassIcon, ChatBubbleLeftIcon, UserIcon } from '@heroicons/react/24/outline'
 import { HomeIcon as HomeIconFull, MagnifyingGlassIcon as MagnifyingGlassIconFull, ChatBubbleLeftIcon as ChatBubbleLeftIconFull, UserIcon as UserIconFull} from '@heroicons/react/24/solid'

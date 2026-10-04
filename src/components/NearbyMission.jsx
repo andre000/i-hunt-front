@@ -4,7 +4,7 @@ import PropTypes from 'prop-types'
 import { css } from '@emotion/react'
 import { MapPinIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline'
 import { ripple } from '../utils/ripple';
-import { MISSION_STATUS_LABEL } from '../campaign/campaign';
+import { MISSION_STATUS_LABEL } from '../campaign/missions';
 
 export function NearbyMission({ onClick, data }) {
   const closingRef = useRef(null)

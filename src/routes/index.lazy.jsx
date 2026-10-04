@@ -8,7 +8,7 @@ import { Header } from '../components/Header';
 import { Footer } from '../components/Footer'
 import { FeaturedMission } from '../components/FeaturedMission';
 import { NearbyMission } from '../components/NearbyMission';
-import { homeView } from '../campaign/campaign';
+import { homeView } from '../campaign/missions';
 
 export const Route = createLazyFileRoute('/')({
   component: Index,

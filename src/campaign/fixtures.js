@@ -1,3 +1,5 @@
+import { parseCampaign } from './parseCampaign'
+
 export function validCampaign() {
   return {
     campaign: { name: 'Noite em Porto Alegre', date: '2026-10-04T21:00:00-03:00' },
@@ -45,4 +47,23 @@ export function validCampaign() {
       },
     ],
   }
+}
+
+export function parsed(raw = validCampaign()) {
+  const result = parseCampaign(raw)
+  if (!result.ok) throw new Error(JSON.stringify(result.errors))
+  return result.campaign
+}
+
+export function campaignWith(...missions) {
+  const raw = validCampaign()
+  raw.missions = missions.map((mission, index) => ({
+    id: `x${index}`,
+    name: `Missão ${index}`,
+    location: 'Centro',
+    value: 100,
+    risk: 'baixo',
+    ...mission,
+  }))
+  return parsed(raw)
 }

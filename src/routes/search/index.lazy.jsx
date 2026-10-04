@@ -7,7 +7,8 @@ import PropTypes from 'prop-types'
 import { ChevronRightIcon } from '@heroicons/react/24/outline'
 import { Header } from '../../components/Header'
 import { Footer } from '../../components/Footer'
-import { MISSION_STATUS_LABEL, RISKS, missionList, relativeToCampaign } from '../../campaign/campaign'
+import { MISSION_STATUS_LABEL, RISKS, missionList } from '../../campaign/missions'
+import { relativeToCampaign } from '../../campaign/time'
 import { formatBRL } from '../../utils/format'
 
 export const Route = createLazyFileRoute('/search/')({

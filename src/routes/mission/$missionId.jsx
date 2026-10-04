@@ -1,7 +1,8 @@
 /** @jsxImportSource @emotion/react */
 import { createFileRoute } from '@tanstack/react-router'
 import { useSelector } from 'react-redux'
-import { MISSION_STATUS_LABEL, missionDetail, relativeToCampaign } from '../../campaign/campaign'
+import { MISSION_STATUS_LABEL, missionDetail } from '../../campaign/missions'
+import { relativeToCampaign } from '../../campaign/time'
 import { Footer } from '../../components/Footer'
 import { css } from '@emotion/react'
 import PropTypes from 'prop-types'

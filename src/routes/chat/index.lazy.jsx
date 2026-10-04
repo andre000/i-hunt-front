@@ -4,7 +4,8 @@ import { useSelector } from 'react-redux'
 import { css } from '@emotion/react'
 import { Footer } from '../../components/Footer'
 import { Avatar } from '../../components/Avatar'
-import { inbox, relativeToCampaign } from '../../campaign/campaign'
+import { inbox } from '../../campaign/messages'
+import { relativeToCampaign } from '../../campaign/time'
 
 export const Route = createLazyFileRoute('/chat/')({
   component: InboxPage,

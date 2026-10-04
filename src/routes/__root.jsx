@@ -4,7 +4,7 @@ import { CampaignStatus } from '../components/CampaignStatus'
 import { HunterChoice } from '../components/HunterChoice'
 import { InviteConfirmation } from '../components/InviteConfirmation'
 import { SyncNotice } from '../components/SyncNotice'
-import { findHunter } from '../campaign/campaign'
+import { findHunter } from '../campaign/hunters'
 
 export const Route = createRootRoute({
   component: Root,

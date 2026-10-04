@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { gmView, isScheduled, parseCampaign } from './campaign'
+import { gmView } from './gm'
+import { isScheduled } from './missions'
+import { parseCampaign } from './parseCampaign'
 import schema from './campaign.schema.json'
 
 const example = JSON.parse(readFileSync(new URL('../../public/exemplo-campanha.json', import.meta.url), 'utf8'))

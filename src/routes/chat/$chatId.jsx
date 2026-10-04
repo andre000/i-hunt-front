@@ -5,7 +5,8 @@ import { useDispatch, useSelector } from 'react-redux'
 import { css } from '@emotion/react'
 import { ChevronLeftIcon } from '@heroicons/react/24/outline'
 import { Avatar } from '../../components/Avatar'
-import { conversation, relativeToCampaign } from '../../campaign/campaign'
+import { conversation } from '../../campaign/messages'
+import { relativeToCampaign } from '../../campaign/time'
 import { markConversationRead } from '../../store/campaign'
 
 export const Route = createFileRoute('/chat/$chatId')({

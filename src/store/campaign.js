@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import { conversation } from '../campaign/campaign'
+import { conversation } from '../campaign/messages'
 
 export const chooseHunter = createAsyncThunk(
   'campaign/chooseHunter',

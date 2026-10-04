@@ -1,4 +1,4 @@
-import { parseCampaign } from './campaign'
+import { parseCampaign } from './parseCampaign'
 
 async function download(fetch, url) {
   try {
