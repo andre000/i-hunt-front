@@ -75,6 +75,8 @@ export const MISSION_STATUS_LABEL = {
 
 const OPEN_STATUSES = ['available', 'in-progress']
 
+export const RISKS = ['baixo', 'médio', 'alto']
+
 const time = (isoDate) => new Date(isoDate).getTime()
 
 export function missionStatus(mission, campaignDate) {
@@ -101,6 +103,13 @@ export function visibleMissions(campaign) {
   return campaign.missions
     .filter(mission => !isScheduled(mission, campaign.campaign.date))
     .map(mission => missionView(campaign, mission))
+}
+
+export function missionList(campaign, { statuses = [], risks = [] } = {}) {
+  return visibleMissions(campaign).filter(mission =>
+    (statuses.length === 0 || statuses.includes(mission.status)) &&
+    (risks.length === 0 || risks.includes(mission.risk))
+  )
 }
 
 export function missionDetail(campaign, missionId) {

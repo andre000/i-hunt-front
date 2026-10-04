@@ -4,6 +4,7 @@ import {
   findMission,
   homeView,
   missionDetail,
+  missionList,
   parseCampaign,
   relativeToCampaign,
   visibleMissions,
@@ -307,5 +308,44 @@ describe('relativeToCampaign', () => {
     ['2026-10-01T21:00:00-03:00', 'há 3 dias'],
   ])('describes %s relative to the campaign date', (date, text) => {
     expect(relativeToCampaign(date, CAMPAIGN_DATE)).toBe(text)
+  })
+})
+
+describe('missionList', () => {
+  const campaign = () => campaignWith(
+    { id: 'open-low', risk: 'baixo' },
+    { id: 'busy-high', risk: 'alto', hunters: ['ana'] },
+    { id: 'done-mid', risk: 'médio', hunters: ['ana'], result: 'concluída' },
+    { id: 'late-high', risk: 'alto', deadline: '2026-10-01T00:00:00-03:00' },
+    { id: 'later', risk: 'baixo', postedAt: '2026-10-05T00:00:00-03:00' },
+  )
+  const ids = (missions) => missions.map(m => m.id)
+
+  it('lists every visible mission in the order of the JSON without filters', () => {
+    expect(ids(missionList(campaign()))).toEqual(['open-low', 'busy-high', 'done-mid', 'late-high'])
+  })
+
+  it('filters by status', () => {
+    expect(ids(missionList(campaign(), { statuses: ['expired'] }))).toEqual(['late-high'])
+  })
+
+  it('keeps missions matching any of the chosen statuses', () => {
+    expect(ids(missionList(campaign(), { statuses: ['available', 'completed'] }))).toEqual(['open-low', 'done-mid'])
+  })
+
+  it('filters by risk', () => {
+    expect(ids(missionList(campaign(), { risks: ['alto'] }))).toEqual(['busy-high', 'late-high'])
+  })
+
+  it('combines status and risk', () => {
+    expect(ids(missionList(campaign(), { statuses: ['in-progress', 'available'], risks: ['alto'] }))).toEqual(['busy-high'])
+  })
+
+  it('never lists scheduled missions', () => {
+    expect(ids(missionList(campaign(), { risks: ['baixo'] }))).toEqual(['open-low'])
+  })
+
+  it('returns nothing when no mission matches', () => {
+    expect(missionList(campaign(), { statuses: ['failed'] })).toEqual([])
   })
 })
