@@ -5,6 +5,7 @@ import { Header } from '../../components/Header'
 import { Footer } from '../../components/Footer'
 import { formatBRL } from '../../utils/format'
 import { css } from '@emotion/react'
+import PropTypes from 'prop-types'
 import { MapPinIcon, StarIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { StarIcon as StarSolid } from '@heroicons/react/24/solid'
 
@@ -43,6 +44,24 @@ function ProfileMissionCard({ mission, onClick }) {
   )
 }
 
+const missionShape = PropTypes.shape({
+  id: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  location: PropTypes.string.isRequired,
+  value: PropTypes.number.isRequired,
+  risk: PropTypes.string.isRequired,
+  status: PropTypes.string.isRequired,
+  expiresDate: PropTypes.oneOfType([
+    PropTypes.number,
+    PropTypes.instanceOf(Date),
+  ]).isRequired,
+})
+
+ProfileMissionCard.propTypes = {
+  mission: missionShape.isRequired,
+  onClick: PropTypes.func.isRequired,
+}
+
 // ─── Sub-component: star rating ───────────────────────────────────────────────
 
 function StarRating({ value }) {
@@ -56,6 +75,10 @@ function StarRating({ value }) {
       <span>{value.toFixed(1)}</span>
     </div>
   )
+}
+
+StarRating.propTypes = {
+  value: PropTypes.number.isRequired,
 }
 
 // ─── Sub-component: hunt section ─────────────────────────────────────────────
@@ -85,6 +108,12 @@ function HuntSection({ title, missions, navigate }) {
       )}
     </section>
   )
+}
+
+HuntSection.propTypes = {
+  title: PropTypes.string.isRequired,
+  missions: PropTypes.arrayOf(missionShape).isRequired,
+  navigate: PropTypes.func.isRequired,
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
