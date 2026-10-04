@@ -17,7 +17,7 @@ export const Route = createLazyFileRoute('/')({
 function Index() {
   const location = useLocation()
   const { data, hunterId } = useSelector(state => state.campaign)
-  const { featured: featuredMission, nearby: nearbyMissions, total } = homeView(data, hunterId)
+  const { featured: featuredMission, nearby: nearbyMissions, available } = homeView(data, hunterId)
 
   const navigate = useNavigate()
   const handleMissionClick = (mission) => {
@@ -57,7 +57,7 @@ function Index() {
 
         <div className="home__body__counter">
           <div>
-            <h2>{total}</h2>
+            <h2>{available}</h2>
             <p>caças disponíveis</p>
           </div>
           <Link to="/search">Ver todas</Link>

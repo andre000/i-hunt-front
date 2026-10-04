@@ -4,6 +4,7 @@ import PropTypes from 'prop-types'
 import { css } from '@emotion/react'
 import { MapPinIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline'
 import { ripple } from '../utils/ripple';
+import { MISSION_STATUS_LABEL } from '../campaign/campaign';
 
 export function NearbyMission({ onClick, data }) {
   const closingRef = useRef(null)
@@ -26,7 +27,7 @@ export function NearbyMission({ onClick, data }) {
 
       <div className="closing__info">
         <h4>{data.name}</h4>
-        <p>{data.location}</p>
+        <p>{data.location} ● {MISSION_STATUS_LABEL[data.status]}</p>
       </div>
 
       <div className="closing__menu">
@@ -41,6 +42,7 @@ NearbyMission.propTypes = {
   onClick: PropTypes.func.isRequired,
   data: PropTypes.shape({
     name: PropTypes.string.isRequired,
+    status: PropTypes.oneOf(Object.keys(MISSION_STATUS_LABEL)).isRequired,
     location: PropTypes.string.isRequired
   }).isRequired
 }

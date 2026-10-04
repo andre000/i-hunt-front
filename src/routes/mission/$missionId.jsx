@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { createFileRoute } from '@tanstack/react-router'
 import { useSelector } from 'react-redux'
-import { findMission } from '../../campaign/campaign'
+import { MISSION_STATUS_LABEL, missionDetail, relativeToCampaign } from '../../campaign/campaign'
 import { Footer } from '../../components/Footer'
 import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
@@ -11,12 +11,22 @@ import {
   MapPinIcon,
   FireIcon,
   BanknotesIcon,
+  CalendarIcon,
+  ClockIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline'
 
 export const Route = createFileRoute('/mission/$missionId')({
   component: MissionComponent,
 })
 
+const STATUS_COLOR = {
+  available: '#22c55e',
+  'in-progress': '#3b82f6',
+  completed: '#9ca3af',
+  failed: '#ef4444',
+  expired: '#f59e0b',
+}
 const RISK_LABEL = { baixo: 'Baixo', médio: 'Médio', alto: 'Alto' }
 const RISK_COLOR = { baixo: '#22c55e', médio: '#f59e0b', alto: '#ef4444' }
 
@@ -40,7 +50,8 @@ InfoCard.propTypes = {
 
 function MissionComponent() {
   const { missionId } = Route.useParams()
-  const mission = useSelector(state => findMission(state.campaign.data, missionId))
+  const campaign = useSelector(state => state.campaign.data)
+  const mission = missionDetail(campaign, missionId)
 
   if (!mission) {
     return (
@@ -62,7 +73,8 @@ function MissionComponent() {
     )
   }
 
-  const { name, description, location, value, tags, risk } = mission
+  const { name, description, location, value, tags, risk, status, hunterNames, deadline, postedAt } = mission
+  const campaignDate = campaign.campaign.date
 
   return (
     <main className="app-main">
@@ -80,6 +92,9 @@ function MissionComponent() {
           <div css={missionHeader}>
             <h1>{name}</h1>
             <div css={badgeRow}>
+              <span css={badge(STATUS_COLOR[status])}>
+                {MISSION_STATUS_LABEL[status]}
+              </span>
               <span css={badge(RISK_COLOR[risk] ?? '#9ca3af')}>
                 <FireIcon /> {RISK_LABEL[risk] ?? risk}
               </span>
@@ -106,7 +121,28 @@ function MissionComponent() {
               label="Recompensa"
               value={formatBRL(value)}
             />
+            {deadline && (
+              <InfoCard icon={CalendarIcon} label="Prazo" value={relativeToCampaign(deadline, campaignDate)} />
+            )}
+            {postedAt && (
+              <InfoCard icon={ClockIcon} label="Publicada" value={relativeToCampaign(postedAt, campaignDate)} />
+            )}
           </div>
+
+          <section css={huntersSection}>
+            <h2>
+              <UserGroupIcon /> Hunters na missão
+            </h2>
+            {hunterNames.length === 0 ? (
+              <p>Nenhum hunter nesta missão ainda.</p>
+            ) : (
+              <ul>
+                {hunterNames.map(hunterName => (
+                  <li key={hunterName}>{hunterName}</li>
+                ))}
+              </ul>
+            )}
+          </section>
         </div>
       </div>
       <Footer active="home" />
@@ -240,6 +276,50 @@ const tagPill = css`
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
+`
+
+const huntersSection = css`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+
+    svg {
+      width: 18px;
+      height: 18px;
+      stroke: #f60;
+    }
+  }
+
+  p {
+    font-size: 13px;
+    color: #888;
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  li {
+    background-color: #f7f7f7;
+    border-radius: 16px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+  }
 `
 
 const infoGrid = css`
