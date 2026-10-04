@@ -4,8 +4,8 @@ import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { createAppStore } from './store'
-import { loadCampaign } from './store/campaign'
-import { createSync, readInvite } from './campaign/sync'
+import { campaignLoaded } from './store/campaign'
+import { createSync, createSyncLoop, readInvite } from './campaign/sync'
 import { Provider } from 'react-redux'
 
 // Import the generated route tree
@@ -21,12 +21,30 @@ function browserStorage() {
 
 const sync = createSync({ fetch: window.fetch.bind(window), storage: browserStorage() })
 const invite = readInvite(window.location.search)
-if (invite) {
-  sync.acceptInvite(invite)
-  window.history.replaceState(null, '', window.location.pathname)
+const pendingInvite = invite && sync.offerInvite(invite) === 'needs-confirmation' ? invite : null
+if (invite) window.history.replaceState(null, '', window.location.pathname)
+
+const store = createAppStore({ sync, pendingInvite })
+
+function onReturn(run) {
+  const onVisible = () => {
+    if (document.visibilityState === 'visible') run()
+  }
+  document.addEventListener('visibilitychange', onVisible)
+  window.addEventListener('online', run)
+  return () => {
+    document.removeEventListener('visibilitychange', onVisible)
+    window.removeEventListener('online', run)
+  }
 }
-const store = createAppStore({ sync })
-store.dispatch(loadCampaign())
+
+createSyncLoop({
+  load: () => sync.load(),
+  onResult: (result) => store.dispatch(campaignLoaded(result)),
+  setInterval: (run, ms) => window.setInterval(run, ms),
+  clearInterval: (id) => window.clearInterval(id),
+  onReturn,
+}).start()
 
 // Create a new router instance
 const router = createRouter({ routeTree })

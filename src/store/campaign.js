@@ -1,10 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 
-export const loadCampaign = createAsyncThunk(
-  'campaign/load',
-  (_, { extra }) => extra.sync.load(),
-)
-
 export const chooseHunter = createAsyncThunk(
   'campaign/chooseHunter',
   (hunterId, { extra }) => {
@@ -13,26 +8,60 @@ export const chooseHunter = createAsyncThunk(
   },
 )
 
-export function initialCampaignState(hunterId = null) {
-  return { status: 'loading', data: null, errors: [], error: null, hunterId }
+export const switchCampaign = createAsyncThunk(
+  'campaign/switch',
+  (url, { extra }) => {
+    extra.sync.acceptInvite(url)
+    return extra.sync.load()
+  },
+)
+
+export function initialCampaignState({ hunterId = null, pendingInvite = null } = {}) {
+  return {
+    status: 'loading',
+    data: null,
+    errors: [],
+    error: null,
+    offline: false,
+    updateError: null,
+    hunterId,
+    pendingInvite,
+  }
+}
+
+function applyLoadResult(state, result) {
+  state.status = result.status
+  state.data = result.campaign ?? null
+  state.errors = result.errors ?? []
+  state.error = result.error ?? null
+  state.offline = result.offline ?? false
+  state.updateError = result.updateError ?? null
 }
 
 const campaignSlice = createSlice({
   name: 'campaign',
   initialState: initialCampaignState(),
-  reducers: {},
+  reducers: {
+    campaignLoaded(state, { payload }) {
+      applyLoadResult(state, payload)
+    },
+    keepCurrentCampaign(state) {
+      state.pendingInvite = null
+    },
+  },
   extraReducers: (builder) => {
     builder
-      .addCase(loadCampaign.fulfilled, (state, { payload }) => {
-        state.status = payload.status
-        state.data = payload.campaign ?? null
-        state.errors = payload.errors ?? []
-        state.error = payload.error ?? null
-      })
       .addCase(chooseHunter.fulfilled, (state, { payload }) => {
         state.hunterId = payload
+      })
+      .addCase(switchCampaign.pending, (state) => {
+        Object.assign(state, initialCampaignState())
+      })
+      .addCase(switchCampaign.fulfilled, (state, { payload }) => {
+        applyLoadResult(state, payload)
       })
   },
 })
 
+export const { campaignLoaded, keepCurrentCampaign } = campaignSlice.actions
 export default campaignSlice.reducer

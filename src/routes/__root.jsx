@@ -2,6 +2,8 @@ import { createRootRoute, Outlet } from '@tanstack/react-router'
 import { useSelector } from 'react-redux'
 import { CampaignStatus } from '../components/CampaignStatus'
 import { HunterChoice } from '../components/HunterChoice'
+import { InviteConfirmation } from '../components/InviteConfirmation'
+import { SyncNotice } from '../components/SyncNotice'
 import { findHunter } from '../campaign/campaign'
 // import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 
@@ -10,7 +12,11 @@ export const Route = createRootRoute({
 })
 
 function Root() {
-  const { status, data, hunterId } = useSelector(state => state.campaign)
+  const { status, data, hunterId, pendingInvite } = useSelector(state => state.campaign)
+
+  if (pendingInvite) {
+    return <InviteConfirmation />
+  }
 
   if (status === 'loading') {
     return <CampaignStatus title="Carregando campanha…" />
@@ -40,6 +46,7 @@ function Root() {
 
   return (
     <>
+      <SyncNotice />
       <Outlet />
       {/* <TanStackRouterDevtools /> */}
     </>
