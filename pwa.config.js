@@ -1,6 +1,6 @@
 export const pwaOptions = {
   registerType: 'autoUpdate',
-  includeAssets: ['favicon.svg', 'favicon.png'],
+  includeAssets: ['favicon.svg', 'favicon.png', 'exemplo-campanha.json'],
   manifest: {
     name: 'iHunt',
     short_name: 'iHunt',

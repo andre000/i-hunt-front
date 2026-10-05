@@ -8,6 +8,8 @@ import { campaignLoaded } from './store/campaign'
 import { createSync } from './campaign/sync'
 import { createSyncLoop } from './campaign/syncLoop'
 import { readInvite } from './campaign/invite'
+import { createDemoSync } from './campaign/demoSync'
+import { chooseMode } from './campaign/demoEntry'
 import { Provider } from 'react-redux'
 
 // Import the generated route tree
@@ -21,8 +23,22 @@ function browserStorage() {
   }
 }
 
-const sync = createSync({ fetch: window.fetch.bind(window), storage: browserStorage() })
-const invite = readInvite(window.location.search)
+function browserSession() {
+  try {
+    return window.sessionStorage
+  } catch {
+    return null
+  }
+}
+
+const fetchCampaignFile = window.fetch.bind(window)
+const mode = chooseMode({ pathname: window.location.pathname, search: window.location.search, session: browserSession() })
+const sync = mode === 'demo'
+  ? createDemoSync({ fetch: fetchCampaignFile, storage: browserSession(), origin: window.location.origin })
+  : createSync({ fetch: fetchCampaignFile, storage: browserStorage() })
+if (mode === 'demo' && window.location.pathname.startsWith('/demo')) window.history.replaceState(null, '', '/')
+
+const invite = mode === 'demo' ? null : readInvite(window.location.search)
 const pendingInvite = invite && sync.offerInvite(invite) === 'needs-confirmation' ? invite : null
 if (invite) window.history.replaceState(null, '', window.location.pathname)
 
