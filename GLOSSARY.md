@@ -40,7 +40,7 @@ _Avoid_: data atual, hoje, relógio
 
 **Agendado**:
 Mensagem ou missão cujo horário da ficção é posterior à data da campanha; os hunters só a veem quando o GM avança a data.
-_Avoid_: rascunho, programado, futuro
+_Avoid_: programado, futuro
 
 **Mensagem**:
 Texto que um NPC envia a todos os hunters ou a hunters específicos. Só vai do NPC para os hunters.
@@ -49,3 +49,17 @@ _Avoid_: chat, conversa, DM
 **Convite**:
 Link que o GM compartilha para levar um jogador a uma campanha.
 _Avoid_: código da campanha, URL
+
+## Ferramentas do GM
+
+**Visão do GM**:
+A tela onde o GM acompanha a campanha publicada, como os jogadores a recebem.
+_Avoid_: painel, admin, dashboard
+
+**Editor da campanha**:
+A tela onde o GM monta e altera o rascunho e o baixa como arquivo da campanha.
+_Avoid_: admin, painel, CMS
+
+**Rascunho**:
+A versão da campanha que o GM está preparando no Editor da campanha, ainda não publicada.
+_Avoid_: edição, versão local
