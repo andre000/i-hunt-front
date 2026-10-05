@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addItem, advanceToNextScheduled, blankDraft, hunterImpact, missionPreview, removeHunter, removeItem, removeNpc, updateItem, dateFromInput, dateToInput, draftErrors, nextScheduled, draftFile, draftFileName, draftFrom, readDraftText, updateCampaign } from './draft'
+import { addItem, advanceToNextScheduled, blankDraft, hunterImpact, missionPreview, parseCoordinates, setMissionPosition, removeHunter, removeItem, removeNpc, updateItem, dateFromInput, dateToInput, draftErrors, nextScheduled, draftFile, draftFileName, draftFrom, readDraftText, updateCampaign } from './draft'
 import { validCampaign } from './fixtures'
 
 describe('draftFrom', () => {
@@ -319,5 +319,50 @@ describe('removeItem', () => {
     const draft = removeItem(draftFrom(validCampaign()), 'missions', 1)
 
     expect(draft.missions.map(mission => mission.id)).toEqual(['m1', 'm3'])
+  })
+})
+
+describe('mission position', () => {
+  it('sets the position picked on the map, rounded to 6 decimals', () => {
+    const draft = setMissionPosition(draftFrom(validCampaign()), 0, { lat: -30.034612345, lng: -51.217712345 })
+
+    expect(draft.missions[0].position).toEqual({ lat: -30.034612, lng: -51.217712 })
+    expect(draftErrors(draft)).toEqual([])
+  })
+
+  it('removes the position', () => {
+    const raw = validCampaign()
+    raw.missions[0].position = { lat: -30, lng: -51 }
+
+    const draft = setMissionPosition(draftFrom(raw), 0, null)
+
+    expect(draft.missions[0]).not.toHaveProperty('position')
+  })
+
+  it('keeps a half-typed position so the error points to the missing field', () => {
+    const draft = setMissionPosition(draftFrom(validCampaign()), 0, { lat: -30, lng: undefined })
+
+    expect(draft.missions[0].position).toEqual({ lat: -30 })
+    expect(draftErrors(draft)).toContainEqual(expect.objectContaining({ path: '/missions/0/position/lng' }))
+  })
+})
+
+describe('mission position with both fields empty', () => {
+  it('removes the position', () => {
+    const draft = setMissionPosition(draftFrom(validCampaign()), 0, { lat: undefined, lng: undefined })
+
+    expect(draft.missions[0]).not.toHaveProperty('position')
+  })
+})
+
+describe('parseCoordinates', () => {
+  it('reads "lat, lng" pasted from a map', () => {
+    expect(parseCoordinates('-30.0346, -51.2177')).toEqual({ lat: -30.0346, lng: -51.2177 })
+    expect(parseCoordinates(' -30.0346 -51.2177 ')).toEqual({ lat: -30.0346, lng: -51.2177 })
+  })
+
+  it('is null for a single number or text', () => {
+    expect(parseCoordinates('-30.0346')).toBeNull()
+    expect(parseCoordinates('Bom Fim')).toBeNull()
   })
 })

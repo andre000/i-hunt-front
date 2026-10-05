@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
 import { useDispatch } from 'react-redux'
-import { dateFromInput, dateToInput, missionPreview } from '../../campaign/draft'
+import { dateFromInput, dateToInput, missionPreview, parseCoordinates } from '../../campaign/draft'
 import { MISSION_STATUS_LABEL, RISKS } from '../../campaign/missions'
-import { itemRemoved, itemUpdated } from '../../store/editor'
+import { itemRemoved, itemUpdated, missionPositioned } from '../../store/editor'
 import { DeleteItem } from './DeleteItem'
+import { PositionPicker } from './PositionPicker'
 
 const RESULTS = [
   { value: '', label: 'Sem resultado' },
@@ -53,6 +54,44 @@ HunterPicker.propTypes = {
   hunters: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string, name: PropTypes.string })).isRequired,
   selected: PropTypes.arrayOf(PropTypes.string),
   onChange: PropTypes.func.isRequired,
+}
+
+function PositionField({ draft, index }) {
+  const dispatch = useDispatch()
+  const position = draft.missions[index].position
+  const others = draft.missions.filter((_, at) => at !== index).map(mission => mission?.position).filter(Boolean)
+  const setPosition = (value) => dispatch(missionPositioned({ index, position: value }))
+  const setCoordinate = (key, value) => setPosition({ ...position, [key]: optionalNumber(value) })
+  const pastePair = (e) => {
+    const pair = parseCoordinates(e.clipboardData.getData('text'))
+    if (!pair) return
+    e.preventDefault()
+    setPosition(pair)
+  }
+
+  return (
+    <fieldset className="editor__position">
+      <legend>Posição no mapa</legend>
+      <PositionPicker position={position} others={others} onPick={setPosition} />
+      <div className="editor__coordinates">
+        <label>
+          <span>Latitude</span>
+          <input type="number" step="any" value={position?.lat ?? ''} onPaste={pastePair} onChange={e => setCoordinate('lat', e.target.value)} />
+        </label>
+        <label>
+          <span>Longitude</span>
+          <input type="number" step="any" value={position?.lng ?? ''} onPaste={pastePair} onChange={e => setCoordinate('lng', e.target.value)} />
+        </label>
+        <button type="button" className="button secondary" disabled={!position} onClick={() => setPosition(null)}>Tirar posição</button>
+      </div>
+      <p>Clique no mapa ou cole “latitude, longitude” do Google Maps.</p>
+    </fieldset>
+  )
+}
+
+PositionField.propTypes = {
+  draft: PropTypes.object.isRequired,
+  index: PropTypes.number.isRequired,
 }
 
 export function MissionFields({ mission, onChange }) {
@@ -158,6 +197,7 @@ export function MissionForm({ draft, index, onRemoved }) {
           </select>
         </label>
       </div>
+      <PositionField draft={draft} index={index} />
       <HunterPicker legend="Hunters na missão" hunters={draft.hunters} selected={mission.hunters} onChange={hunters => update({ hunters })} />
       <HunterPicker legend="Aparece como perto para" hunters={draft.hunters} selected={mission.nearHunters} onChange={nearHunters => update({ nearHunters })} />
       {deleting

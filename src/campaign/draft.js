@@ -89,6 +89,19 @@ export function removeHunter(draft, index) {
   return { ...removeItem(draft, 'hunters', index), missions, messages }
 }
 
+const roundCoordinate = (value) => (typeof value === 'number' ? Math.round(value * 1e6) / 1e6 : value)
+
+export function setMissionPosition(draft, index, position) {
+  const value = position && withoutEmpty({ lat: roundCoordinate(position.lat), lng: roundCoordinate(position.lng) })
+  return updateItem(draft, 'missions', index, { position: value && Object.keys(value).length > 0 ? value : undefined })
+}
+
+export function parseCoordinates(text) {
+  const numbers = String(text).trim().split(/[\s,;]+/).map(Number)
+  if (numbers.length !== 2 || numbers.some(Number.isNaN)) return null
+  return { lat: numbers[0], lng: numbers[1] }
+}
+
 export function missionPreview(draft, index) {
   const mission = { ...draft.missions[index] }
   mission.hunters = Array.isArray(mission.hunters) ? mission.hunters : []

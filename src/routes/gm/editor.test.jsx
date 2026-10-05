@@ -380,6 +380,35 @@ describe('Missões', () => {
     expect(screen.queryByText('Agendado', { selector: '.editor__meta *' })).toBeNull()
   })
 
+  it('sets the position by typing latitude and longitude', async () => {
+    const { store } = await openMission('Vampiro no bar')
+
+    fireEvent.change(screen.getByLabelText('Latitude'), { target: { value: '-30.04' } })
+    fireEvent.change(screen.getByLabelText('Longitude'), { target: { value: '-51.22' } })
+
+    expect(missionInDraft(store, 2).position).toEqual({ lat: -30.04, lng: -51.22 })
+  })
+
+  it('fills both fields when "lat, lng" is pasted', async () => {
+    const { store } = await openMission('Vampiro no bar')
+
+    fireEvent.paste(screen.getByLabelText('Latitude'), { clipboardData: { getData: () => '-30.0346, -51.2177' } })
+
+    expect(missionInDraft(store, 2).position).toEqual({ lat: -30.0346, lng: -51.2177 })
+    expect(screen.getByLabelText('Longitude').value).toBe('-51.2177')
+  })
+
+  it('removes the position', async () => {
+    const body = validCampaign()
+    body.missions[2].position = { lat: -30.04, lng: -51.22 }
+    const { store } = await openMission('Vampiro no bar', { body })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tirar posição' }))
+
+    expect(missionInDraft(store, 2)).not.toHaveProperty('position')
+    expect(screen.getByLabelText('Latitude').value).toBe('')
+  })
+
   it('deletes a mission after confirming', async () => {
     const { store } = await openMission('Fantasma no ônibus T5')
 

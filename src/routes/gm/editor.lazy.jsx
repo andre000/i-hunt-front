@@ -639,6 +639,47 @@ const editorPage = css`
     color: var(--texto);
   }
 
+  .editor__position {
+    margin: 0;
+    padding: 12px 14px 14px;
+    border: 1px solid var(--linha);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    legend {
+      padding: 0 6px;
+      font-size: 13px;
+      color: var(--apagado);
+    }
+
+    p {
+      font-size: 12px;
+      color: var(--apagado);
+    }
+  }
+
+  .editor__coordinates {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+
+    label {
+      flex: 1;
+    }
+
+    .button {
+      padding: 10px 14px;
+      font-size: 14px;
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+    }
+  }
+
   .editor__picker {
     margin: 0;
     padding: 12px 14px;
