@@ -9,6 +9,10 @@ function pngSize(file) {
   return `${png.readUInt32BE(16)}x${png.readUInt32BE(20)}`
 }
 
+function cacheFor(url) {
+  return pwaOptions.workbox.runtimeCaching.find(({ urlPattern }) => urlPattern.test(url))
+}
+
 describe('pwaOptions', () => {
   it.each(pwaOptions.manifest.icons)('icon $sizes points to a PNG of that size', (icon) => {
     expect(existsSync(publicPath(icon.src))).toBe(true)
@@ -25,6 +29,20 @@ describe('pwaOptions', () => {
 
   it.each(pwaOptions.includeAssets)('included asset %s exists in public', (asset) => {
     expect(existsSync(publicPath(asset))).toBe(true)
+  })
+
+  it.each([
+    ['map tiles', 'https://tile.openstreetmap.org/15/12345/6789.png', 'CacheFirst'],
+    ['font stylesheets', 'https://fonts.googleapis.com/css2?family=Geist:wght@400..800', 'StaleWhileRevalidate'],
+    ['font files', 'https://fonts.gstatic.com/s/geist/v1/abc.woff2', 'CacheFirst'],
+  ])('caches %s for offline use', (_, url, handler) => {
+    const cache = cacheFor(url)
+    expect(cache?.handler).toBe(handler)
+    expect(cache.options.expiration.maxEntries).toBeGreaterThan(0)
+  })
+
+  it('does not cache requests to the campaign host', () => {
+    expect(cacheFor('https://example.com/campanha.json')).toBeUndefined()
   })
 })
 

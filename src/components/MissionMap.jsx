@@ -46,7 +46,7 @@ export function MissionMap({ missions, selectedId, onSelect, interactive = true,
         touchZoom: interactive,
         keyboard: interactive,
       })
-      L.tileLayer(TILES, { attribution: ATTRIBUTION, maxZoom: 19 }).addTo(map.current)
+      L.tileLayer(TILES, { attribution: ATTRIBUTION, maxZoom: 19, crossOrigin: '' }).addTo(map.current)
       map.current.attributionControl.setPrefix(false)
       layer.current = L.layerGroup().addTo(map.current)
       draw.current()
