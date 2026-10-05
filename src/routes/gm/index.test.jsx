@@ -14,9 +14,11 @@ describe('GM view', () => {
     await renderApp({ path: '/gm', hunterId: null, body })
 
     expect(await screen.findByText('Noite em Porto Alegre')).toBeTruthy()
-    expect(screen.getByText(/Data da campanha:/)).toBeTruthy()
-    expect(screen.getByText('4.5 ★ · R$ 800,00')).toBeTruthy()
-    expect(screen.getByText('Concluída · Ana')).toBeTruthy()
+    expect(screen.getByLabelText(/^Data da campanha:/)).toBeTruthy()
+    expect(screen.getByText('4.5')).toBeTruthy()
+    expect(screen.getAllByText('R$ 800,00')).toHaveLength(2)
+    expect(screen.getByText('Concluída')).toBeTruthy()
+    expect(screen.getByText('Ana', { selector: '.gm__meta span' })).toBeTruthy()
     expect(screen.getByText('Agendada · em 12 horas')).toBeTruthy()
   })
 

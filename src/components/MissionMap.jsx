@@ -136,6 +136,7 @@ const mapStyle = css`
   .pin--in-progress { --pin: var(--texto); }
   .pin--completed { --pin: var(--ok); }
   .pin--failed { --pin: var(--perigo); }
+  .pin--scheduled { --pin: var(--aviso); }
 
   .pin__dot {
     position: absolute;

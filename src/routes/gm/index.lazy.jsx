@@ -4,9 +4,12 @@ import { createLazyFileRoute } from '@tanstack/react-router'
 import { useSelector } from 'react-redux'
 import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
+import { StarIcon } from '@heroicons/react/24/solid'
 import { Avatar } from '../../components/Avatar'
+import { CampaignClock } from '../../components/CampaignClock'
+import { MissionMap } from '../../components/MissionMap'
+import { StatusLabel } from '../../components/MissionTags'
 import { gmView } from '../../campaign/gm'
-import { MISSION_STATUS_LABEL } from '../../campaign/missions'
 import { relativeToCampaign } from '../../campaign/time'
 import { inviteLink } from '../../campaign/invite'
 import { formatBRL } from '../../utils/format'
@@ -14,8 +17,6 @@ import { formatBRL } from '../../utils/format'
 export const Route = createLazyFileRoute('/gm/')({
   component: GmPage,
 })
-
-const dateFormat = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full', timeStyle: 'short' })
 
 function InviteBox({ campaignUrl }) {
   const inputRef = useRef(null)
@@ -75,17 +76,20 @@ JsonErrors.propTypes = {
 
 function HunterList({ hunters }) {
   return (
-    <section>
-      <h2>Hunters ({hunters.length})</h2>
+    <section className="gm__section">
+      <h2>Hunters <span className="num">{hunters.length}</span></h2>
       <ul className="gm__list">
         {hunters.map(({ hunter, earnings }) => (
           <li key={hunter.id}>
             <Avatar person={hunter} size={36} />
             <span className="gm__name">{hunter.name}</span>
-            <span className="gm__meta">
-              {hunter.rating !== undefined ? `${hunter.rating.toFixed(1)} ★ · ` : ''}
-              {formatBRL(earnings)}
-            </span>
+            {hunter.rating !== undefined && (
+              <span className="gm__rating num">
+                <StarIcon aria-hidden="true" />
+                {hunter.rating.toFixed(1)}
+              </span>
+            )}
+            <span className="gm__value num">{formatBRL(earnings)}</span>
           </li>
         ))}
       </ul>
@@ -104,41 +108,55 @@ HunterList.propTypes = {
   })).isRequired,
 }
 
-function MissionList({ missions, date }) {
+function MissionRow({ mission, date }) {
   return (
-    <section>
-      <h2>Missões ({missions.length})</h2>
+    <li>
+      <span className="gm__mission">
+        <span className="gm__name">{mission.name}</span>
+        <span className="gm__meta">
+          {mission.scheduled
+            ? <span className="gm__scheduled">Agendada · {relativeToCampaign(mission.postedAt, date)}</span>
+            : <StatusLabel status={mission.status} />}
+          {mission.hunterNames.length > 0 && <span>{mission.hunterNames.join(', ')}</span>}
+          {!mission.position && <span>Sem posição no mapa</span>}
+        </span>
+      </span>
+      <span className="gm__value num">{formatBRL(mission.value)}</span>
+    </li>
+  )
+}
+
+MissionRow.propTypes = {
+  mission: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    status: PropTypes.string.isRequired,
+    scheduled: PropTypes.bool.isRequired,
+    postedAt: PropTypes.string,
+    value: PropTypes.number.isRequired,
+    position: PropTypes.object,
+    hunterNames: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
+  date: PropTypes.string.isRequired,
+}
+
+function MissionList({ missions, date }) {
+  const onMap = missions
+    .filter(mission => mission.position)
+    .map(mission => (mission.scheduled ? { ...mission, status: 'scheduled' } : mission))
+
+  return (
+    <section className="gm__section">
+      <h2>Missões <span className="num">{missions.length}</span></h2>
+      {onMap.length > 0 && <MissionMap className="gm__map" missions={onMap} />}
       <ul className="gm__list">
-        {missions.map(mission => (
-          <li key={mission.id}>
-            <span className="gm__name">
-              {mission.name}
-              {mission.scheduled && (
-                <span className="gm__scheduled">
-                  Agendada · {relativeToCampaign(mission.postedAt, date)}
-                </span>
-              )}
-            </span>
-            <span className="gm__meta">
-              {MISSION_STATUS_LABEL[mission.status]}
-              {mission.hunterNames.length > 0 && ` · ${mission.hunterNames.join(', ')}`}
-            </span>
-          </li>
-        ))}
+        {missions.map(mission => <MissionRow key={mission.id} mission={mission} date={date} />)}
       </ul>
     </section>
   )
 }
 
 MissionList.propTypes = {
-  missions: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    status: PropTypes.string.isRequired,
-    scheduled: PropTypes.bool.isRequired,
-    postedAt: PropTypes.string,
-    hunterNames: PropTypes.arrayOf(PropTypes.string).isRequired,
-  })).isRequired,
+  missions: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string.isRequired })).isRequired,
   date: PropTypes.string.isRequired,
 }
 
@@ -148,74 +166,125 @@ function GmPage() {
 
   return (
     <main css={gmPage}>
-      <header>
-        <p className="gm__eyebrow">Visão do GM</p>
-        <h1>{data?.campaign.name ?? 'Campanha'}</h1>
-        {view && <p className="gm__date">Data da campanha: {dateFormat.format(new Date(view.date))}</p>}
-      </header>
+      <div className="gm__top">
+        <span className="gm__brand"><span>i</span>Hunt <b>GM</b></span>
+        {view && <CampaignClock />}
+      </div>
 
-      {errors.length > 0 && <JsonErrors errors={errors} hasValidVersion={Boolean(data)} />}
+      <div className="gm__body">
+        <h1>{data?.campaign.name ?? 'Visão do GM'}</h1>
 
-      {status === 'error' && (
-        <section className="gm__errors" role="alert">
-          <h2>Não foi possível ler o JSON</h2>
-          <p>{error}. Confira a URL e a política de CORS do bucket.</p>
-        </section>
-      )}
+        {errors.length > 0 && <JsonErrors errors={errors} hasValidVersion={Boolean(data)} />}
 
-      {campaignUrl && (
-        <section>
-          <h2>Convite</h2>
-          <InviteBox campaignUrl={campaignUrl} />
-        </section>
-      )}
+        {status === 'error' && (
+          <section className="gm__errors" role="alert">
+            <h2>Não foi possível ler o JSON</h2>
+            <p>{error}. Confira a URL e a política de CORS do bucket.</p>
+          </section>
+        )}
 
-      {view && <HunterList hunters={view.hunters} />}
-      {view && <MissionList missions={view.missions} date={view.date} />}
+        {campaignUrl && (
+          <section className="gm__section">
+            <h2>Convite</h2>
+            <InviteBox campaignUrl={campaignUrl} />
+          </section>
+        )}
+
+        {view && <HunterList hunters={view.hunters} />}
+        {view && <MissionList missions={view.missions} date={view.date} />}
+      </div>
     </main>
   )
 }
 
 const gmPage = css`
-  min-height: 100vh;
-  padding: 24px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  color: #333;
-  background-color: #fff;
-  color-scheme: light;
 
-  .gm__eyebrow {
-    font-size: 12px;
-    font-weight: 700;
-    color: #f60;
-    text-transform: uppercase;
+  .gm__top {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px;
+    background-color: rgb(12 14 17 / 92%);
+    border-bottom: 1px solid var(--linha);
+    backdrop-filter: blur(8px);
+  }
+
+  .gm__brand {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+
+    > span {
+      color: var(--laranja);
+    }
+
+    b {
+      margin-left: 8px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background-color: var(--laranja-fundo);
+      color: var(--laranja);
+      font-size: 12px;
+      letter-spacing: 0;
+    }
+  }
+
+  .gm__body {
+    padding: 20px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
   }
 
   h1 {
-    font-size: 24px;
+    font-size: 30px;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
   }
 
-  .gm__date {
-    font-size: 13px;
-    color: #777;
+  .gm__section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
 
   h2 {
-    font-size: 15px;
-    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--apagado);
+    letter-spacing: 0;
+    display: flex;
+    gap: 6px;
   }
 
   .gm__errors {
-    border: 1px solid #fca5a5;
-    background-color: var(--danger-surface);
-    border-radius: 12px;
+    border: 1px solid rgb(255 107 107 / 40%);
+    background-color: var(--perigo-fundo);
+    border-radius: 16px;
     padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    h2 {
+      color: var(--perigo);
+      font-size: 15px;
+    }
 
     p {
-      font-size: 13px;
-      margin-bottom: 8px;
+      font-size: 14px;
     }
 
     ul {
@@ -228,7 +297,8 @@ const gmPage = css`
     }
 
     code {
-      font-weight: 700;
+      font-family: var(--mono);
+      color: var(--perigo);
     }
   }
 
@@ -239,46 +309,82 @@ const gmPage = css`
     input {
       flex: 1;
       min-width: 0;
-      padding: 8px 12px;
-      border: 1px solid #ddd;
-      border-radius: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--linha);
+      border-radius: 14px;
+      background-color: var(--painel);
+      color: var(--apagado);
+      font-family: var(--mono);
       font-size: 12px;
-      color: #555;
     }
+  }
+
+  .gm__map {
+    height: 220px;
+    border-radius: 16px;
+    border: 1px solid var(--linha);
+    overflow: hidden;
   }
 
   .gm__list {
     list-style: none;
     margin: 0;
     padding: 0;
-    display: flex;
-    flex-direction: column;
+    border-top: 1px solid var(--linha);
 
     li {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 10px 0;
-      border-bottom: 1px solid #f0f0f0;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--linha);
     }
+  }
+
+  .gm__mission {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
   }
 
   .gm__name {
     flex: 1;
+    min-width: 0;
+    font-size: 15px;
     font-weight: 600;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .gm__scheduled {
-    font-size: 11px;
-    font-weight: 700;
-    color: #8b5cf6;
   }
 
   .gm__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
     font-size: 12px;
-    color: #777;
-    text-align: right;
+    color: var(--apagado);
+  }
+
+  .gm__scheduled {
+    color: var(--aviso);
+    font-weight: 600;
+  }
+
+  .gm__rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--apagado);
+
+    svg {
+      width: 13px;
+      height: 13px;
+      color: var(--aviso);
+    }
+  }
+
+  .gm__value {
+    font-size: 14px;
+    white-space: nowrap;
   }
 `

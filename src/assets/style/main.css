@@ -17,9 +17,6 @@
   --sans: "Geist", ui-sans-serif, system-ui, sans-serif;
   --mono: "Geist Mono", ui-monospace, Menlo, monospace;
   --max-width: 440px;
-  --primary-color: var(--laranja);
-  --surface-sunken: #f2f2f2;
-  --danger-surface: #fef2f2;
   color-scheme: dark;
 }
 
