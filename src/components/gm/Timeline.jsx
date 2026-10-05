@@ -4,7 +4,7 @@ import PropTypes from 'prop-types'
 import { Link } from '@tanstack/react-router'
 import { ChatBubbleOvalLeftIcon } from '@heroicons/react/16/solid'
 import { RiskChip, StatusLabel } from '../MissionTags'
-import { campaignClock, time, timeLeft } from '../../campaign/time'
+import { addMinutes, campaignClock, time, timeLeft } from '../../campaign/time'
 import { formatBRL } from '../../utils/format'
 
 const EARLIER_SHOWN = 6
@@ -100,7 +100,7 @@ Node.propTypes = {
   item: PropTypes.object.isRequired,
 }
 
-function Row({ item, open, fresh, date, hunterName, onToggle }) {
+function Row({ item, open, fresh, freshLabel, date, hunterName, onToggle }) {
   const closed = item.kind === 'mission' && ['completed', 'failed', 'expired'].includes(item.mission.status) && !item.scheduled
   const classes = ['row', open && 'is-open', fresh && 'is-fresh', closed && 'is-closed'].filter(Boolean).join(' ')
 
@@ -113,7 +113,7 @@ function Row({ item, open, fresh, date, hunterName, onToggle }) {
         </span>
         <Node item={item} />
         <span className="row__body">
-          {fresh && <span className="row__fresh">Saiu agora</span>}
+          {fresh && <span className="row__fresh">{freshLabel}</span>}
           {item.kind === 'mission'
             ? <MissionBody item={item} open={open} date={date} hunterName={hunterName} />
             : <MessageBody item={item} open={open} />}
@@ -128,6 +128,7 @@ Row.propTypes = {
   item: PropTypes.object.isRequired,
   open: PropTypes.bool.isRequired,
   fresh: PropTypes.bool.isRequired,
+  freshLabel: PropTypes.string.isRequired,
   date: PropTypes.string.isRequired,
   hunterName: PropTypes.string,
   onToggle: PropTypes.func.isRequired,
@@ -138,7 +139,7 @@ function freshTest(freshSince, date) {
 }
 
 function Groups({ items, ...rowProps }) {
-  const { openId, freshSince, date, hunterName } = rowProps
+  const { openId, freshSince, freshLabel, date, hunterName } = rowProps
   const isFresh = freshTest(freshSince, date)
 
   return byDay(items).map(({ day, items: dayItems }) => (
@@ -151,6 +152,7 @@ function Groups({ items, ...rowProps }) {
             item={item}
             open={openId === item.id}
             fresh={isFresh(item)}
+            freshLabel={freshLabel}
             date={date}
             hunterName={hunterName}
             onToggle={rowProps.onToggle}
@@ -179,33 +181,96 @@ function itemLabel(item) {
   return `${item.npc?.name ?? item.message.npc} → ${to}`
 }
 
-function NowBand({ date, next, fresh, hunterName, onReveal }) {
-  const clock = campaignClock(date)
-  const viewer = hunterName ? `${hunterName} vê` : 'Os jogadores veem'
+const MINUTE = 60 * 1000
+
+function Scrub({ realDate, marks, span, minutes, onMove }) {
+  const start = time(realDate)
+  const at = clock => campaignClock(addMinutes(realDate, clock))
+  const markMinutes = marks.map(mark => Math.round((time(mark) - start) / MINUTE))
+  const shown = at(minutes)
+
+  const jump = event => {
+    const forward = event.key === 'ArrowRight' || event.key === 'ArrowUp'
+    const back = event.key === 'ArrowLeft' || event.key === 'ArrowDown'
+    if (!forward && !back) return
+    event.preventDefault()
+    const target = forward
+      ? markMinutes.find(mark => mark > minutes) ?? span
+      : [...markMinutes].reverse().find(mark => mark < minutes) ?? 0
+    onMove(target)
+  }
 
   return (
-    <div className={fresh.length > 0 ? 'now is-moved' : 'now'} id="gm-agora">
-      <p className="now__rule">
-        <span className="now__label"><span className="now__dot" aria-hidden="true" />Agora</span>
-      </p>
+    <span className="scrub" style={{ '--fill': `${(minutes / span) * 100}%` }}>
+      <span className="scrub__marks" aria-hidden="true">
+        {markMinutes.map(mark => (
+          <span key={mark} className={mark <= minutes ? 'is-reached' : undefined} style={{ '--at': mark / span }} />
+        ))}
+      </span>
+      <input
+        type="range"
+        min={0}
+        max={span}
+        step={1}
+        value={minutes}
+        aria-label="Ensaiar a data da campanha"
+        aria-valuetext={minutes === 0 ? 'Agora' : `${shown.day}, ${shown.hour}`}
+        onKeyDown={jump}
+        onChange={event => onMove(Number(event.target.value))}
+      />
+    </span>
+  )
+}
+
+Scrub.propTypes = {
+  realDate: PropTypes.string.isRequired,
+  marks: PropTypes.arrayOf(PropTypes.string).isRequired,
+  span: PropTypes.number.isRequired,
+  minutes: PropTypes.number.isRequired,
+  onMove: PropTypes.func.isRequired,
+}
+
+function NowBand({ date, next, fresh, hunterName, onReveal, rehearsal }) {
+  const clock = campaignClock(date)
+  const viewer = hunterName ? `${hunterName} vê` : 'Os jogadores veem'
+  const rehearsing = rehearsal?.minutes > 0
+  const classes = ['now', fresh.length > 0 && 'is-moved', rehearsing && 'is-rehearsal'].filter(Boolean).join(' ')
+  const real = rehearsal && campaignClock(rehearsal.realDate)
+
+  return (
+    <div className={classes} id="gm-agora">
+      <div className="now__rule">
+        <span className="now__label"><span className="now__dot" aria-hidden="true" />{rehearsing ? 'Ensaio' : 'Agora'}</span>
+        {rehearsal ? <Scrub {...rehearsal} /> : <span className="now__line" />}
+      </div>
       <p className="now__clock">
         <span className="now__hour num">{clock.hour}</span>
         <span className="now__day">{clock.day}</span>
+        {rehearsing && <span className="now__real">de verdade: {real.day} · <span className="num">{real.hour}</span></span>}
       </p>
       {fresh.length > 0 && (
-        <p className="now__moved" role="status">
-          Acabou de sair: {arrivals(fresh)}.
+        <p className="now__moved" role={rehearsing ? undefined : 'status'}>
+          {rehearsing ? 'Até aqui, saem' : 'Acabou de sair'}: {arrivals(fresh)}.
         </p>
       )}
       {next && (
         <button type="button" className="now__next" onClick={() => onReveal(next)}>
-          <span className="now__next-label">Próximo, em {timeLeft(next.at, date)}</span>
-          <span className="now__next-item">{itemLabel(next)}</span>
+          <span className="now__next-label">Próximo em {timeLeft(next.at, date)}</span> {itemLabel(next)}
         </button>
       )}
-      <p className="now__hint">
-        {viewer} o que está acima. O que está abaixo entra quando a data da campanha avançar.
-      </p>
+      {rehearsing
+        ? (
+          <p className="now__hint now__hint--rehearsal" role="status">
+            Os jogadores ainda não veem isto.
+            <button type="button" className="now__action" onClick={() => rehearsal.onMove(0)}>Voltar para agora</button>
+          </p>
+        )
+        : (
+          <p className="now__hint">
+            {viewer} o que está acima.
+            {rehearsal ? ' Arraste a bolinha na linha para ensaiar os próximos horários.' : ' O que está abaixo entra quando a data da campanha avançar.'}
+          </p>
+        )}
     </div>
   )
 }
@@ -216,6 +281,13 @@ NowBand.propTypes = {
   fresh: PropTypes.array.isRequired,
   hunterName: PropTypes.string,
   onReveal: PropTypes.func.isRequired,
+  rehearsal: PropTypes.shape({
+    realDate: PropTypes.string.isRequired,
+    marks: PropTypes.arrayOf(PropTypes.string).isRequired,
+    span: PropTypes.number.isRequired,
+    minutes: PropTypes.number.isRequired,
+    onMove: PropTypes.func.isRequired,
+  }),
 }
 
 function EditorHint({ editable, children }) {
@@ -227,10 +299,11 @@ EditorHint.propTypes = {
   children: PropTypes.node.isRequired,
 }
 
-export function Timeline({ timeline, date, hunterName, openId, freshSince, showEarlier, onShowEarlier, onToggle, editable = false }) {
+export function Timeline({ timeline, date, hunterName, openId, freshSince, showEarlier, onShowEarlier, onToggle, editable = false, rehearsal = null }) {
   const earlier = [...timeline.origin, ...timeline.past]
   const hidden = showEarlier ? 0 : Math.max(0, earlier.length - EARLIER_SHOWN)
-  const rowProps = { openId, freshSince, date, hunterName, onToggle }
+  const freshLabel = rehearsal?.minutes > 0 ? 'Vai sair' : 'Saiu agora'
+  const rowProps = { openId, freshSince, freshLabel, date, hunterName, onToggle }
   const fresh = timeline.past.filter(freshTest(freshSince, date))
   const reveal = item => {
     if (openId !== item.id) onToggle(item)
@@ -253,16 +326,27 @@ export function Timeline({ timeline, date, hunterName, openId, freshSince, showE
         )
         : <Groups items={earlier.slice(hidden)} {...rowProps} />}
 
-      <NowBand date={date} next={timeline.upcoming[0] ?? null} fresh={fresh} hunterName={hunterName} onReveal={reveal} />
+      <NowBand
+        date={date}
+        next={timeline.upcoming[0] ?? null}
+        fresh={fresh}
+        hunterName={hunterName}
+        onReveal={reveal}
+        rehearsal={rehearsal}
+      />
 
-      {timeline.upcoming.length === 0
-        ? (
-          <p className="timeline__empty">
+      {timeline.upcoming.length === 0 && rehearsal?.minutes > 0 && (
+        <p className="timeline__empty">Nada agendado depois deste horário.</p>
+      )}
+      {timeline.upcoming.length === 0 && !(rehearsal?.minutes > 0) && (
+        <p className="timeline__empty">
             Nada agendado. Para preparar a próxima cena, dê a uma missão ou mensagem um horário depois de agora
-            no <EditorHint editable={editable}>Editor</EditorHint>.
-          </p>
-        )
-        : <div className="timeline__upcoming"><Groups items={timeline.upcoming} {...rowProps} /></div>}
+          no <EditorHint editable={editable}>Editor</EditorHint>.
+        </p>
+      )}
+      {timeline.upcoming.length > 0 && (
+        <div className="timeline__upcoming"><Groups items={timeline.upcoming} {...rowProps} /></div>
+      )}
     </section>
   )
 }
@@ -281,6 +365,7 @@ Timeline.propTypes = {
   onShowEarlier: PropTypes.func.isRequired,
   onToggle: PropTypes.func.isRequired,
   editable: PropTypes.bool,
+  rehearsal: PropTypes.object,
 }
 
 const timelineStyle = css`
@@ -396,7 +481,8 @@ const timelineStyle = css`
     font-family: var(--sans);
     font-size: 11px;
     font-weight: 600;
-    white-space: nowrap;
+    text-align: right;
+    overflow-wrap: anywhere;
   }
 
   .node {
@@ -564,7 +650,7 @@ const timelineStyle = css`
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 8px;
   }
 
   .now__rule {
@@ -573,16 +659,16 @@ const timelineStyle = css`
     display: flex;
     align-items: center;
     gap: 12px;
+  }
 
-    &::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background-color: var(--laranja);
-    }
+  .now__line {
+    flex: 1;
+    height: 1px;
+    background-color: var(--laranja);
   }
 
   .now__label {
+    flex-shrink: 0;
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -620,10 +706,117 @@ const timelineStyle = css`
     to { transform: scale(1); opacity: 0; }
   }
 
+  .is-rehearsal .now__label {
+    background-color: var(--asfalto);
+    color: var(--laranja);
+    box-shadow: inset 0 0 0 1.5px var(--laranja);
+  }
+
+  .is-rehearsal .now__dot {
+    background-color: var(--laranja);
+  }
+
+  .scrub {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    height: 32px;
+  }
+
+  .scrub__marks {
+    position: absolute;
+    inset: 0 9px;
+    pointer-events: none;
+
+    span {
+      position: absolute;
+      top: 50%;
+      left: calc(var(--at) * 100%);
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background-color: var(--apagado);
+      transform: translate(-50%, -50%);
+    }
+
+    .is-reached {
+      background-color: var(--laranja);
+    }
+  }
+
+  input[type='range'] {
+    position: relative;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    height: 32px;
+    margin: 0;
+    background: transparent;
+    cursor: grab;
+  }
+
+  input[type='range']:active {
+    cursor: grabbing;
+  }
+
+  input[type='range']::-webkit-slider-runnable-track {
+    height: 2px;
+    background:
+      linear-gradient(to right, var(--laranja) var(--fill), transparent var(--fill)),
+      repeating-linear-gradient(to right, rgb(255 107 26 / 45%) 0 6px, transparent 6px 10px);
+  }
+
+  input[type='range']::-moz-range-track {
+    height: 2px;
+    background:
+      linear-gradient(to right, var(--laranja) var(--fill), transparent var(--fill)),
+      repeating-linear-gradient(to right, rgb(255 107 26 / 45%) 0 6px, transparent 6px 10px);
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    margin-top: -8px;
+    border-radius: 50%;
+    background-color: var(--laranja);
+    box-shadow: 0 0 0 4px var(--asfalto);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  input[type='range']::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background-color: var(--laranja);
+    box-shadow: 0 0 0 4px var(--asfalto);
+  }
+
+  input[type='range']:hover::-webkit-slider-thumb,
+  input[type='range']:active::-webkit-slider-thumb {
+    transform: scale(1.15);
+  }
+
+  input[type='range']:focus-visible {
+    outline: none;
+  }
+
+  input[type='range']:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px var(--asfalto), 0 0 0 6px var(--laranja);
+  }
+
+  input[type='range']:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 4px var(--asfalto), 0 0 0 6px var(--laranja);
+  }
+
   .now__clock {
     display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
-    gap: 12px;
+    gap: 4px 12px;
   }
 
   .now__hour {
@@ -635,6 +828,11 @@ const timelineStyle = css`
   .now__day {
     font-size: 15px;
     font-weight: 600;
+    color: var(--apagado);
+  }
+
+  .now__real {
+    font-size: 12px;
     color: var(--apagado);
   }
 
@@ -656,17 +854,14 @@ const timelineStyle = css`
   }
 
   .now__next {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
     margin-left: -10px;
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-radius: 12px;
     background: none;
     color: var(--texto);
     text-align: left;
-    font-weight: 400;
+    font-size: 15px;
+    font-weight: 600;
     transition: background-color 0.2s ease;
   }
 
@@ -675,21 +870,34 @@ const timelineStyle = css`
   }
 
   .now__next-label {
-    font-size: 12px;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--apagado);
-  }
-
-  .now__next-item {
-    font-size: 15px;
-    font-weight: 600;
   }
 
   .now__hint {
     max-width: 62ch;
     font-size: 12px;
-    line-height: 1.4;
+    line-height: 1.5;
     color: var(--apagado);
+  }
+
+  .now__hint--rehearsal {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 14px;
+    font-size: 13px;
+    color: var(--texto);
+  }
+
+  .now__action {
+    padding: 4px 0;
+    background: none;
+    color: var(--laranja);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 
   @media (prefers-reduced-motion: reduce) {

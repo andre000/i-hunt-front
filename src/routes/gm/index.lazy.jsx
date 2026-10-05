@@ -1,5 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import { useEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { createLazyFileRoute, Link } from '@tanstack/react-router'
 import { useSelector } from 'react-redux'
 import { css } from '@emotion/react'
@@ -14,6 +15,7 @@ import { CampaignProblems, SyncStatus } from '../../components/gm/CampaignHealth
 import { MapPanel } from '../../components/gm/MapPanel'
 import { OpenCampaign } from '../../components/gm/OpenCampaign'
 import { gmView } from '../../campaign/gm'
+import { addMinutes, time } from '../../campaign/time'
 import { attempt, safeStorage } from '../../campaign/storage'
 
 export const Route = createLazyFileRoute('/gm/')({
@@ -120,6 +122,51 @@ JumpToNow.propTypes = {
   date: PropTypes.string.isRequired,
 }
 
+function scrollParent(element) {
+  for (let node = element?.parentElement; node; node = node.parentElement) {
+    const { overflowY } = getComputedStyle(node)
+    if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) return node
+  }
+  return null
+}
+
+function keepNowInPlace(update) {
+  const before = document.getElementById('gm-agora')?.getBoundingClientRect().top
+  flushSync(update)
+  const band = document.getElementById('gm-agora')
+  const scroller = scrollParent(band)
+  if (band && scroller && before !== undefined) scroller.scrollTop += band.getBoundingClientRect().top - before
+}
+
+const EASE_OUT = 'cubic-bezier(0.16, 1, 0.3, 1)'
+
+function timelineRows() {
+  return [...document.querySelectorAll('.gm__feed li.row')]
+}
+
+function slideRows(update) {
+  const before = new Map(timelineRows().map(row => [row.id, row.getBoundingClientRect().top]))
+  keepNowInPlace(update)
+  if (prefersCalm()) return
+  for (const row of timelineRows()) {
+    const was = before.get(row.id)
+    if (was === undefined) {
+      row.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: EASE_OUT })
+      continue
+    }
+    const delta = was - row.getBoundingClientRect().top
+    if (Math.abs(delta) > 1) {
+      row.animate?.([{ transform: `translateY(${delta}px)` }, { transform: 'none' }], { duration: 450, easing: EASE_OUT })
+    }
+  }
+}
+
+const MINUTE = 60 * 1000
+
+function rehearsedCampaign(data, date) {
+  return date ? { ...data, campaign: { ...data.campaign, date } } : data
+}
+
 function CampaignView({ data, desktop }) {
   const [hunterId, setHunterId] = useState(null)
   const [openId, setOpenId] = useState(null)
@@ -128,13 +175,36 @@ function CampaignView({ data, desktop }) {
   const [scrollTarget, setScrollTarget] = useState(null)
   const campaignUrl = useSelector(state => state.campaign.campaignUrl)
   const wide = useWideScreen()
-  const view = gmView(data, { hunterId })
-  const freshSince = useLastSeenDate(view.date, campaignUrl)
+  const [offset, setOffset] = useState(0)
+  const realView = gmView(data, { hunterId })
+  const marks = [...new Set(realView.timeline.upcoming.map(item => item.at))]
+  const realTime = time(realView.date)
+  const span = marks.length > 0 ? Math.ceil((time(marks.at(-1)) - realTime) / MINUTE) : 0
+  const minutes = Math.min(offset, span)
+  const rehearsalDate = minutes > 0 ? addMinutes(realView.date, minutes) : null
+  const view = rehearsalDate ? gmView(rehearsedCampaign(data, rehearsalDate), { hunterId }) : realView
+  const lastSeen = useLastSeenDate(realView.date, campaignUrl)
+  const freshSince = rehearsalDate ? realView.date : lastSeen
   const hunterName = view.hunters.find(({ hunter }) => hunter.id === hunterId)?.hunter.name ?? null
+  const reached = at => marks.filter(mark => time(mark) <= realTime + at * MINUTE).length
+  const rehearse = next => {
+    if (reached(next) === reached(minutes)) setOffset(next)
+    else slideRows(() => setOffset(next))
+  }
 
   useEffect(() => {
+    setOffset(0)
     if (desktop) goToNow('auto')
-  }, [desktop, view.date])
+  }, [desktop, realView.date])
+
+  useEffect(() => {
+    if (minutes === 0) return undefined
+    const onKey = event => {
+      if (event.key === 'Escape') slideRows(() => setOffset(0))
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [minutes])
 
   useEffect(() => {
     if (!scrollTarget) return
@@ -192,8 +262,17 @@ function CampaignView({ data, desktop }) {
           onShowEarlier={() => setShowEarlier(true)}
           onToggle={toggle}
           editable={desktop}
+          rehearsal={marks.length > 0
+            ? {
+              realDate: realView.date,
+              marks,
+              span,
+              minutes,
+              onMove: rehearse,
+            }
+            : null}
         />
-        <JumpToNow date={view.date} />
+        <JumpToNow date={realView.date} />
       </div>
 
       {wide && <div className="gm__map">{map}</div>}

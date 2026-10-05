@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { relativeToCampaign, timeLeft } from './time'
+import { addMinutes, relativeToCampaign, timeLeft } from './time'
 
 const CAMPAIGN_DATE = '2026-10-04T21:00:00-03:00'
 
@@ -28,5 +28,13 @@ describe('timeLeft', () => {
 
   it('returns null once the deadline has passed', () => {
     expect(timeLeft('2026-10-04T20:00:00-03:00', CAMPAIGN_DATE)).toBeNull()
+  })
+})
+
+describe('addMinutes', () => {
+  it('keeps the time zone written in the campaign file', () => {
+    expect(addMinutes(CAMPAIGN_DATE, 150)).toBe('2026-10-04T23:30:00-03:00')
+    expect(addMinutes(CAMPAIGN_DATE, 24 * 60)).toBe('2026-10-05T21:00:00-03:00')
+    expect(addMinutes('2026-10-04T21:00:00Z', 30)).toBe('2026-10-04T21:30:00Z')
   })
 })

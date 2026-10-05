@@ -42,3 +42,10 @@ export function campaignClock(isoDate) {
   const weekday = parts.weekday.charAt(0).toUpperCase() + parts.weekday.slice(1)
   return { day: `${weekday} ${parts.day} ${parts.month}`, hour: `${parts.hour}:${parts.minute}` }
 }
+
+export function addMinutes(isoDate, minutes) {
+  const zone = isoDate.match(/([+-])(\d{2}):(\d{2})$/)
+  const zoneMinutes = zone ? (zone[1] === '-' ? -1 : 1) * (Number(zone[2]) * 60 + Number(zone[3])) : 0
+  const local = new Date(time(isoDate) + (minutes + zoneMinutes) * MINUTE).toISOString().slice(0, 19)
+  return `${local}${zone ? zone[0] : 'Z'}`
+}

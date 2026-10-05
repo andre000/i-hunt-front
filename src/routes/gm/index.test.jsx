@@ -45,7 +45,7 @@ describe('GM view', () => {
   it('names the next scheduled item at Agora and opens it', async () => {
     await renderApp({ path: '/gm', hunterId: null, body: campaignWithHistory() })
 
-    const next = await screen.findByRole('button', { name: /Próximo, em 2h/ })
+    const next = await screen.findByRole('button', { name: /Próximo em 2h/ })
     expect(within(next).getByText('Padre Júlio → Todos')).toBeTruthy()
     fireEvent.click(next)
     expect(screen.getByText('Ainda não.').closest('button').getAttribute('aria-expanded')).toBe('true')
@@ -71,6 +71,39 @@ describe('GM view', () => {
 
     expect(await screen.findByText('Acabou de sair: 3 mensagens.')).toBeTruthy()
     expect(window.localStorage.getItem('ihunt.gm.seenDate:https://pub-123.r2.dev/campanha.json')).toBe('2026-10-04T21:00:00-03:00')
+  })
+
+  it('rehearses a later date without changing the campaign', async () => {
+    await renderApp({ path: '/gm', hunterId: null, body: campaignWithHistory() })
+
+    const slider = await screen.findByLabelText('Ensaiar a data da campanha')
+    expect(slider.max).toBe('720')
+    fireEvent.change(slider, { target: { value: '90' } })
+    expect(screen.queryByText('Ensaio')).toBeTruthy()
+    expect(screen.queryByText('Vai sair')).toBeNull()
+
+    fireEvent.change(slider, { target: { value: '150' } })
+    expect(screen.getByText(/Os jogadores ainda não veem isto/)).toBeTruthy()
+    expect(screen.getByText('Até aqui, saem: 1 mensagem.')).toBeTruthy()
+    expect(screen.getByText('Vai sair')).toBeTruthy()
+    const text = screen.getByRole('region', { name: 'Linha do tempo' }).textContent
+    expect(text.indexOf('Ainda não.')).toBeLessThan(text.indexOf('Ensaio'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar para agora' }))
+    expect(screen.queryByText('Ensaio')).toBeNull()
+    expect(screen.getByLabelText(/^Data da campanha:/).getAttribute('datetime')).toBe('2026-10-04T21:00:00-03:00')
+  })
+
+  it('jumps between scheduled times with the arrow keys', async () => {
+    await renderApp({ path: '/gm', hunterId: null, body: campaignWithHistory() })
+
+    const slider = await screen.findByLabelText('Ensaiar a data da campanha')
+    fireEvent.keyDown(slider, { key: 'ArrowRight' })
+    expect(slider.value).toBe('120')
+    fireEvent.keyDown(slider, { key: 'ArrowRight' })
+    expect(slider.value).toBe('720')
+    fireEvent.keyDown(slider, { key: 'ArrowLeft' })
+    expect(slider.value).toBe('120')
   })
 
   it('opens an item to show all of it', async () => {
