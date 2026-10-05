@@ -39,6 +39,11 @@ export function initialEditorState(saved = null) {
   }
 }
 
+function edit(state, change) {
+  state.draft = change(state.draft)
+  state.unsaved = true
+}
+
 function open(state, draft, fileName) {
   Object.assign(state, { draft, fileName, unsaved: false, started: true, loading: false, error: null })
 }
@@ -54,46 +59,36 @@ const editorSlice = createSlice({
       Object.assign(state, initialEditorState(), { started: true })
     },
     campaignDateAdvanced(state) {
-      state.draft = advanceToNextScheduled(state.draft)
-      state.unsaved = true
+      edit(state, draft => advanceToNextScheduled(draft))
     },
     itemAdded(state, { payload }) {
-      state.draft = addItem(state.draft, payload.section, payload.fields)
-      state.unsaved = true
+      edit(state, draft => addItem(draft, payload.section, payload.fields))
     },
     itemUpdated(state, { payload }) {
-      state.draft = updateItem(state.draft, payload.section, payload.index, payload.changes)
-      state.unsaved = true
+      edit(state, draft => updateItem(draft, payload.section, payload.index, payload.changes))
     },
     missionPositioned(state, { payload }) {
-      state.draft = setMissionPosition(state.draft, payload.index, payload.position)
-      state.unsaved = true
+      edit(state, draft => setMissionPosition(draft, payload.index, payload.position))
     },
     messageAdded(state, { payload }) {
-      state.draft = addMessage(state.draft, payload)
-      state.unsaved = true
+      edit(state, draft => addMessage(draft, payload))
     },
     itemMoved(state, { payload }) {
-      state.draft = moveItem(state.draft, payload.section, payload.from, payload.to)
-      state.unsaved = true
+      edit(state, draft => moveItem(draft, payload.section, payload.from, payload.to))
     },
     itemRemoved(state, { payload }) {
-      state.draft = removeItem(state.draft, payload.section, payload.index)
-      state.unsaved = true
+      edit(state, draft => removeItem(draft, payload.section, payload.index))
     },
     hunterRemoved(state, { payload }) {
-      state.draft = removeHunter(state.draft, payload)
-      state.unsaved = true
+      edit(state, draft => removeHunter(draft, payload))
     },
     npcRemoved(state, { payload }) {
       const result = removeNpc(state.draft, payload)
       if (!result.ok) return
-      state.draft = result.draft
-      state.unsaved = true
+      edit(state, () => result.draft)
     },
     campaignEdited(state, { payload }) {
-      state.draft = updateCampaign(state.draft, payload)
-      state.unsaved = true
+      edit(state, draft => updateCampaign(draft, payload))
     },
   },
   extraReducers: (builder) => {
