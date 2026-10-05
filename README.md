@@ -26,3 +26,12 @@ Serve the build locally for testing:
 ```bash
 pnpm preview
 ```
+
+## Deploy
+
+The app is served as static assets by a Cloudflare Worker (`wrangler.jsonc`). Unknown paths fall back to `index.html`, so routes like `/gm` open directly.
+
+```bash
+pnpm wrangler login
+pnpm run deploy
+```
