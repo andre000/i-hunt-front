@@ -390,15 +390,27 @@ describe('messages', () => {
   it('starts a message from a NPC to everyone, at the campaign date', () => {
     const draft = addMessage(draftFrom(validCampaign()), { npc: 'padre' })
 
-    expect(draft.messages.at(-1)).toEqual({ id: 'msg-padre', npc: 'padre', to: 'all', sentAt: '2026-10-04T21:00:00-03:00', text: '' })
+    expect(draft.messages.at(-1)).toEqual({ id: expect.stringMatching(/^msg-padre-[a-z0-9]+$/), npc: 'padre', to: 'all', sentAt: '2026-10-04T21:00:00-03:00', text: '' })
     expect(messageScheduled(draft, 5)).toBe(false)
   })
 
-  it('never repeats a message id', () => {
-    let draft = addMessage(draftFrom(validCampaign()), { npc: 'padre' })
-    draft = addMessage(draft, { npc: 'padre' })
+  it('never repeats a message id, even when written in the same instant', () => {
+    const now = new Date('2026-10-05T15:00:00Z')
+    let draft = addMessage(draftFrom(validCampaign()), { npc: 'padre' }, now)
+    draft = addMessage(draft, { npc: 'padre' }, now)
 
-    expect(draft.messages.slice(-2).map(message => message.id)).toEqual(['msg-padre', 'msg-padre-2'])
+    const [first, second] = draft.messages.slice(-2).map(message => message.id)
+    expect(first).not.toBe(second)
+  })
+
+  it('never reuses the id of a deleted message, so players see the new one as unread', () => {
+    let draft = addMessage(draftFrom(validCampaign()), { npc: 'padre' }, new Date('2026-10-05T15:00:00Z'))
+    const deletedId = draft.messages.at(-1).id
+    draft = removeItem(draft, 'messages', 5)
+
+    draft = addMessage(draft, { npc: 'padre' }, new Date('2026-10-05T15:07:00Z'))
+
+    expect(draft.messages.at(-1).id).not.toBe(deletedId)
   })
 
   it('is Agendado when sent after the campaign date', () => {

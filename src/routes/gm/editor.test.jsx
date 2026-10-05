@@ -437,7 +437,7 @@ describe('Mensagens', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Adicionar' }))
     fireEvent.change(screen.getByLabelText('Texto'), { target: { value: 'Venham todos.' } })
 
-    expect(messages(store).at(-1)).toEqual({ id: 'msg-padre', npc: 'padre', to: 'all', sentAt: '2026-10-04T21:00:00-03:00', text: 'Venham todos.' })
+    expect(messages(store).at(-1)).toEqual({ id: expect.stringMatching(/^msg-padre-/), npc: 'padre', to: 'all', sentAt: '2026-10-04T21:00:00-03:00', text: 'Venham todos.' })
     expect(screen.getByLabelText('Hora').value).toBe('2026-10-04T21:00')
     expect(screen.queryByText('Agendado', { selector: '.editor__meta *' })).toBeNull()
   })

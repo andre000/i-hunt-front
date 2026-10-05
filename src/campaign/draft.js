@@ -111,8 +111,9 @@ export function parseCoordinates(text) {
   return { lat: numbers[0], lng: numbers[1] }
 }
 
-export function addMessage(draft, { npc }) {
-  const message = { id: uniqueId(draft, 'messages', `msg-${npc}`), npc, to: 'all', sentAt: draft.campaign.date, text: '' }
+export function addMessage(draft, { npc }, now = new Date()) {
+  // The device stores read message ids, so a reused id would show a new message as already read.
+  const message = { id: uniqueId(draft, 'messages', `msg-${npc}-${now.getTime().toString(36)}`), npc, to: 'all', sentAt: draft.campaign.date, text: '' }
   return { ...draft, messages: [...draft.messages, message] }
 }
 
