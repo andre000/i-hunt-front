@@ -70,3 +70,14 @@ describe('demo bar', () => {
     expect(screen.queryByRole('button', { name: 'Avançar a noite' })).toBeNull()
   })
 })
+
+describe('demo restart from a deep screen', () => {
+  it('lands on the home map after choosing a hunter again', async () => {
+    await renderApp({ path: '/mission/culto-guaiba', demo: { hunterId: 'ana', night: 3 } })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Recomeçar demo' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Ana Souza/ }))
+
+    expect(await screen.findByText('Seus ganhos')).toBeTruthy()
+  })
+})
