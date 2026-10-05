@@ -35,3 +35,7 @@ The app is served as static assets by a Cloudflare Worker (`wrangler.jsonc`). Un
 pnpm wrangler login
 pnpm run deploy
 ```
+
+## Demo
+
+Open `/demo` to try the player app with the example campaign (`public/exemplo-campanha.json`). The demo keeps its state in `sessionStorage` under `ihunt.demo.*`, so it never touches a real player's campaign. The bar at the top advances the campaign date one night at a time; "Sair" leaves the demo.

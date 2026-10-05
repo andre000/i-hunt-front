@@ -24,7 +24,7 @@ export function DemoWelcome() {
       <h2>Try this</h2>
       <ol>
         {STEPS.map(step => <li key={step}>{step}</li>)}
-        <li>Tap <b lang="pt-BR">Avançar a noite</b> in the top bar to move the story forward.</li>
+        <li><span>Tap <b lang="pt-BR">Avançar a noite</b> in the top bar to move the story forward.</span></li>
       </ol>
       <p className="welcome__note">The app itself is in Brazilian Portuguese, like the campaign it runs.</p>
       <button type="button" className="button primary" onClick={() => dispatch(dismissDemoIntro())}>
