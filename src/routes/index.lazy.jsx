@@ -48,9 +48,12 @@ SelectedMission.propTypes = {
   campaignDate: PropTypes.string.isRequired,
 }
 
+const NO_FRESH = []
+
 function Index() {
   const navigate = useNavigate()
   const { data, hunterId } = useSelector(state => state.campaign)
+  const freshIds = useSelector(state => state.campaign.demo?.changes?.newMissionIds) ?? NO_FRESH
   const { open } = homeView(data, hunterId)
   const { earnings } = hunterProfile(data, hunterId)
   const [selectedId, setSelectedId] = useState(null)
@@ -68,6 +71,7 @@ function Index() {
             missions={onMap}
             selectedId={selected?.id}
             onSelect={setSelectedId}
+            freshIds={freshIds}
           />
         )}
         <div className="home__top">

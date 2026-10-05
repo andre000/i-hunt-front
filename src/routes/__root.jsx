@@ -6,7 +6,7 @@ import { HunterChoice } from '../components/HunterChoice'
 import { InviteConfirmation } from '../components/InviteConfirmation'
 import { SyncNotice } from '../components/SyncNotice'
 import { DemoWelcome } from '../components/DemoWelcome'
-import { DemoErrorActions } from '../components/DemoBar'
+import { DemoBar, DemoErrorActions } from '../components/DemoBar'
 import { findHunter } from '../campaign/hunters'
 
 export const Route = createRootRoute({
@@ -56,10 +56,8 @@ PlayerScreen.propTypes = {
   demo: PropTypes.shape({ introSeen: PropTypes.bool.isRequired }),
 }
 
-function Root() {
+function RootScreen({ isGmView }) {
   const { status, data, hunterId, pendingInvite, demo } = useSelector(state => state.campaign)
-  const pathname = useLocation({ select: location => location.pathname })
-  const isGmView = pathname === '/gm' || pathname.startsWith('/gm/')
 
   if (pendingInvite) return <InviteConfirmation />
   if (status === 'loading') return <CampaignStatus title="Carregando campanha…" />
@@ -67,4 +65,22 @@ function Root() {
   if (isGmView) return <Outlet />
   if (status !== 'ready') return <LoadFailed demo={Boolean(demo)} />
   return <PlayerScreen data={data} hunterId={hunterId} demo={demo} />
+}
+
+RootScreen.propTypes = {
+  isGmView: PropTypes.bool.isRequired,
+}
+
+function Root() {
+  const demo = useSelector(state => state.campaign.demo)
+  const pathname = useLocation({ select: location => location.pathname })
+  const isGmView = pathname === '/gm' || pathname.startsWith('/gm/')
+  const showBar = demo?.introSeen && !isGmView
+
+  return (
+    <>
+      {showBar && <DemoBar />}
+      <RootScreen isGmView={isGmView} />
+    </>
+  )
 }

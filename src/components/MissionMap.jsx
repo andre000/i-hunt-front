@@ -21,7 +21,9 @@ function revealDelayAt(map, point, revealFrom) {
   return Math.max(0, revealFrom.at + distance / revealFrom.speed - performance.now())
 }
 
-export function MissionMap({ missions, selectedId, onSelect, interactive = true, zoom, revealFrom, className }) {
+const NO_IDS = []
+
+export function MissionMap({ missions, selectedId, onSelect, interactive = true, zoom, revealFrom, freshIds = NO_IDS, className }) {
   const element = useRef(null)
   const map = useRef(null)
   const layer = useRef(null)
@@ -56,7 +58,7 @@ export function MissionMap({ missions, selectedId, onSelect, interactive = true,
     }
   }, [interactive])
 
-  const markersKey = `${selectedId}|${missions.map(m => `${m.id}:${m.status}:${m.position.lat},${m.position.lng}`).join('|')}`
+  const markersKey = `${selectedId}|${freshIds.join(',')}|${missions.map(m => `${m.id}:${m.status}:${m.position.lat},${m.position.lng}`).join('|')}`
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(drawMarkers, [markersKey])
 
@@ -75,7 +77,7 @@ export function MissionMap({ missions, selectedId, onSelect, interactive = true,
     }
     missions.forEach((mission, index) => {
       const point = points[index]
-      const delay = revealDelayAt(map.current, point, revealFrom)
+      const delay = freshIds.includes(mission.id) ? 0 : revealDelayAt(map.current, point, revealFrom)
       const marker = L.marker(point, {
         icon: L.divIcon({ className: '', html: markerHtml(mission, mission.id === selectedId, delay), iconSize: [28, 28], iconAnchor: [14, 14] }),
         title: mission.name,
@@ -102,6 +104,7 @@ MissionMap.propTypes = {
   onSelect: PropTypes.func,
   interactive: PropTypes.bool,
   zoom: PropTypes.number,
+  freshIds: PropTypes.arrayOf(PropTypes.string),
   revealFrom: PropTypes.shape({ x: PropTypes.number.isRequired, y: PropTypes.number.isRequired, at: PropTypes.number.isRequired, speed: PropTypes.number.isRequired }),
   className: PropTypes.string,
 }

@@ -29,3 +29,44 @@ describe('demo entry', () => {
     expect(leaveDemo).toHaveBeenCalledOnce()
   })
 })
+
+describe('demo bar', () => {
+  it('advances the night and shows what changed', async () => {
+    await renderApp({ path: '/search', demo: { hunterId: 'ana' } })
+
+    expect(await screen.findByText('Noite 1')).toBeTruthy()
+    expect(screen.queryByText('Culto às margens do Guaíba')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Avançar a noite' }))
+
+    expect(await screen.findByText('Culto às margens do Guaíba')).toBeTruthy()
+    expect(screen.getByText('Noite 2')).toBeTruthy()
+    expect(screen.getByRole('status').textContent).toBe('Nova caça no mapa · 1 mensagem nova')
+  })
+
+  it('offers a restart on the last night that goes back to the hunter choice', async () => {
+    await renderApp({ demo: { hunterId: 'ana', night: 3 } })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Recomeçar demo' }))
+
+    expect(await screen.findByText('Quem é você nesta campanha?')).toBeTruthy()
+    expect(screen.getByText('Noite 1')).toBeTruthy()
+  })
+
+  it('leaves the demo from the bar', async () => {
+    const { leaveDemo, sync } = await renderApp({ demo: { hunterId: 'ana' } })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Sair' }))
+
+    await screen.findByText('Noite 1')
+    expect(leaveDemo).toHaveBeenCalledOnce()
+    expect(sync.getHunterId()).toBeNull()
+  })
+
+  it('is hidden on the GM view', async () => {
+    await renderApp({ path: '/gm', demo: { hunterId: 'ana' } })
+
+    await screen.findByText('Noites de Porto Alegre')
+    expect(screen.queryByRole('button', { name: 'Avançar a noite' })).toBeNull()
+  })
+})
