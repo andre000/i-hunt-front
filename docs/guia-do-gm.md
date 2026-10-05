@@ -2,6 +2,8 @@
 
 Este guia mostra como montar a campanha, publicá-la e levar os jogadores até ela. O app #iHunt só lê o arquivo da campanha: tudo o que os jogadores veem sai dele, e você é a única fonte da verdade.
 
+Você pode montar o arquivo pelo **Editor da campanha**, dentro do app (seção 2), ou escrevê-lo à mão (seções 1 e 3).
+
 ## 1. A estrutura do arquivo
 
 A campanha é um arquivo JSON com seis partes:
@@ -30,7 +32,31 @@ Cada campo está explicado no próprio schema (`https://<endereço do app>/campa
 - **Posição no mapa** (`position`): opcional. Clique com o botão direito no lugar, no Google Maps ou no OpenStreetMap, e copie os dois números: `"position": { "lat": -30.0386, "lng": -51.2155 }`. Missão sem posição aparece só na lista, fora do mapa.
 - **Mensagens**: `"to": "all"` vai para todos os hunters; `"to": ["ana", "beto"]` vai só para esses. Um jogador nunca vê mensagem enviada só para outros hunters.
 
-## 2. Validar no editor
+## 2. Editar pelo Editor da campanha
+
+O Editor da campanha monta o arquivo por formulários e cuida de ids, fusos e referências. Ele funciona só no computador: no celular, `/gm/editor` mostra "Abra no computador para editar".
+
+**Abrir.** Na Visão do GM, use **Editar**, ou abra `https://<endereço do app>/gm/editor`. Se o aparelho já abriu um Convite, o editor carrega a campanha publicada. Sem campanha, ou em **Trocar rascunho**, escolha:
+
+- **Carregar a campanha publicada** ou cole o **endereço do arquivo no R2**;
+- **Abrir arquivo do computador**, para continuar um arquivo feito fora do app;
+- **Começar em branco**.
+
+O que você edita é o **Rascunho**. Ele fica salvo no navegador a cada mudança: pode fechar a aba e voltar depois. Antes de carregar outra campanha, o editor pergunta "Substituir o rascunho atual?". **Descartar** apaga o rascunho.
+
+**Editar.** À esquerda ficam as seções (Campanha, Hunters, Missões, NPCs, Mensagens) com os itens; o item escolhido abre à direita. Use **+** para adicionar.
+
+- O **id** é criado sozinho a partir do nome (ex.: "João da Silva" vira `joao-da-silva`) e não muda quando você renomeia.
+- **Datas** são digitadas sem fuso: o editor usa o fuso da data da campanha.
+- **Missões**: hunters e "perto" se escolhem por lista; a posição se escolhe clicando no mapa (ou colando "latitude, longitude"); arraste as missões na lista para mudar a ordem que os jogadores veem.
+- **Apagar um hunter** mostra onde ele aparece e o tira de todas as missões e mensagens. Um NPC com mensagens não pode ser apagado.
+- Missões e mensagens com horário depois da data da campanha mostram **Agendado**. No topo, **Avançar até o próximo agendado** leva a data da campanha até o próximo deles.
+
+**Erros.** O topo mostra quantos erros o rascunho tem e a lista deles. Clique num erro para abrir o item com o problema.
+
+**Baixar e publicar.** **Baixar** só funciona sem erros. O arquivo sai com o mesmo nome do publicado (ou `campanha.json`), com a linha `$schema` e formatado. Envie esse arquivo para o R2 como na seção 5. O aviso **Mudanças não baixadas** lembra que o rascunho mudou depois do último download. O editor nunca publica sozinho.
+
+## 3. Validar no editor de texto
 
 Coloque esta linha no topo do arquivo:
 
@@ -42,18 +68,18 @@ Editores como o VS Code passam a sublinhar os erros e a mostrar a explicação d
 
 O app valida de novo ao ler. Se o arquivo publicado tiver erro, os jogadores continuam vendo a última versão válida, e a Visão do GM mostra cada erro com o campo e o motivo.
 
-## 3. Avançar a data da campanha
+## 4. Avançar a data da campanha
 
 `campaign.date` é o "agora" da ficção. Prazos e horários usam essa data, não o relógio real, então nada expira entre uma sessão e outra.
 
 Missões com `postedAt` e mensagens com `sentAt` **depois** da data da campanha ficam **agendadas**: os jogadores não as veem. Para preparar uma cena:
 
 1. Antes da sessão, escreva a mensagem ou a missão com um horário depois da data da campanha.
-2. Na hora certa, avance `campaign.date` até esse horário e publique de novo.
+2. Na hora certa, avance `campaign.date` até esse horário e publique de novo. No Editor da campanha, use **Avançar até o próximo agendado** e baixe o arquivo.
 
 Em até cerca de 30 segundos, o conteúdo aparece no app dos jogadores, sem eles recarregarem nada.
 
-## 4. Publicar no Cloudflare R2
+## 5. Publicar no Cloudflare R2
 
 Configuração, uma vez só:
 
@@ -76,7 +102,7 @@ Para publicar a campanha, envie o arquivo (ex.: `campanha.json`) para o bucket p
 
 Atenção: qualquer pessoa com esse endereço lê o arquivo inteiro, inclusive o conteúdo agendado. Não guarde segredos nele. A Cloudflare indica o `r2.dev` para uso fora de produção e limita o número de acessos, o que não é problema para uma mesa.
 
-## 5. Gerar o Convite
+## 6. Gerar o Convite
 
 O Convite é o link do app com o endereço do arquivo:
 
