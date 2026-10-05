@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
 import { useDispatch } from 'react-redux'
-import { Avatar } from '../Avatar'
 import { hunterImpact } from '../../campaign/draft'
 import { hunterRemoved, itemUpdated } from '../../store/editor'
+import { AvatarField } from './fields'
 
-const optional = (value) => (value.trim() === '' ? undefined : value)
 const optionalNumber = (value) => (value === '' ? undefined : Number(value))
 
 function DeleteHunter({ draft, index, onCancel, onRemoved }) {
@@ -75,15 +74,7 @@ export function HunterForm({ draft, index, onRemoved }) {
         <span>Nome</span>
         <input value={hunter.name ?? ''} onChange={e => update({ name: e.target.value })} />
       </label>
-      <div className="editor__avatar">
-        <span role="img" aria-label="Prévia do avatar">
-          <Avatar person={{ name: hunter.name || '?', avatar: hunter.avatar }} size={56} />
-        </span>
-        <label>
-          <span>Avatar (endereço da imagem)</span>
-          <input type="url" value={hunter.avatar ?? ''} onChange={e => update({ avatar: optional(e.target.value) })} />
-        </label>
-      </div>
+      <AvatarField person={hunter} onChange={avatar => update({ avatar })} />
       <label className="editor__short">
         <span>Avaliação (0 a 5)</span>
         <input

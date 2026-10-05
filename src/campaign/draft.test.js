@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addItem, advanceToNextScheduled, blankDraft, hunterImpact, removeHunter, updateItem, dateFromInput, dateToInput, draftErrors, nextScheduled, draftFile, draftFileName, draftFrom, readDraftText, updateCampaign } from './draft'
+import { addItem, advanceToNextScheduled, blankDraft, hunterImpact, removeHunter, removeNpc, updateItem, dateFromInput, dateToInput, draftErrors, nextScheduled, draftFile, draftFileName, draftFrom, readDraftText, updateCampaign } from './draft'
 import { validCampaign } from './fixtures'
 
 describe('draftFrom', () => {
@@ -271,5 +271,22 @@ describe('removing a hunter', () => {
     const draft = removeHunter(draftWithAnaEverywhere(), 0)
 
     expect(draftErrors(draft)).toContainEqual(expect.objectContaining({ path: '/messages/1/to' }))
+  })
+})
+
+describe('removing a NPC', () => {
+  it('refuses when the NPC has messages and says how many', () => {
+    const draft = draftFrom(validCampaign())
+
+    expect(removeNpc(draft, 0)).toEqual({ ok: false, messages: 3 })
+  })
+
+  it('removes a NPC without messages', () => {
+    const draft = addItem(draftFrom(validCampaign()), 'npcs', { name: 'Vizinha' })
+
+    const result = removeNpc(draft, 2)
+
+    expect(result.ok).toBe(true)
+    expect(result.draft.npcs.map(npc => npc.id)).toEqual(['dona-rosa', 'padre'])
   })
 })

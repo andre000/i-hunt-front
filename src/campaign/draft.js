@@ -53,6 +53,16 @@ export function updateItem(draft, section, index, changes) {
   return { ...draft, [section]: items }
 }
 
+export function removeItem(draft, section, index) {
+  return { ...draft, [section]: draft[section].filter((_, at) => at !== index) }
+}
+
+export function removeNpc(draft, index) {
+  const { id } = draft.npcs[index]
+  const messages = draft.messages.filter(message => message?.npc === id).length
+  return messages > 0 ? { ok: false, messages } : { ok: true, draft: removeItem(draft, 'npcs', index) }
+}
+
 const includes = (list, id) => Array.isArray(list) && list.includes(id)
 const without = (list, id) => (Array.isArray(list) ? list.filter(item => item !== id) : list)
 
@@ -75,7 +85,7 @@ export function removeHunter(draft, index) {
     return withoutEmpty({ ...mission, hunters: without(mission.hunters, id), nearHunters: without(mission.nearHunters, id) })
   })
   const messages = draft.messages.map(message => (includes(message.to, id) ? { ...message, to: without(message.to, id) } : message))
-  return { ...draft, hunters: draft.hunters.filter((_, at) => at !== index), missions, messages }
+  return { ...removeItem(draft, 'hunters', index), missions, messages }
 }
 
 export function draftErrors(draft) {

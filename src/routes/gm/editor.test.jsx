@@ -249,6 +249,58 @@ describe('Hunters', () => {
   })
 })
 
+describe('NPCs', () => {
+  async function openNpc(name) {
+    const result = await renderApp({ path: '/gm/editor', hunterId: null })
+    const sections = await screen.findByRole('navigation', { name: 'Seções do rascunho' })
+    fireEvent.click(within(sections).getByRole('button', { name }))
+    return result
+  }
+
+  it('adds a NPC with an id made from the name', async () => {
+    const { store } = await renderApp({ path: '/gm/editor', hunterId: null })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Adicionar NPC' }))
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Seu Lúcio' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar' }))
+
+    expect(store.getState().editor.draft.npcs.at(-1)).toEqual({ id: 'seu-lucio', name: 'Seu Lúcio' })
+    expect(screen.getByRole('heading', { level: 1, name: 'Seu Lúcio' })).toBeTruthy()
+  })
+
+  it('edits the name and the avatar with a preview, keeping the id', async () => {
+    const { store } = await openNpc('Dona Rosa')
+
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Dona Rosa Maria' } })
+    fireEvent.change(screen.getByLabelText('Avatar (endereço da imagem)'), { target: { value: 'https://example.com/rosa.png' } })
+
+    expect(screen.getByRole('img', { name: 'Prévia do avatar' }).querySelector('img').getAttribute('src')).toBe('https://example.com/rosa.png')
+    expect(store.getState().editor.draft.npcs[0]).toEqual({ id: 'dona-rosa', name: 'Dona Rosa Maria', avatar: 'https://example.com/rosa.png' })
+  })
+
+  it('refuses to delete a NPC with messages and says how many', async () => {
+    const { store } = await openNpc('Padre Júlio')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar NPC' }))
+
+    expect(screen.getByRole('alert').textContent).toMatch(/Padre Júlio tem 2 mensagens/)
+    expect(store.getState().editor.draft.npcs).toHaveLength(2)
+  })
+
+  it('deletes a NPC without messages after confirming', async () => {
+    const { store } = await renderApp({ path: '/gm/editor', hunterId: null })
+    fireEvent.click(await screen.findByRole('button', { name: 'Adicionar NPC' }))
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Vizinha' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar NPC' }))
+    fireEvent.click(within(screen.getByRole('alertdialog', { name: 'Apagar Vizinha?' })).getByRole('button', { name: 'Apagar' }))
+
+    expect(store.getState().editor.draft.npcs.map(npc => npc.id)).toEqual(['dona-rosa', 'padre'])
+    expect(screen.getByRole('heading', { level: 1, name: 'Campanha' })).toBeTruthy()
+  })
+})
+
 describe('Editor da campanha', () => {
   it('opens the published campaign of the device as the draft', async () => {
     await renderApp({ path: '/gm/editor', hunterId: null })

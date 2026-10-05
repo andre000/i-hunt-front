@@ -7,6 +7,7 @@ import PropTypes from 'prop-types'
 import { CampaignStatus } from '../../components/CampaignStatus'
 import { HunterForm } from '../../components/editor/HunterForm'
 import { NewItemForm } from '../../components/editor/NewItemForm'
+import { NpcForm } from '../../components/editor/NpcForm'
 import { useDesktopWidth } from '../../components/useDesktopWidth'
 import { campaignDateAdvanced, campaignEdited, itemAdded, downloadDraft, draftDiscarded, draftOpened, openDraftFile, openPublishedDraft } from '../../store/editor'
 import { blankDraft, dateFromInput, dateToInput, draftErrors, nextScheduled } from '../../campaign/draft'
@@ -18,7 +19,7 @@ export const Route = createLazyFileRoute('/gm/editor')({
 const SECTIONS = [
   { key: 'hunters', title: 'Hunters', label: item => item.name, add: 'Adicionar hunter', newTitle: 'Novo hunter', Form: HunterForm },
   { key: 'missions', title: 'Missões', label: item => item.name },
-  { key: 'npcs', title: 'NPCs', label: item => item.name },
+  { key: 'npcs', title: 'NPCs', label: item => item.name, add: 'Adicionar NPC', newTitle: 'Novo NPC', Form: NpcForm },
   { key: 'messages', title: 'Mensagens', label: item => item.text },
 ]
 
