@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { renderApp } from '../../test/renderApp'
 import { validCampaign } from '../../campaign/fixtures'
+import { memoryStorage } from '../../test/fakes'
 
 afterEach(() => {
   cleanup()
@@ -12,6 +13,136 @@ function setWidth(width) {
   window.innerWidth = width
   window.dispatchEvent(new Event('resize'))
 }
+
+describe('Rascunho saved in the browser', () => {
+  it('comes back as it was after reloading', async () => {
+    const editorStorage = memoryStorage()
+    await renderApp({ path: '/gm/editor', hunterId: null, editorStorage })
+    fireEvent.change(await screen.findByLabelText('Nome da campanha'), { target: { value: 'Noite em Pelotas' } })
+    cleanup()
+
+    const body = validCampaign()
+    body.campaign.name = 'Mudou no R2'
+    await renderApp({ path: '/gm/editor', hunterId: null, editorStorage, body })
+
+    expect((await screen.findByLabelText('Nome da campanha')).value).toBe('Noite em Pelotas')
+  })
+})
+
+describe('Starting a Rascunho', () => {
+  it('starts a blank campaign', async () => {
+    await renderApp({ path: '/gm/editor', hunterId: null, campaignUrl: null })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Começar em branco' }))
+
+    expect(screen.getByLabelText('Nome da campanha').value).toBe('Nova campanha')
+    expect(screen.getByText('1 erro')).toBeTruthy()
+  })
+
+  it('loads the published campaign from a pasted address', async () => {
+    const { saveFile } = await renderApp({ path: '/gm/editor', hunterId: null, campaignUrl: null })
+
+    fireEvent.change(await screen.findByLabelText('Endereço do arquivo no R2'), { target: { value: 'https://pub-9.r2.dev/noites.json' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Carregar' }))
+
+    expect((await screen.findByLabelText('Nome da campanha')).value).toBe('Noite em Porto Alegre')
+    fireEvent.click(screen.getByRole('button', { name: 'Baixar' }))
+    expect(saveFile.mock.calls[0][0]).toBe('noites.json')
+  })
+
+  it('explains when the pasted address is not readable JSON', async () => {
+    await renderApp({ path: '/gm/editor', hunterId: null, campaignUrl: null, body: '<html>' })
+
+    fireEvent.change(await screen.findByLabelText('Endereço do arquivo no R2'), { target: { value: 'https://pub-9.r2.dev/noites.json' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Carregar' }))
+
+    expect(await screen.findByText(/JSON inválido/)).toBeTruthy()
+  })
+
+  it('opens a campaign file from the computer', async () => {
+    const { saveFile } = await renderApp({ path: '/gm/editor', hunterId: null, campaignUrl: null })
+    const file = new File([JSON.stringify(validCampaign())], 'mesa.json', { type: 'application/json' })
+
+    fireEvent.change(await screen.findByLabelText('Abrir arquivo do computador'), { target: { files: [file] } })
+
+    expect((await screen.findByLabelText('Nome da campanha')).value).toBe('Noite em Porto Alegre')
+    fireEvent.click(screen.getByRole('button', { name: 'Baixar' }))
+    expect(saveFile.mock.calls[0][0]).toBe('mesa.json')
+  })
+
+  it('explains when the file from the computer is not readable JSON', async () => {
+    await renderApp({ path: '/gm/editor', hunterId: null, campaignUrl: null })
+    const file = new File(['não é json'], 'notas.txt')
+
+    fireEvent.change(await screen.findByLabelText('Abrir arquivo do computador'), { target: { files: [file] } })
+
+    expect(await screen.findByText(/O arquivo não é um JSON legível/)).toBeTruthy()
+    expect(screen.queryByLabelText('Nome da campanha')).toBeNull()
+  })
+})
+
+describe('Replacing the Rascunho', () => {
+  async function renameAndChooseBlank() {
+    const result = await renderApp({ path: '/gm/editor', hunterId: null })
+    fireEvent.change(await screen.findByLabelText('Nome da campanha'), { target: { value: 'Noite em Pelotas' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Trocar rascunho' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Começar em branco' }))
+    return result
+  }
+
+  it('asks before replacing the open draft', async () => {
+    await renameAndChooseBlank()
+
+    const dialog = screen.getByRole('alertdialog', { name: 'Substituir o rascunho atual?' })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Substituir' }))
+
+    expect(screen.getByLabelText('Nome da campanha').value).toBe('Nova campanha')
+  })
+
+  it('keeps the draft when the GM cancels', async () => {
+    await renameAndChooseBlank()
+
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancelar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar ao rascunho' }))
+
+    expect(screen.getByLabelText('Nome da campanha').value).toBe('Noite em Pelotas')
+  })
+
+  it('discards the draft after confirming', async () => {
+    const { editorStorage } = await renderApp({ path: '/gm/editor', hunterId: null })
+    await screen.findByLabelText('Nome da campanha')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Descartar' }))
+    fireEvent.click(within(screen.getByRole('alertdialog', { name: 'Descartar o rascunho atual?' })).getByRole('button', { name: 'Descartar' }))
+
+    expect(screen.queryByLabelText('Nome da campanha')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Começar em branco' })).toBeTruthy()
+    expect(editorStorage.keys()).not.toContain('ihunt.editor.draft')
+  })
+})
+
+describe('Mudanças não baixadas', () => {
+  it('is not shown for a draft just loaded', async () => {
+    await renderApp({ path: '/gm/editor', hunterId: null })
+    await screen.findByLabelText('Nome da campanha')
+
+    expect(screen.queryByText('Mudanças não baixadas')).toBeNull()
+  })
+
+  it('shows after a change, survives a reload and goes away after downloading', async () => {
+    const editorStorage = memoryStorage()
+    await renderApp({ path: '/gm/editor', hunterId: null, editorStorage })
+    fireEvent.change(await screen.findByLabelText('Nome da campanha'), { target: { value: 'Noite em Pelotas' } })
+    expect(screen.getByText('Mudanças não baixadas')).toBeTruthy()
+    cleanup()
+
+    await renderApp({ path: '/gm/editor', hunterId: null, editorStorage })
+    expect(await screen.findByText('Mudanças não baixadas')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Baixar' }))
+    await waitFor(() => expect(screen.queryByText('Mudanças não baixadas')).toBeNull())
+  })
+})
 
 describe('Editor da campanha', () => {
   it('opens the published campaign of the device as the draft', async () => {

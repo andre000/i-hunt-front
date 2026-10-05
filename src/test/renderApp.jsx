@@ -8,6 +8,7 @@ import { campaignLoaded } from '../store/campaign'
 import { createSync } from '../campaign/sync'
 import { createDemoSync } from '../campaign/demoSync'
 import { validCampaign } from '../campaign/fixtures'
+import { createDraftStorage } from '../campaign/draftStorage'
 import { memoryStorage, respondWith } from './fakes'
 import example from '../../public/exemplo-campanha.json'
 
@@ -39,11 +40,12 @@ export async function renderApp({
   campaignUrl = CAMPAIGN_URL,
   pendingInvite = null,
   demo = null,
+  editorStorage = memoryStorage(),
 } = {}) {
   const sync = demo ? demoSetup(demo) : realSetup({ body, status, hunterId, campaignUrl })
   const leaveDemo = vi.fn()
   const saveFile = vi.fn()
-  const store = createAppStore({ sync, pendingInvite, leaveDemo, saveFile })
+  const store = createAppStore({ sync, pendingInvite, leaveDemo, saveFile, drafts: createDraftStorage(editorStorage) })
   store.dispatch(campaignLoaded(await sync.load()))
 
   const router = createRouter({ routeTree, history: createMemoryHistory({ initialEntries: [path] }) })
@@ -52,5 +54,5 @@ export async function renderApp({
       <RouterProvider router={router} />
     </Provider>,
   )
-  return { ...view, store, router, sync, leaveDemo, saveFile }
+  return { ...view, store, router, sync, leaveDemo, saveFile, editorStorage }
 }

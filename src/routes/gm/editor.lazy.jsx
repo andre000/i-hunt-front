@@ -6,8 +6,8 @@ import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
 import { CampaignStatus } from '../../components/CampaignStatus'
 import { useDesktopWidth } from '../../components/useDesktopWidth'
-import { campaignEdited, downloadDraft, openPublishedDraft } from '../../store/editor'
-import { draftErrors } from '../../campaign/draft'
+import { campaignEdited, downloadDraft, draftDiscarded, draftOpened, openDraftFile, openPublishedDraft } from '../../store/editor'
+import { blankDraft, draftErrors } from '../../campaign/draft'
 
 export const Route = createLazyFileRoute('/gm/editor')({
   component: EditorPage,
@@ -129,48 +129,165 @@ DraftErrors.propTypes = {
   })).isRequired,
 }
 
+function DraftSources({ campaignUrl, onPick, onCancel }) {
+  const dispatch = useDispatch()
+  const [url, setUrl] = useState('')
+
+  const openFile = (e) => {
+    const [file] = e.target.files
+    e.target.value = ''
+    if (file) onPick(() => dispatch(openDraftFile(file)))
+  }
+
+  return (
+    <section className="editor__sources" aria-label="Abrir um rascunho">
+      <h1>Abrir um rascunho</h1>
+      {campaignUrl && (
+        <button type="button" className="button primary" onClick={() => onPick(() => dispatch(openPublishedDraft()))}>
+          Carregar a campanha publicada
+        </button>
+      )}
+      <form
+        className="editor__url"
+        onSubmit={e => {
+          e.preventDefault()
+          onPick(() => dispatch(openPublishedDraft(url.trim())))
+        }}
+      >
+        <label>
+          <span>Endereço do arquivo no R2</span>
+          <input type="url" required placeholder="https://pub-….r2.dev/campanha.json" value={url} onChange={e => setUrl(e.target.value)} />
+        </label>
+        <button type="submit" className="button secondary">Carregar</button>
+      </form>
+      <div className="editor__choices">
+        <label className="button secondary editor__file">
+          Abrir arquivo do computador
+          <input type="file" accept=".json,application/json" onChange={openFile} />
+        </label>
+        <button type="button" className="button secondary" onClick={() => onPick(() => dispatch(draftOpened({ draft: blankDraft() })))}>
+          Começar em branco
+        </button>
+      </div>
+      {onCancel && (
+        <button type="button" className="editor__link" onClick={onCancel}>Voltar ao rascunho</button>
+      )}
+    </section>
+  )
+}
+
+DraftSources.propTypes = {
+  campaignUrl: PropTypes.string,
+  onPick: PropTypes.func.isRequired,
+  onCancel: PropTypes.func,
+}
+
+function Confirm({ question, confirmLabel, onConfirm, onCancel }) {
+  return (
+    <section className="editor__confirm" role="alertdialog" aria-label={question}>
+      <p>{question}</p>
+      <button type="button" className="button primary" onClick={onConfirm}>{confirmLabel}</button>
+      <button type="button" className="button secondary" onClick={onCancel}>Cancelar</button>
+    </section>
+  )
+}
+
+Confirm.propTypes = {
+  question: PropTypes.string.isRequired,
+  confirmLabel: PropTypes.string.isRequired,
+  onConfirm: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
+}
+
 function Editor() {
   const dispatch = useDispatch()
-  const { status, draft, error } = useSelector(state => state.editor)
+  const { started, draft, error, loading, unsaved } = useSelector(state => state.editor)
+  const campaignUrl = useSelector(state => state.campaign.campaignUrl)
   const [selected, setSelected] = useState({ section: 'campaign' })
+  const [choosing, setChoosing] = useState(false)
+  const [confirm, setConfirm] = useState(null)
   const errors = useMemo(() => (draft ? draftErrors(draft) : []), [draft])
 
   useEffect(() => {
-    if (status === 'empty') dispatch(openPublishedDraft())
-  }, [status, dispatch])
+    if (!started && campaignUrl) dispatch(openPublishedDraft())
+  }, [started, campaignUrl, dispatch])
+
+  const ask = (question, confirmLabel, action) => setConfirm({
+    question,
+    confirmLabel,
+    run: () => {
+      setConfirm(null)
+      setChoosing(false)
+      setSelected({ section: 'campaign' })
+      action()
+    },
+  })
+
+  const replaceDraft = (action) => {
+    if (draft) ask('Substituir o rascunho atual?', 'Substituir', action)
+    else action()
+  }
 
   return (
     <main className="gm-editor" css={editorPage}>
       <div className="editor__top">
         <span className="editor__brand"><span>i</span>Hunt <b>Editor</b></span>
         {draft && (
-          <span className={errors.length > 0 ? 'editor__count editor__count--bad' : 'editor__count'}>
-            {errorCount(errors.length)}
-          </span>
-        )}
-        {draft && (
-          <button
-            type="button"
-            className="button primary editor__download"
-            disabled={errors.length > 0}
-            onClick={() => dispatch(downloadDraft())}
-          >
-            Baixar
-          </button>
+          <>
+            <button type="button" className="editor__link" onClick={() => setChoosing(true)}>Trocar rascunho</button>
+            <button
+              type="button"
+              className="editor__link"
+              onClick={() => ask('Descartar o rascunho atual?', 'Descartar', () => dispatch(draftDiscarded()))}
+            >
+              Descartar
+            </button>
+            <span className="editor__spacer" />
+            {unsaved && <span className="editor__unsaved">Mudanças não baixadas</span>}
+            <span className={errors.length > 0 ? 'editor__count editor__count--bad' : 'editor__count'}>
+              {errorCount(errors.length)}
+            </span>
+            <button
+              type="button"
+              className="button primary editor__download"
+              disabled={errors.length > 0}
+              onClick={() => dispatch(downloadDraft())}
+            >
+              Baixar
+            </button>
+          </>
         )}
       </div>
-      <DraftErrors errors={errors} />
-      {status === 'error' && (
+      {confirm && (
+        <Confirm
+          question={confirm.question}
+          confirmLabel={confirm.confirmLabel}
+          onConfirm={confirm.run}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
+      {error && (
         <section className="editor__errors" role="alert">
-          <h2>Não foi possível abrir a campanha publicada</h2>
+          <h2>Não foi possível abrir a campanha</h2>
           <p>{error}</p>
         </section>
       )}
-      {draft && (
-        <div className="editor__body">
-          <SectionList draft={draft} selected={selected} onSelect={setSelected} />
-          <ItemPanel draft={draft} selected={selected} />
-        </div>
+      {loading && <p className="editor__loading">Carregando campanha…</p>}
+      {!loading && draft && !choosing && (
+        <>
+          <DraftErrors errors={errors} />
+          <div className="editor__body">
+            <SectionList draft={draft} selected={selected} onSelect={setSelected} />
+            <ItemPanel draft={draft} selected={selected} />
+          </div>
+        </>
+      )}
+      {!loading && (!draft || choosing) && (
+        <DraftSources
+          campaignUrl={campaignUrl}
+          onPick={replaceDraft}
+          onCancel={draft ? () => setChoosing(false) : null}
+        />
       )}
     </main>
   )
@@ -315,8 +432,124 @@ const editorPage = css`
     color: var(--apagado);
   }
 
+  .editor__spacer {
+    flex: 1;
+  }
+
+  .editor__link {
+    padding: 4px 6px;
+    border: 0;
+    background: none;
+    color: var(--apagado);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--texto);
+    }
+  }
+
+  .editor__unsaved {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--aviso);
+  }
+
+  .editor__loading {
+    padding: 24px 32px;
+    color: var(--apagado);
+  }
+
+  .editor__confirm {
+    margin: 12px 20px 0;
+    padding: 12px 16px;
+    border: 1px solid var(--linha);
+    border-radius: 12px;
+    background-color: var(--painel);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    p {
+      flex: 1;
+      font-weight: 600;
+    }
+
+    .button {
+      padding: 6px 14px;
+      font-size: 14px;
+    }
+  }
+
+  .editor__sources {
+    padding: 32px;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+
+    h1 {
+      font-size: 26px;
+      letter-spacing: -0.03em;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--apagado);
+    }
+
+    input[type='url'] {
+      padding: 10px 12px;
+      border: 1px solid var(--linha);
+      border-radius: 10px;
+      background-color: var(--painel);
+      color: var(--texto);
+      font: inherit;
+      font-size: 14px;
+    }
+  }
+
+  .editor__url {
+    align-self: stretch;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+
+    label {
+      flex: 1;
+    }
+  }
+
+  .editor__choices {
+    display: flex;
+    gap: 8px;
+  }
+
+  .editor__sources .editor__file {
+    flex-direction: row;
+    color: var(--texto);
+    font-size: inherit;
+    cursor: pointer;
+
+    &:focus-within {
+      outline: 2px solid var(--laranja);
+      outline-offset: 2px;
+    }
+
+    input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+    }
+  }
+
   .editor__count {
-    margin-left: auto;
     padding: 4px 10px;
     border-radius: 999px;
     background-color: var(--ok-fundo);

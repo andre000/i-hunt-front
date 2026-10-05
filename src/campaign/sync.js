@@ -76,8 +76,7 @@ export function createSync({ fetch, storage }) {
     getHunterId: () => store.get(HUNTER_ID_KEY),
     setHunterId: (hunterId) => store.set(HUNTER_ID_KEY, hunterId),
     clearHunterId: () => store.remove(HUNTER_ID_KEY),
-    async readPublished() {
-      const url = store.get(CAMPAIGN_URL_KEY)
+    async readPublished(url = store.get(CAMPAIGN_URL_KEY)) {
       const fetched = await fetchCampaign(fetch, url)
       if (fetched.raw !== undefined) return { raw: fetched.raw, url }
       return { error: fetched.error ?? fetched.errors[0].message }

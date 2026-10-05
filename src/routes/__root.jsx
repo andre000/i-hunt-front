@@ -56,10 +56,11 @@ PlayerScreen.propTypes = {
   demo: PropTypes.shape({ introSeen: PropTypes.bool.isRequired }),
 }
 
-function RootScreen({ isGmView }) {
+function RootScreen({ isGmView, isEditor }) {
   const { status, data, hunterId, pendingInvite, demo } = useSelector(state => state.campaign)
 
   if (pendingInvite) return <InviteConfirmation />
+  if (isEditor) return <Outlet />
   if (status === 'loading') return <CampaignStatus title="Carregando campanha…" />
   if (status === 'no-campaign') return <NoCampaign />
   if (isGmView) return <Outlet />
@@ -69,6 +70,7 @@ function RootScreen({ isGmView }) {
 
 RootScreen.propTypes = {
   isGmView: PropTypes.bool.isRequired,
+  isEditor: PropTypes.bool.isRequired,
 }
 
 function Root() {
@@ -80,7 +82,7 @@ function Root() {
   return (
     <>
       {showBar && <DemoBar />}
-      <RootScreen isGmView={isGmView} />
+      <RootScreen isGmView={isGmView} isEditor={pathname === '/gm/editor'} />
     </>
   )
 }

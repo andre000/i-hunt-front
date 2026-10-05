@@ -6,6 +6,7 @@ import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { createAppStore } from './store'
 import { campaignLoaded } from './store/campaign'
 import { createSync } from './campaign/sync'
+import { createDraftStorage } from './campaign/draftStorage'
 import { createSyncLoop } from './campaign/syncLoop'
 import { readInvite } from './campaign/invite'
 import { createDemoSync } from './campaign/demoSync'
@@ -42,7 +43,7 @@ const invite = mode === 'demo' ? null : readInvite(window.location.search)
 const pendingInvite = invite && sync.offerInvite(invite) === 'needs-confirmation' ? invite : null
 if (invite) window.history.replaceState(null, '', window.location.pathname)
 
-const store = createAppStore({ sync, pendingInvite })
+const store = createAppStore({ sync, pendingInvite, drafts: createDraftStorage(browserStorage()) })
 
 function onReturn(run) {
   const onVisible = () => {

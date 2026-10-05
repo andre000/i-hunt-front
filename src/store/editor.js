@@ -1,9 +1,23 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import { draftFile, draftFileName, draftFrom, updateCampaign } from '../campaign/draft'
+import { draftFile, draftFileName, draftFrom, readDraftText, updateCampaign } from '../campaign/draft'
 
 export const openPublishedDraft = createAsyncThunk(
   'editor/openPublished',
-  (_, { extra }) => extra.sync.readPublished(),
+  (url, { extra }) => extra.sync.readPublished(url),
+)
+
+function readText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(reader.error)
+    reader.readAsText(file)
+  })
+}
+
+export const openDraftFile = createAsyncThunk(
+  'editor/openFile',
+  async (file) => ({ ...readDraftText(await readText(file)), fileName: file.name }),
 )
 
 export const downloadDraft = createAsyncThunk(
@@ -14,32 +28,62 @@ export const downloadDraft = createAsyncThunk(
   },
 )
 
+export function initialEditorState(saved = null) {
+  return {
+    draft: saved?.draft ?? null,
+    fileName: saved?.fileName ?? draftFileName(null),
+    unsaved: saved?.unsaved ?? false,
+    started: Boolean(saved),
+    loading: false,
+    error: null,
+  }
+}
+
+function open(state, draft, fileName) {
+  Object.assign(state, { draft, fileName, unsaved: false, started: true, loading: false, error: null })
+}
+
 const editorSlice = createSlice({
   name: 'editor',
-  initialState: { status: 'empty', draft: null, fileName: null, error: null },
+  initialState: initialEditorState(),
   reducers: {
+    draftOpened(state, { payload }) {
+      open(state, payload.draft, payload.fileName ?? draftFileName(null))
+    },
+    draftDiscarded(state) {
+      Object.assign(state, initialEditorState(), { started: true })
+    },
     campaignEdited(state, { payload }) {
       state.draft = updateCampaign(state.draft, payload)
+      state.unsaved = true
     },
   },
   extraReducers: (builder) => {
     builder
       .addCase(openPublishedDraft.pending, (state) => {
-        state.status = 'loading'
+        state.started = true
+        state.loading = true
+        state.error = null
       })
       .addCase(openPublishedDraft.fulfilled, (state, { payload }) => {
-        if (payload.error) {
-          state.status = 'error'
-          state.error = payload.error
-          return
-        }
-        state.status = 'ready'
-        state.draft = draftFrom(payload.raw)
-        state.fileName = draftFileName(payload.url)
-        state.error = null
+        state.loading = false
+        if (payload.error) state.error = payload.error
+        else open(state, draftFrom(payload.raw), draftFileName(payload.url))
+      })
+      .addCase(openDraftFile.fulfilled, (state, { payload }) => {
+        state.started = true
+        if (payload.error) state.error = payload.error
+        else open(state, payload.draft, payload.fileName)
+      })
+      .addCase(openDraftFile.rejected, (state) => {
+        state.started = true
+        state.error = 'Não foi possível ler o arquivo.'
+      })
+      .addCase(downloadDraft.fulfilled, (state) => {
+        state.unsaved = false
       })
   },
 })
 
-export const { campaignEdited } = editorSlice.actions
+export const { campaignEdited, draftDiscarded, draftOpened } = editorSlice.actions
 export default editorSlice.reducer

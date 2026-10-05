@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 import campaignReducer, { initialCampaignState } from './campaign'
-import editorReducer from './editor'
+import editorReducer, { initialEditorState } from './editor'
+import { createDraftStorage } from '../campaign/draftStorage'
 
 function demoState(sync) {
   if (!sync.isDemo) return null
@@ -18,8 +19,8 @@ function saveToComputer(name, text) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-export function createAppStore({ sync, pendingInvite = null, leaveDemo = goHome, saveFile = saveToComputer }) {
-  return configureStore({
+export function createAppStore({ sync, pendingInvite = null, leaveDemo = goHome, saveFile = saveToComputer, drafts = createDraftStorage(null) }) {
+  const store = configureStore({
     reducer: {
       campaign: campaignReducer,
       editor: editorReducer,
@@ -32,8 +33,18 @@ export function createAppStore({ sync, pendingInvite = null, leaveDemo = goHome,
         campaignUrl: sync.getCampaignUrl(),
         demo: demoState(sync),
       }),
+      editor: initialEditorState(drafts.load()),
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({ thunk: { extraArgument: { sync, leaveDemo, saveFile } } }),
   })
+
+  let saved = store.getState().editor
+  store.subscribe(() => {
+    const { editor } = store.getState()
+    if (editor === saved) return
+    saved = editor
+    drafts.save(editor)
+  })
+  return store
 }
