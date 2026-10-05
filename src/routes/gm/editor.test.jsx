@@ -144,6 +144,36 @@ describe('Mudanças não baixadas', () => {
   })
 })
 
+describe('Data da campanha', () => {
+  it('is edited without a time zone and kept with the zone of the campaign', async () => {
+    const { store } = await renderApp({ path: '/gm/editor', hunterId: null })
+
+    const field = await screen.findByLabelText('Data da campanha')
+    expect(field.value).toBe('2026-10-04T21:00')
+    fireEvent.change(field, { target: { value: '2026-10-05T02:15' } })
+
+    expect(store.getState().editor.draft.campaign.date).toBe('2026-10-05T02:15:00-03:00')
+  })
+
+  it('advances to the next scheduled message', async () => {
+    const { store } = await renderApp({ path: '/gm/editor', hunterId: null })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Avançar até o próximo agendado' }))
+
+    expect(screen.getByLabelText('Data da campanha').value).toBe('2026-10-04T23:00')
+    expect(store.getState().editor.draft.campaign.date).toBe('2026-10-04T23:00:00-03:00')
+    expect(screen.getByText('Mudanças não baixadas')).toBeTruthy()
+  })
+
+  it('cannot advance when nothing is scheduled', async () => {
+    const body = validCampaign()
+    body.messages = body.messages.filter(message => message.id !== 'msg5')
+    await renderApp({ path: '/gm/editor', hunterId: null, body })
+
+    expect((await screen.findByRole('button', { name: 'Avançar até o próximo agendado' })).disabled).toBe(true)
+  })
+})
+
 describe('Editor da campanha', () => {
   it('opens the published campaign of the device as the draft', async () => {
     await renderApp({ path: '/gm/editor', hunterId: null })

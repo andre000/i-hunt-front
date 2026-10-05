@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { blankDraft, draftErrors, draftFile, draftFileName, draftFrom, readDraftText, updateCampaign } from './draft'
+import { advanceToNextScheduled, blankDraft, dateFromInput, dateToInput, draftErrors, nextScheduled, draftFile, draftFileName, draftFrom, readDraftText, updateCampaign } from './draft'
 import { validCampaign } from './fixtures'
 
 describe('draftFrom', () => {
@@ -117,5 +117,85 @@ describe('readDraftText', () => {
 
   it('explains when the JSON is not an object', () => {
     expect(readDraftText('[1, 2]').error).toMatch(/^O arquivo não é um JSON legível/)
+  })
+})
+
+describe('dates typed without a time zone', () => {
+  const CAMPAIGN_DATE = '2026-10-04T21:00:00-03:00'
+
+  it('shows a date as the time of the campaign zone', () => {
+    expect(dateToInput('2026-10-05T03:30:00Z', CAMPAIGN_DATE)).toBe('2026-10-05T00:30')
+  })
+
+  it('keeps the time as written when the zone is the same', () => {
+    expect(dateToInput('2026-10-04T21:00:00-03:00', CAMPAIGN_DATE)).toBe('2026-10-04T21:00')
+  })
+
+  it('stores a typed time with the zone of the campaign date', () => {
+    expect(dateFromInput('2026-10-05T00:30', CAMPAIGN_DATE)).toBe('2026-10-05T00:30:00-03:00')
+  })
+
+  it('uses Z when the campaign date is in UTC', () => {
+    expect(dateFromInput('2026-10-05T00:30', '2026-10-04T21:00:00Z')).toBe('2026-10-05T00:30:00Z')
+  })
+
+  it('shows an empty field for a missing or broken date', () => {
+    expect(dateToInput(undefined, CAMPAIGN_DATE)).toBe('')
+    expect(dateToInput('amanhã', CAMPAIGN_DATE)).toBe('')
+  })
+
+  it('stores nothing for an empty field', () => {
+    expect(dateFromInput('', CAMPAIGN_DATE)).toBeUndefined()
+  })
+})
+
+describe('next scheduled', () => {
+  function draftWith({ missions = [], messages = [] }) {
+    const raw = validCampaign()
+    raw.missions.push(...missions.map((postedAt, index) => ({ id: `s${index}`, name: 'S', location: 'C', value: 1, risk: 'baixo', postedAt })))
+    raw.messages = messages.map((sentAt, index) => ({ id: `n${index}`, npc: 'padre', to: 'all', sentAt, text: 'Oi' }))
+    return draftFrom(raw)
+  }
+
+  it('is the earliest mission or message after the campaign date', () => {
+    const draft = draftWith({
+      missions: ['2026-10-05T02:00:00-03:00', '2026-10-04T20:00:00-03:00'],
+      messages: ['2026-10-05T02:00:00Z', '2026-10-04T22:30:00-03:00'],
+    })
+
+    expect(nextScheduled(draft)).toBe('2026-10-04T22:30:00-03:00')
+  })
+
+  it('compares instants, not text, across time zones', () => {
+    const draft = draftWith({ missions: ['2026-10-05T03:00:00Z'], messages: ['2026-10-05T01:00:00-03:00'] })
+
+    expect(nextScheduled(draft)).toBe('2026-10-05T03:00:00Z')
+  })
+
+  it('is null when nothing is scheduled', () => {
+    const draft = draftWith({ messages: ['2026-10-04T21:00:00-03:00'] })
+
+    expect(nextScheduled(draft)).toBeNull()
+  })
+
+  it('advances the campaign date to it, in the campaign zone', () => {
+    const draft = draftWith({ messages: ['2026-10-05T03:00:00Z'] })
+
+    expect(advanceToNextScheduled(draft).campaign.date).toBe('2026-10-05T00:00:00-03:00')
+  })
+
+  it('advances to the exact second, so the item is no longer scheduled', () => {
+    const draft = draftWith({ messages: ['2026-10-04T22:10:45-03:00'] })
+
+    const advanced = advanceToNextScheduled(draft)
+
+    expect(advanced.campaign.date).toBe('2026-10-04T22:10:45-03:00')
+    expect(nextScheduled(advanced)).toBeNull()
+  })
+
+  it('leaves the draft alone when nothing is scheduled', () => {
+    const draft = draftWith({})
+
+    expect(advanceToNextScheduled(draft)).toBe(draft)
   })
 })

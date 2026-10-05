@@ -6,8 +6,8 @@ import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
 import { CampaignStatus } from '../../components/CampaignStatus'
 import { useDesktopWidth } from '../../components/useDesktopWidth'
-import { campaignEdited, downloadDraft, draftDiscarded, draftOpened, openDraftFile, openPublishedDraft } from '../../store/editor'
-import { blankDraft, draftErrors } from '../../campaign/draft'
+import { campaignDateAdvanced, campaignEdited, downloadDraft, draftDiscarded, draftOpened, openDraftFile, openPublishedDraft } from '../../store/editor'
+import { blankDraft, dateFromInput, dateToInput, draftErrors, nextScheduled } from '../../campaign/draft'
 
 export const Route = createLazyFileRoute('/gm/editor')({
   component: EditorPage,
@@ -129,6 +129,36 @@ DraftErrors.propTypes = {
   })).isRequired,
 }
 
+function CampaignDate({ draft }) {
+  const dispatch = useDispatch()
+  const { date } = draft.campaign
+
+  return (
+    <div className="editor__date">
+      <label>
+        <span>Data da campanha</span>
+        <input
+          type="datetime-local"
+          value={dateToInput(date, date)}
+          onChange={e => dispatch(campaignEdited({ date: dateFromInput(e.target.value, date) }))}
+        />
+      </label>
+      <button
+        type="button"
+        className="button secondary"
+        disabled={!nextScheduled(draft)}
+        onClick={() => dispatch(campaignDateAdvanced())}
+      >
+        Avançar até o próximo agendado
+      </button>
+    </div>
+  )
+}
+
+CampaignDate.propTypes = {
+  draft: PropTypes.shape({ campaign: PropTypes.shape({ date: PropTypes.string }).isRequired }).isRequired,
+}
+
 function DraftSources({ campaignUrl, onPick, onCancel }) {
   const dispatch = useDispatch()
   const [url, setUrl] = useState('')
@@ -243,6 +273,7 @@ function Editor() {
               Descartar
             </button>
             <span className="editor__spacer" />
+            <CampaignDate draft={draft} />
             {unsaved && <span className="editor__unsaved">Mudanças não baixadas</span>}
             <span className={errors.length > 0 ? 'editor__count editor__count--bad' : 'editor__count'}>
               {errorCount(errors.length)}
@@ -306,10 +337,12 @@ const editorPage = css`
 
   .editor__top {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 16px;
+    gap: 10px 16px;
     padding: 12px 20px;
     border-bottom: 1px solid var(--linha);
+    white-space: nowrap;
   }
 
   .editor__brand {
@@ -430,6 +463,40 @@ const editorPage = css`
     font-family: var(--mono);
     font-size: 12px;
     color: var(--apagado);
+  }
+
+  .editor__date {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--apagado);
+    }
+
+    input {
+      padding: 6px 10px;
+      border: 1px solid var(--linha);
+      border-radius: 10px;
+      background-color: var(--painel);
+      color: var(--texto);
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+
+    .button {
+      padding: 6px 12px;
+      font-size: 13px;
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+    }
   }
 
   .editor__spacer {
