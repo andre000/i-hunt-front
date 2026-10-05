@@ -1,6 +1,6 @@
 export const pwaOptions = {
   registerType: 'autoUpdate',
-  includeAssets: ['favicon.svg', 'favicon.png', 'exemplo-campanha.json'],
+  includeAssets: ['favicon.svg', 'favicon.png', 'apple-touch-icon.png', 'exemplo-campanha.json'],
   manifest: {
     name: 'iHunt',
     short_name: 'iHunt',
@@ -18,6 +18,12 @@ export const pwaOptions = {
         src: '/pwa-512x512.png',
         sizes: '512x512',
         type: 'image/png',
+      },
+      {
+        src: '/pwa-maskable-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
       },
     ],
   },
