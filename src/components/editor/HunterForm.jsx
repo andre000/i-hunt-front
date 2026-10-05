@@ -34,7 +34,7 @@ function DeleteHunter({ draft, index, onCancel, onRemoved }) {
         <>
           <h3>Mensagens</h3>
           <ul aria-label="Mensagens">
-            {impact.messages.map((text, at) => <li key={at}>{text}</li>)}
+            {impact.messages.map((text, at) => <li key={at}>{text || '(sem texto)'}</li>)}
           </ul>
         </>
       )}

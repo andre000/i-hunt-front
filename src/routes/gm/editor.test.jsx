@@ -263,6 +263,17 @@ describe('Hunters', () => {
     expect(within(dialog).getByText(/ficariam sem destinatário/)).toBeTruthy()
   })
 
+  it('names a message without text before deleting', async () => {
+    const body = validCampaign()
+    body.messages[1].text = ''
+    await openHunter('Ana', { body })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar hunter' }))
+
+    const dialog = screen.getByRole('alertdialog', { name: 'Apagar Ana?' })
+    expect(within(dialog).getByText('(sem texto)')).toBeTruthy()
+  })
+
   it('takes the hunter out of the whole draft after confirming', async () => {
     const { store } = await openHunter('Ana')
 
