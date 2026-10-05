@@ -58,5 +58,16 @@ export function homeView(campaign, hunterId) {
     mission => mission !== featured && mission.nearHunters.includes(hunterId)
   )
   const available = missions.filter(mission => mission.status === 'available').length
-  return { featured, nearby, available }
+  const others = open.filter(mission => mission !== featured && !nearby.includes(mission))
+  return { featured, nearby, available, open: [featured, ...nearby, ...others].filter(Boolean) }
+}
+
+export function deadlineProgress(mission, campaignDate) {
+  if (!mission.deadline || !mission.postedAt) return null
+
+  const start = time(mission.postedAt)
+  const total = time(mission.deadline) - start
+  if (total <= 0) return 1
+
+  return Math.min(1, Math.max(0, (time(campaignDate) - start) / total))
 }

@@ -1,0 +1,527 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-05T00:20:41+00:00",
+  "title": "Design System: iHunt",
+  "extensions": {
+    "colorMeta": {
+      "laranja": {
+        "role": "primary",
+        "displayName": "Laranja Sinal",
+        "tonalRamp": [
+          "oklch(15% 0.198 43.4)",
+          "oklch(26% 0.198 43.4)",
+          "oklch(37% 0.198 43.4)",
+          "oklch(48% 0.198 43.4)",
+          "oklch(59% 0.198 43.4)",
+          "oklch(70% 0.198 43.4)",
+          "oklch(82% 0.198 43.4)",
+          "oklch(95% 0.198 43.4)"
+        ],
+        "canonical": "#ff6b1a"
+      },
+      "laranja-forte": {
+        "role": "primary",
+        "displayName": "Laranja Aceso",
+        "tonalRamp": [
+          "oklch(15% 0.171 46.0)",
+          "oklch(26% 0.171 46.0)",
+          "oklch(37% 0.171 46.0)",
+          "oklch(48% 0.171 46.0)",
+          "oklch(59% 0.171 46.0)",
+          "oklch(70% 0.171 46.0)",
+          "oklch(82% 0.171 46.0)",
+          "oklch(95% 0.171 46.0)"
+        ],
+        "canonical": "#ff8240"
+      },
+      "laranja-fundo": {
+        "role": "primary",
+        "displayName": "Brasa",
+        "tonalRamp": [
+          "oklch(15% 0.198 43.4)",
+          "oklch(26% 0.198 43.4)",
+          "oklch(37% 0.198 43.4)",
+          "oklch(48% 0.198 43.4)",
+          "oklch(59% 0.198 43.4)",
+          "oklch(70% 0.198 43.4)",
+          "oklch(82% 0.198 43.4)",
+          "oklch(95% 0.198 43.4)"
+        ],
+        "canonical": "rgb(255 107 26 / 14%)"
+      },
+      "tinta-sobre-laranja": {
+        "role": "primary",
+        "displayName": "Tinta sobre Laranja",
+        "tonalRamp": [
+          "oklch(15% 0.031 68.1)",
+          "oklch(26% 0.031 68.1)",
+          "oklch(37% 0.031 68.1)",
+          "oklch(48% 0.031 68.1)",
+          "oklch(59% 0.031 68.1)",
+          "oklch(70% 0.031 68.1)",
+          "oklch(82% 0.031 68.1)",
+          "oklch(95% 0.031 68.1)"
+        ],
+        "canonical": "#120700"
+      },
+      "perigo": {
+        "role": "secondary",
+        "displayName": "Sirene",
+        "tonalRamp": [
+          "oklch(15% 0.181 22.8)",
+          "oklch(26% 0.181 22.8)",
+          "oklch(37% 0.181 22.8)",
+          "oklch(48% 0.181 22.8)",
+          "oklch(59% 0.181 22.8)",
+          "oklch(70% 0.181 22.8)",
+          "oklch(82% 0.181 22.8)",
+          "oklch(95% 0.181 22.8)"
+        ],
+        "canonical": "#ff6b6b"
+      },
+      "perigo-fundo": {
+        "role": "secondary",
+        "displayName": "Fundo Sirene",
+        "tonalRamp": [
+          "oklch(15% 0.181 22.8)",
+          "oklch(26% 0.181 22.8)",
+          "oklch(37% 0.181 22.8)",
+          "oklch(48% 0.181 22.8)",
+          "oklch(59% 0.181 22.8)",
+          "oklch(70% 0.181 22.8)",
+          "oklch(82% 0.181 22.8)",
+          "oklch(95% 0.181 22.8)"
+        ],
+        "canonical": "rgb(255 107 107 / 14%)"
+      },
+      "aviso": {
+        "role": "secondary",
+        "displayName": "Âmbar de Poste",
+        "tonalRamp": [
+          "oklch(15% 0.147 79.0)",
+          "oklch(26% 0.147 79.0)",
+          "oklch(37% 0.147 79.0)",
+          "oklch(48% 0.147 79.0)",
+          "oklch(59% 0.147 79.0)",
+          "oklch(70% 0.147 79.0)",
+          "oklch(82% 0.147 79.0)",
+          "oklch(95% 0.147 79.0)"
+        ],
+        "canonical": "#f2b33d"
+      },
+      "aviso-fundo": {
+        "role": "secondary",
+        "displayName": "Fundo Âmbar",
+        "tonalRamp": [
+          "oklch(15% 0.147 79.0)",
+          "oklch(26% 0.147 79.0)",
+          "oklch(37% 0.147 79.0)",
+          "oklch(48% 0.147 79.0)",
+          "oklch(59% 0.147 79.0)",
+          "oklch(70% 0.147 79.0)",
+          "oklch(82% 0.147 79.0)",
+          "oklch(95% 0.147 79.0)"
+        ],
+        "canonical": "rgb(242 179 61 / 14%)"
+      },
+      "ok": {
+        "role": "secondary",
+        "displayName": "Verde de Pago",
+        "tonalRamp": [
+          "oklch(15% 0.153 156.2)",
+          "oklch(26% 0.153 156.2)",
+          "oklch(37% 0.153 156.2)",
+          "oklch(48% 0.153 156.2)",
+          "oklch(59% 0.153 156.2)",
+          "oklch(70% 0.153 156.2)",
+          "oklch(82% 0.153 156.2)",
+          "oklch(95% 0.153 156.2)"
+        ],
+        "canonical": "#4fd18b"
+      },
+      "ok-fundo": {
+        "role": "secondary",
+        "displayName": "Fundo Verde",
+        "tonalRamp": [
+          "oklch(15% 0.153 156.2)",
+          "oklch(26% 0.153 156.2)",
+          "oklch(37% 0.153 156.2)",
+          "oklch(48% 0.153 156.2)",
+          "oklch(59% 0.153 156.2)",
+          "oklch(70% 0.153 156.2)",
+          "oklch(82% 0.153 156.2)",
+          "oklch(95% 0.153 156.2)"
+        ],
+        "canonical": "rgb(79 209 139 / 14%)"
+      },
+      "asfalto": {
+        "role": "neutral",
+        "displayName": "Asfalto",
+        "tonalRamp": [
+          "oklch(15% 0.007 258.4)",
+          "oklch(26% 0.007 258.4)",
+          "oklch(37% 0.007 258.4)",
+          "oklch(48% 0.007 258.4)",
+          "oklch(59% 0.007 258.4)",
+          "oklch(70% 0.007 258.4)",
+          "oklch(82% 0.007 258.4)",
+          "oklch(95% 0.007 258.4)"
+        ],
+        "canonical": "#0c0e11"
+      },
+      "mapa-noite": {
+        "role": "neutral",
+        "displayName": "Mapa Noturno",
+        "tonalRamp": [
+          "oklch(15% 0.011 260.7)",
+          "oklch(26% 0.011 260.7)",
+          "oklch(37% 0.011 260.7)",
+          "oklch(48% 0.011 260.7)",
+          "oklch(59% 0.011 260.7)",
+          "oklch(70% 0.011 260.7)",
+          "oklch(82% 0.011 260.7)",
+          "oklch(95% 0.011 260.7)"
+        ],
+        "canonical": "#111419"
+      },
+      "painel": {
+        "role": "neutral",
+        "displayName": "Painel",
+        "tonalRamp": [
+          "oklch(15% 0.011 260.7)",
+          "oklch(26% 0.011 260.7)",
+          "oklch(37% 0.011 260.7)",
+          "oklch(48% 0.011 260.7)",
+          "oklch(59% 0.011 260.7)",
+          "oklch(70% 0.011 260.7)",
+          "oklch(82% 0.011 260.7)",
+          "oklch(95% 0.011 260.7)"
+        ],
+        "canonical": "#15181d"
+      },
+      "painel-2": {
+        "role": "neutral",
+        "displayName": "Painel 2",
+        "tonalRamp": [
+          "oklch(15% 0.015 261.7)",
+          "oklch(26% 0.015 261.7)",
+          "oklch(37% 0.015 261.7)",
+          "oklch(48% 0.015 261.7)",
+          "oklch(59% 0.015 261.7)",
+          "oklch(70% 0.015 261.7)",
+          "oklch(82% 0.015 261.7)",
+          "oklch(95% 0.015 261.7)"
+        ],
+        "canonical": "#1d2128"
+      },
+      "linha": {
+        "role": "neutral",
+        "displayName": "Linha",
+        "tonalRamp": [
+          "oklch(15% 0.016 259.8)",
+          "oklch(26% 0.016 259.8)",
+          "oklch(37% 0.016 259.8)",
+          "oklch(48% 0.016 259.8)",
+          "oklch(59% 0.016 259.8)",
+          "oklch(70% 0.016 259.8)",
+          "oklch(82% 0.016 259.8)",
+          "oklch(95% 0.016 259.8)"
+        ],
+        "canonical": "#2a2f37"
+      },
+      "texto": {
+        "role": "neutral",
+        "displayName": "Texto",
+        "tonalRamp": [
+          "oklch(15% 0.005 247.9)",
+          "oklch(26% 0.005 247.9)",
+          "oklch(37% 0.005 247.9)",
+          "oklch(48% 0.005 247.9)",
+          "oklch(59% 0.005 247.9)",
+          "oklch(70% 0.005 247.9)",
+          "oklch(82% 0.005 247.9)",
+          "oklch(95% 0.005 247.9)"
+        ],
+        "canonical": "#eef1f4"
+      },
+      "apagado": {
+        "role": "neutral",
+        "displayName": "Apagado",
+        "tonalRamp": [
+          "oklch(15% 0.022 257.5)",
+          "oklch(26% 0.022 257.5)",
+          "oklch(37% 0.022 257.5)",
+          "oklch(48% 0.022 257.5)",
+          "oklch(59% 0.022 257.5)",
+          "oklch(70% 0.022 257.5)",
+          "oklch(82% 0.022 257.5)",
+          "oklch(95% 0.022 257.5)"
+        ],
+        "canonical": "#8d96a3"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Nome da caça no detalhe da missão."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Título de tela no cabeçalho; nome do hunter no Perfil (26px)."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Caça selecionada na folha da Início; cabeçalho da conversa (16px)."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Mensagens de NPC e descrição da missão."
+      },
+      "body-sm": {
+        "displayName": "Body small",
+        "purpose": "Linhas de lista, local, estados vazios."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Relógio da campanha, títulos de seção e rótulos de cartão em apagado."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Chips, rótulo de estado, legendas de filtro, metadados."
+      },
+      "nav": {
+        "displayName": "Nav",
+        "purpose": "Rótulos das abas."
+      },
+      "money-display": {
+        "displayName": "Money display",
+        "purpose": "Recompensa e ganhos em destaque (até 32px no Perfil)."
+      },
+      "money": {
+        "displayName": "Money",
+        "purpose": "Valores em linhas, pílulas e na folha (14-16px)."
+      }
+    },
+    "shadows": [
+      {
+        "name": "flutuante",
+        "value": "0 8px 20px -8px rgb(0 0 0 / 60%)",
+        "purpose": "Pílulas de relógio e ganhos sobre o mapa."
+      },
+      {
+        "name": "folha",
+        "value": "0 -20px 40px -10px rgb(0 0 0 / 70%)",
+        "purpose": "Folha inferior da Início sobre o mapa."
+      },
+      {
+        "name": "contorno-interno",
+        "value": "inset 0 0 0 1px var(--linha)",
+        "purpose": "Borda de botão secundário e filtro (laranja quando pressionado)."
+      },
+      {
+        "name": "halo-ao-vivo",
+        "value": "0 0 0 4px var(--laranja-fundo)",
+        "purpose": "Halo do ponto do relógio da campanha."
+      },
+      {
+        "name": "recorte",
+        "value": "0 0 0 2px var(--painel)",
+        "purpose": "Recorta o badge de não lidas do painel; no mapa, 3px de #111419 recorta os pinos."
+      },
+      {
+        "name": "moldura",
+        "value": "0 0 0 1px #1a1d22",
+        "purpose": "Contorno da coluna de 440px sobre o fundo externo #050607."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-saida",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Curva de toda entrada e mudança de estado."
+      },
+      {
+        "name": "page-in",
+        "value": "0.36s cubic-bezier(0.16, 1, 0.3, 1); translateY(12px) e opacidade",
+        "purpose": "Entrada do corpo de cada tela."
+      },
+      {
+        "name": "sheet-up",
+        "value": "0.5s cubic-bezier(0.16, 1, 0.3, 1); translateY(40px), opacidade 0.4 a 1",
+        "purpose": "Folha inferior da Início."
+      },
+      {
+        "name": "ring",
+        "value": "stroke-dashoffset 0.9s cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Anéis de prazo andam juntos quando o GM avança a data."
+      },
+      {
+        "name": "pin-pulse",
+        "value": "2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite; scale 0.3 a 1, opacidade 0.55 a 0",
+        "purpose": "Só a caça disponível pulsa no mapa; estático a 18% com movimento reduzido."
+      },
+      {
+        "name": "pin-select",
+        "value": "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); scale 1.5",
+        "purpose": "Pino selecionado cresce."
+      },
+      {
+        "name": "cor",
+        "value": "0.2s ease",
+        "purpose": "Hover de cor e fundo em botões e abas."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "coluna",
+        "value": "440px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botão principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ação principal; laranja com tinta quase preta.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">Aceitar caça</button>",
+      "css": ":host { --asfalto:#0c0e11; --painel:#15181d; --painel-2:#1d2128; --linha:#2a2f37; --texto:#eef1f4; --apagado:#8d96a3; --laranja:#ff6b1a; --laranja-forte:#ff8240; --laranja-fundo:rgb(255 107 26 / 14%); --perigo:#ff6b6b; --perigo-fundo:rgb(255 107 107 / 14%); --aviso:#f2b33d; --aviso-fundo:rgb(242 179 61 / 14%); --ok:#4fd18b; --sans:'Geist', ui-sans-serif, system-ui, sans-serif; --mono:'Geist Mono', ui-monospace, Menlo, monospace; } .ds-btn { font-family: var(--sans); font-weight: 600; border-radius: 14px; border: none; cursor: pointer; padding: 10px 18px; transition: background-color 0.2s ease, color 0.2s ease; } .ds-btn:focus-visible { outline: 2px solid var(--laranja); outline-offset: 2px; } .ds-btn-primary { background-color: var(--laranja); color: #120700; } .ds-btn-primary:hover { background-color: var(--laranja-forte); } .ds-btn-primary:active { background-color: var(--laranja); }"
+    },
+    {
+      "name": "CTA da folha",
+      "kind": "button",
+      "refersTo": "button-cta",
+      "description": "Botão largo de 52px na folha da Início.",
+      "html": "<button class=\"ds-btn ds-btn-cta\">Ver caça <svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" aria-hidden=\"true\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3\"/></svg></button>",
+      "css": ":host { --asfalto:#0c0e11; --painel:#15181d; --painel-2:#1d2128; --linha:#2a2f37; --texto:#eef1f4; --apagado:#8d96a3; --laranja:#ff6b1a; --laranja-forte:#ff8240; --laranja-fundo:rgb(255 107 26 / 14%); --perigo:#ff6b6b; --perigo-fundo:rgb(255 107 107 / 14%); --aviso:#f2b33d; --aviso-fundo:rgb(242 179 61 / 14%); --ok:#4fd18b; --sans:'Geist', ui-sans-serif, system-ui, sans-serif; --mono:'Geist Mono', ui-monospace, Menlo, monospace; } .ds-btn { font-family: var(--sans); font-weight: 600; border-radius: 14px; border: none; cursor: pointer; padding: 10px 18px; transition: background-color 0.2s ease, color 0.2s ease; } .ds-btn:focus-visible { outline: 2px solid var(--laranja); outline-offset: 2px; } .ds-btn-cta { width: 100%; height: 52px; display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; background-color: var(--laranja); color: #120700; } .ds-btn-cta:hover { background-color: var(--laranja-forte); }"
+    },
+    {
+      "name": "Botão secundário",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Ação secundária em painel-2 com contorno interno.",
+      "html": "<button class=\"ds-btn ds-btn-secondary\">Trocar de hunter</button>",
+      "css": ":host { --asfalto:#0c0e11; --painel:#15181d; --painel-2:#1d2128; --linha:#2a2f37; --texto:#eef1f4; --apagado:#8d96a3; --laranja:#ff6b1a; --laranja-forte:#ff8240; --laranja-fundo:rgb(255 107 26 / 14%); --perigo:#ff6b6b; --perigo-fundo:rgb(255 107 107 / 14%); --aviso:#f2b33d; --aviso-fundo:rgb(242 179 61 / 14%); --ok:#4fd18b; --sans:'Geist', ui-sans-serif, system-ui, sans-serif; --mono:'Geist Mono', ui-monospace, Menlo, monospace; } .ds-btn { font-family: var(--sans); font-weight: 600; border-radius: 14px; border: none; cursor: pointer; padding: 10px 18px; transition: background-color 0.2s ease, color 0.2s ease; } .ds-btn:focus-visible { outline: 2px solid var(--laranja); outline-offset: 2px; } .ds-btn-secondary { background-color: var(--painel-2); color: var(--texto); box-shadow: inset 0 0 0 1px var(--linha); } .ds-btn-secondary:hover { background-color: var(--linha); }"
+    },
+    {
+      "name": "Chips e estado",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Rótulo de estado com ponto, chips de risco e tag neutra.",
+      "html": "<div class=\"ds-chips\"><span class=\"ds-status\">Disponível</span><span class=\"ds-chip ds-chip-alto\">Risco alto</span><span class=\"ds-chip ds-chip-medio\">Risco médio</span><span class=\"ds-chip\">lobisomem</span></div>",
+      "css": ":host { --asfalto:#0c0e11; --painel:#15181d; --painel-2:#1d2128; --linha:#2a2f37; --texto:#eef1f4; --apagado:#8d96a3; --laranja:#ff6b1a; --laranja-forte:#ff8240; --laranja-fundo:rgb(255 107 26 / 14%); --perigo:#ff6b6b; --perigo-fundo:rgb(255 107 107 / 14%); --aviso:#f2b33d; --aviso-fundo:rgb(242 179 61 / 14%); --ok:#4fd18b; --sans:'Geist', ui-sans-serif, system-ui, sans-serif; --mono:'Geist Mono', ui-monospace, Menlo, monospace; } .ds-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 12px; background: var(--asfalto); font-family: var(--sans); } .ds-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--laranja); } .ds-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; } .ds-chip { display: inline-flex; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--painel-2); color: var(--apagado); } .ds-chip-alto { background: var(--perigo-fundo); color: var(--perigo); } .ds-chip-medio { background: var(--aviso-fundo); color: var(--aviso); }"
+    },
+    {
+      "name": "Filtro",
+      "kind": "chip",
+      "refersTo": "filter-chip",
+      "description": "Filtro alternável da Busca; pressionado vira brasa.",
+      "html": "<div class=\"ds-filters\"><button class=\"ds-filter\" aria-pressed=\"true\">Disponível</button><button class=\"ds-filter\" aria-pressed=\"false\">Em andamento</button></div>",
+      "css": ":host { --asfalto:#0c0e11; --painel:#15181d; --painel-2:#1d2128; --linha:#2a2f37; --texto:#eef1f4; --apagado:#8d96a3; --laranja:#ff6b1a; --laranja-forte:#ff8240; --laranja-fundo:rgb(255 107 26 / 14%); --perigo:#ff6b6b; --perigo-fundo:rgb(255 107 107 / 14%); --aviso:#f2b33d; --aviso-fundo:rgb(242 179 61 / 14%); --ok:#4fd18b; --sans:'Geist', ui-sans-serif, system-ui, sans-serif; --mono:'Geist Mono', ui-monospace, Menlo, monospace; } .ds-filters { display: flex; gap: 6px; padding: 12px; background: var(--asfalto); } .ds-filter { font-family: var(--sans); background-color: var(--painel-2); color: var(--apagado); border: none; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; box-shadow: inset 0 0 0 1px var(--linha); cursor: pointer; } .ds-filter:hover { color: var(--texto); } .ds-filter:focus-visible { outline: 2px solid var(--laranja); outline-offset: 2px; } .ds-filter[aria-pressed='true'] { background-color: var(--laranja-fundo); color: var(--laranja); box-shadow: inset 0 0 0 1px var(--laranja); }"
+    },
+    {
+      "name": "Relógio da campanha",
+      "kind": "custom",
+      "refersTo": "campaign-clock",
+      "description": "Pílula com a data e hora da campanha; o único 'agora' do app.",
+      "html": "<div class=\"ds-wrap\"><time class=\"ds-clock\"><span class=\"ds-clock-dot\"></span>Sáb 10 out · <span class=\"ds-num\">22:00</span></time></div>",
+      "css": ":host { --asfalto:#0c0e11; --painel:#15181d; --painel-2:#1d2128; --linha:#2a2f37; --texto:#eef1f4; --apagado:#8d96a3; --laranja:#ff6b1a; --laranja-forte:#ff8240; --laranja-fundo:rgb(255 107 26 / 14%); --perigo:#ff6b6b; --perigo-fundo:rgb(255 107 107 / 14%); --aviso:#f2b33d; --aviso-fundo:rgb(242 179 61 / 14%); --ok:#4fd18b; --sans:'Geist', ui-sans-serif, system-ui, sans-serif; --mono:'Geist Mono', ui-monospace, Menlo, monospace; } .ds-wrap { padding: 12px; background: var(--asfalto); } .ds-clock { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; background-color: rgb(21 24 29 / 92%); border: 1px solid var(--linha); color: var(--texto); font-family: var(--sans); font-size: 13px; font-weight: 600; } .ds-clock-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--laranja); box-shadow: 0 0 0 4px var(--laranja-fundo); } .ds-num { font-family: var(--mono); font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Anel de prazo",
+      "kind": "custom",
+      "refersTo": "deadline-ring",
+      "description": "Anel de 62px que esvazia com a data da campanha.",
+      "html": "<div class=\"ds-wrap\"><div class=\"ds-ring\"><svg viewBox=\"0 0 62 62\"><circle cx=\"31\" cy=\"31\" r=\"27\" class=\"ds-track\"/><circle cx=\"31\" cy=\"31\" r=\"27\" class=\"ds-fill\" stroke-dasharray=\"169.6\" stroke-dashoffset=\"59\"/></svg><span class=\"ds-ring-label\"><b>2d</b>8h</span></div></div>",
+      "css": ":host { --asfalto:#0c0e11; --painel:#15181d; --painel-2:#1d2128; --linha:#2a2f37; --texto:#eef1f4; --apagado:#8d96a3; --laranja:#ff6b1a; --laranja-forte:#ff8240; --laranja-fundo:rgb(255 107 26 / 14%); --perigo:#ff6b6b; --perigo-fundo:rgb(255 107 107 / 14%); --aviso:#f2b33d; --aviso-fundo:rgb(242 179 61 / 14%); --ok:#4fd18b; --sans:'Geist', ui-sans-serif, system-ui, sans-serif; --mono:'Geist Mono', ui-monospace, Menlo, monospace; } .ds-wrap { padding: 12px; background: var(--painel); } .ds-ring { position: relative; width: 62px; height: 62px; font-family: var(--sans); } .ds-ring svg { width: 62px; height: 62px; transform: rotate(-90deg); } .ds-ring circle { fill: none; stroke-width: 5; } .ds-track { stroke: var(--linha); } .ds-fill { stroke: var(--laranja); stroke-linecap: round; transition: stroke-dashoffset 0.9s cubic-bezier(0.16, 1, 0.3, 1); } .ds-ring:hover .ds-fill { stroke-dashoffset: 90; } .ds-ring-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; line-height: 1.1; color: var(--apagado); } .ds-ring-label b { font-family: var(--mono); font-size: 15px; color: var(--texto); }"
+    },
+    {
+      "name": "Linha de caça",
+      "kind": "card",
+      "refersTo": "list-row",
+      "description": "Linha de lista com divisória, nome, estado e valor mono.",
+      "html": "<ul class=\"ds-list\"><li><button class=\"ds-row\"><span class=\"ds-row-body\"><span class=\"ds-row-name\">Lobisomem no Bom Fim</span><span class=\"ds-row-meta\"><span class=\"ds-status\">Disponível</span><span>prazo depois de amanhã</span></span></span><span class=\"ds-row-value\">R$ 1.200,00</span></button></li></ul>",
+      "css": ":host { --asfalto:#0c0e11; --painel:#15181d; --painel-2:#1d2128; --linha:#2a2f37; --texto:#eef1f4; --apagado:#8d96a3; --laranja:#ff6b1a; --laranja-forte:#ff8240; --laranja-fundo:rgb(255 107 26 / 14%); --perigo:#ff6b6b; --perigo-fundo:rgb(255 107 107 / 14%); --aviso:#f2b33d; --aviso-fundo:rgb(242 179 61 / 14%); --ok:#4fd18b; --sans:'Geist', ui-sans-serif, system-ui, sans-serif; --mono:'Geist Mono', ui-monospace, Menlo, monospace; } .ds-list { list-style: none; margin: 0; padding: 0 16px; background: var(--asfalto); } .ds-list li { border-top: 1px solid var(--linha); border-bottom: 1px solid var(--linha); } .ds-row { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 0; background: none; border: none; color: var(--texto); text-align: left; cursor: pointer; font-family: var(--sans); } .ds-row:hover .ds-row-name { color: var(--laranja); } .ds-row:focus-visible { outline: 2px solid var(--laranja); outline-offset: 2px; } .ds-row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; } .ds-row-name { font-size: 15px; font-weight: 600; } .ds-row-meta { display: flex; gap: 4px 12px; font-size: 12px; color: var(--apagado); } .ds-status { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--laranja); } .ds-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; } .ds-row-value { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 500; white-space: nowrap; }"
+    },
+    {
+      "name": "Cartão de recompensa",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Painel com borda para um único fato destacado.",
+      "html": "<div class=\"ds-wrap\"><div class=\"ds-panel\"><span>Recompensa</span><b>R$ 1.200,00</b></div></div>",
+      "css": ":host { --asfalto:#0c0e11; --painel:#15181d; --painel-2:#1d2128; --linha:#2a2f37; --texto:#eef1f4; --apagado:#8d96a3; --laranja:#ff6b1a; --laranja-forte:#ff8240; --laranja-fundo:rgb(255 107 26 / 14%); --perigo:#ff6b6b; --perigo-fundo:rgb(255 107 107 / 14%); --aviso:#f2b33d; --aviso-fundo:rgb(242 179 61 / 14%); --ok:#4fd18b; --sans:'Geist', ui-sans-serif, system-ui, sans-serif; --mono:'Geist Mono', ui-monospace, Menlo, monospace; } .ds-wrap { padding: 12px; background: var(--asfalto); } .ds-panel { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-radius: 16px; background: var(--painel); border: 1px solid var(--linha); font-family: var(--sans); color: var(--texto); } .ds-panel span { font-size: 13px; color: var(--apagado); } .ds-panel b { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 26px; letter-spacing: -0.01em; }"
+    },
+    {
+      "name": "Nav inferior",
+      "kind": "nav",
+      "refersTo": "nav-tab",
+      "description": "Quatro abas com ícone e rótulo; ativa com ícone laranja.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#\" aria-current=\"page\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z\"/></svg>Mapa</a><a href=\"#\"><span class=\"ds-icon\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 0 1 1.037-.443 48.282 48.282 0 0 0 5.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z\"/></svg><span class=\"ds-badge\">2</span></span>Mensagens</a></nav>",
+      "css": ":host { --asfalto:#0c0e11; --painel:#15181d; --painel-2:#1d2128; --linha:#2a2f37; --texto:#eef1f4; --apagado:#8d96a3; --laranja:#ff6b1a; --laranja-forte:#ff8240; --laranja-fundo:rgb(255 107 26 / 14%); --perigo:#ff6b6b; --perigo-fundo:rgb(255 107 107 / 14%); --aviso:#f2b33d; --aviso-fundo:rgb(242 179 61 / 14%); --ok:#4fd18b; --sans:'Geist', ui-sans-serif, system-ui, sans-serif; --mono:'Geist Mono', ui-monospace, Menlo, monospace; } .ds-nav { display: flex; justify-content: space-around; padding: 8px 4px 10px; background: var(--painel); border-top: 1px solid var(--linha); font-family: var(--sans); } .ds-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 10px; min-width: 64px; font-size: 11px; font-weight: 600; color: var(--apagado); text-decoration: none; border-radius: 10px; transition: color 0.2s ease; } .ds-nav a:hover, .ds-nav a[aria-current='page'] { color: var(--texto); } .ds-nav a[aria-current='page'] svg { color: var(--laranja); } .ds-nav a:focus-visible { outline: 2px solid var(--laranja); outline-offset: 2px; } .ds-nav svg { width: 24px; height: 24px; } .ds-icon { position: relative; display: flex; } .ds-badge { position: absolute; top: -5px; left: 15px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--laranja); color: #120700; font-family: var(--mono); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px var(--painel); box-sizing: border-box; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Turno da Noite",
+    "overview": "O app do jogador é o lado do trabalhador de um app de corrida à noite: o motorista olhando o celular no painel do carro, não o cliente pedindo comida. Tudo é asfalto quase preto e painéis grafite separados por linhas finas; o laranja aparece só onde algo está ao vivo, selecionado ou pedindo um toque. A seriedade comercial é o ponto: nenhum enfeite de terror, nenhuma textura de RPG, só um produto de bico bem acabado que por acaso lista lobisomens.\n\nA densidade é de ferramenta de trabalho. Linhas de lista com divisórias em vez de cartões empilhados, valores em mono tabular alinhados à direita, rótulos curtos em caixa normal. A Início é um mapa escuro de tela cheia com uma folha que sobe por baixo; as demais telas são uma coluna única com cabeçalho fino e a nav de quatro abas no pé. Tempo é sempre o tempo da campanha, mostrado na pílula do relógio com um ponto laranja e materializado no anel de prazo.\n\nO movimento é curto e com freio (curva de saída expo), sempre com alternativa para quem pede movimento reduzido. O único movimento contínuo é o pulso da caça disponível no mapa.\n\nVisão do GM (`src/routes/gm`) ainda usa o estilo claro anterior e está fora deste sistema até herdá-lo.",
+    "keyCharacteristics": [
+      "Escuro de verdade: asfalto, painel e painel-2 como três degraus de superfície, separados por linha de 1px.",
+      "Laranja como sinal, não como tema.",
+      "Geist para texto, Geist Mono tabular para dinheiro e horário.",
+      "Risco e desfecho em cores semânticas próprias, nunca no laranja.",
+      "Prazo como anel e barra que correm pela data da campanha."
+    ],
+    "rules": [
+      {
+        "name": "The Sinal Rule",
+        "body": "Laranja marca o que está vivo, atual ou acionável. Fora o botão principal e o badge, ele aparece como texto, traço, ponto ou fundo de 14%; nunca como preenchimento de superfície ou de cartão.",
+        "section": "colors"
+      },
+      {
+        "name": "The Risco Não É Laranja Rule",
+        "body": "Risco e desfecho usam perigo, aviso e ok. Uma caça disponível de risco alto mostra as duas coisas lado a lado: ponto laranja de \"Disponível\" e chip vermelho de \"Risco alto\".",
+        "section": "colors"
+      },
+      {
+        "name": "The Tinta Rule",
+        "body": "Sobre laranja, o texto é a tinta quase preta, nunca branco.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Para Número Rule",
+        "body": "Valor em R$, hora da campanha, contagem de não lidas e o número do anel usam Geist Mono tabular. Texto corrido nunca usa mono.",
+        "section": "typography"
+      },
+      {
+        "name": "The Caixa Normal Rule",
+        "body": "Rótulos e títulos de seção ficam em caixa normal, peso 600, cor apagada. Sem caixa alta espaçada.",
+        "section": "typography"
+      },
+      {
+        "name": "The Linha Antes de Cartão Rule",
+        "body": "Coleções são linhas com divisória, não cartões. Cartão (painel com borda) é para um único fato destacado: recompensa, ganhos, local com mapa.",
+        "section": "layout"
+      },
+      {
+        "name": "The Só Sobre o Mapa Rule",
+        "body": "Sombra de projeção só em elementos que flutuam sobre o mapa. Cartões e listas no fluxo da página são planos.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** usar laranja só para o que está vivo, selecionado ou acionável, e tinta quase preta sobre ele.",
+      "**Do** mostrar risco com perigo/aviso e desfecho com ok/perigo/apagado, cada um com seu fundo de 14%.",
+      "**Do** escrever todo valor em R$ e toda hora em Geist Mono tabular, alinhado à direita nas listas.",
+      "**Do** separar itens de coleção com divisórias de 1px na cor linha.",
+      "**Do** usar a curva `cubic-bezier(0.16, 1, 0.3, 1)` para entradas e mudanças de estado, e desligar animação com `prefers-reduced-motion`.",
+      "**Do** mostrar a data da campanha com o relógio, nunca o relógio real."
+    ],
+    "donts": [
+      "**Don't** usar superfícies claras nem cartões claros arredondados no app do jogador; é o visual de delivery que o sistema recusa.",
+      "**Don't** pintar risco, alerta ou erro de laranja.",
+      "**Don't** usar laranja como preenchimento sólido de cartões, cabeçalhos ou fundos (o brilho radial de 8% no palco da Início é atmosfera, não preenchimento).",
+      "**Don't** pôr sombra em cartões e listas que não flutuam sobre o mapa.",
+      "**Don't** usar caixa alta espaçada em rótulos ou títulos de seção.",
+      "**Don't** introduzir enfeite temático de terror ou RPG; o app se leva a sério como produto comercial."
+    ]
+  }
+}

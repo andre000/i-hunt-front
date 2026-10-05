@@ -7,7 +7,8 @@ export const centeredScreen = css`
   justify-content: center;
   gap: 16px;
   padding: 24px;
-  color: #333;
+  color: var(--texto);
+  background-color: var(--asfalto);
 `
 
 export const rowButton = css`
@@ -15,8 +16,8 @@ export const rowButton = css`
   display: flex;
   align-items: center;
   gap: 12px;
-  background-color: #fff;
-  color: #333;
+  background: none;
+  color: var(--texto);
   text-align: left;
   cursor: pointer;
 `

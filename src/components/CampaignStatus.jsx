@@ -21,13 +21,14 @@ CampaignStatus.propTypes = {
 
 const campaignStatus = css`
   h1 {
-    font-size: 1.6rem;
-    line-height: 1.2;
+    font-size: 1.8rem;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
   }
 
   p {
     font-size: 14px;
-    color: #777;
+    color: var(--apagado);
     line-height: 1.5;
   }
 `

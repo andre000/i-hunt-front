@@ -6,7 +6,8 @@ export const pwaOptions = {
     short_name: 'iHunt',
     lang: 'pt-BR',
     description: 'Seu novo trabalho? Ser um herói urbano!',
-    theme_color: '#ff6600',
+    theme_color: '#0c0e11',
+    background_color: '#0c0e11',
     icons: [
       {
         src: '/pwa-192x192.png',

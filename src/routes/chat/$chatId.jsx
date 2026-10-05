@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { css } from '@emotion/react'
 import { ChevronLeftIcon } from '@heroicons/react/24/outline'
 import { Avatar } from '../../components/Avatar'
+import { CampaignClock } from '../../components/CampaignClock'
 import { conversation } from '../../campaign/messages'
 import { relativeToCampaign } from '../../campaign/time'
 import { markConversationRead } from '../../store/campaign'
@@ -43,10 +44,11 @@ function ConversationPage() {
     <main css={pageStyle}>
       <header css={headerStyle}>
         <button type='button' onClick={goBack} aria-label='Voltar'>
-          <ChevronLeftIcon width={24} />
+          <ChevronLeftIcon width={20} />
         </button>
         <Avatar person={thread.npc} size={40} />
         <h2>{thread.npc.name}</h2>
+        <CampaignClock className='conversation__clock' />
       </header>
 
       <ol css={messagesStyle}>
@@ -65,61 +67,65 @@ function ConversationPage() {
 }
 
 const pageStyle = css`
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  background-color: var(--surface-sunken);
+  background-color: var(--asfalto);
 `
 
 const headerStyle = css`
-  position: sticky;
-  top: 0;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background-color: #f60;
-  color: #fff;
+  gap: 10px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 12px;
+  border-bottom: 1px solid var(--linha);
 
   button {
-    padding: 4px;
-    background: none;
-    color: #fff;
-    display: flex;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 12px;
+    background-color: var(--painel-2);
+    color: var(--texto);
+    display: grid;
+    place-items: center;
   }
 
   button:hover {
-    background: none;
+    background-color: var(--linha);
   }
 
   h2 {
+    flex: 1;
+    min-width: 0;
     font-size: 16px;
-    font-weight: 700;
-    font-family: 'Open Sans', sans-serif;
+    letter-spacing: -0.01em;
   }
 `
 
 const messagesStyle = css`
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   list-style: none;
   margin: 0;
-  padding: 16px;
+  padding: 18px 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 
   .message {
     align-self: flex-start;
-    max-width: 80%;
-    background-color: #fff;
-    border-radius: 4px 16px 16px 16px;
-    padding: 10px 12px;
-    box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+    max-width: 84%;
+    background-color: var(--painel-2);
+    border-radius: 18px 18px 18px 6px;
+    padding: 10px 12px 8px;
   }
 
   p {
-    font-size: 14px;
-    color: #333;
+    font-size: 15px;
     line-height: 1.4;
     white-space: pre-wrap;
   }
@@ -128,24 +134,25 @@ const messagesStyle = css`
     display: block;
     margin-top: 4px;
     font-size: 11px;
-    color: #999;
+    color: var(--apagado);
     text-align: right;
   }
 `
 
 const readOnlyStyle = css`
-  padding: 12px 16px 20px;
+  flex-shrink: 0;
+  padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--linha);
   font-size: 12px;
-  color: #999;
+  color: var(--apagado);
   text-align: center;
 `
 
 const notFoundStyle = css`
-  min-height: 100vh;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 16px;
-  color: #333;
 `

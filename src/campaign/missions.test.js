@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { homeView, missionDetail, missionList, visibleMissions } from './missions'
+import { deadlineProgress, homeView, missionDetail, missionList, visibleMissions } from './missions'
 import { campaignWith, parsed, validCampaign } from './fixtures'
 
 function statusOf(mission) {
@@ -26,6 +26,20 @@ describe('homeView', () => {
     raw.missions[2].featured = true
 
     expect(homeView(parsed(raw), 'ana').featured.id).toBe('m1')
+  })
+
+  it('lists open missions with the featured first, then the ones near the hunter', () => {
+    const view = homeView(parsed(), 'beto')
+
+    expect(view.open.map(m => m.id)).toEqual(['m1', 'm2', 'm3'])
+  })
+
+  it('puts missions near the hunter before the others', () => {
+    const raw = validCampaign()
+    raw.missions[0].featured = false
+    raw.missions[2].nearHunters = ['beto']
+
+    expect(homeView(parsed(raw), 'beto').open.map(m => m.id)).toEqual(['m2', 'm3', 'm1'])
   })
 
   it('has no featured mission when none is marked', () => {
@@ -169,5 +183,23 @@ describe('missionList', () => {
 
   it('returns nothing when no mission matches', () => {
     expect(missionList(campaign(), { statuses: ['failed'] })).toEqual([])
+  })
+})
+
+describe('deadlineProgress', () => {
+  const mission = { postedAt: '2026-10-04T18:00:00-03:00', deadline: '2026-10-05T06:00:00-03:00' }
+
+  it('is the share of time already gone between posting and deadline', () => {
+    expect(deadlineProgress(mission, '2026-10-04T21:00:00-03:00')).toBe(0.25)
+  })
+
+  it('stays between 0 and 1', () => {
+    expect(deadlineProgress(mission, '2026-10-04T12:00:00-03:00')).toBe(0)
+    expect(deadlineProgress(mission, '2026-10-06T12:00:00-03:00')).toBe(1)
+  })
+
+  it('cannot be measured without both dates', () => {
+    expect(deadlineProgress({ deadline: mission.deadline }, '2026-10-04T21:00:00-03:00')).toBeNull()
+    expect(deadlineProgress({ postedAt: mission.postedAt }, '2026-10-04T21:00:00-03:00')).toBeNull()
   })
 })

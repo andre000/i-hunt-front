@@ -46,6 +46,31 @@ describe('parseCampaign with an invalid campaign', () => {
     expect(result.errors).toContainEqual(expect.objectContaining({ path: '/missions/1/value' }))
   })
 
+  it('accepts a mission position on the map', () => {
+    const raw = validCampaign()
+    raw.missions[0].position = { lat: -30.0346, lng: -51.2177 }
+
+    expect(parseCampaign(raw).campaign.missions[0].position).toEqual({ lat: -30.0346, lng: -51.2177 })
+  })
+
+  it('reports a position without longitude', () => {
+    const raw = validCampaign()
+    raw.missions[0].position = { lat: -30.0346 }
+
+    const result = parseCampaign(raw)
+
+    expect(result.errors).toContainEqual(expect.objectContaining({ path: '/missions/0/position/lng' }))
+  })
+
+  it('reports a latitude out of range', () => {
+    const raw = validCampaign()
+    raw.missions[0].position = { lat: -300, lng: -51.2 }
+
+    const result = parseCampaign(raw)
+
+    expect(result.errors).toContainEqual(expect.objectContaining({ path: '/missions/0/position/lat' }))
+  })
+
   it('reports a risk outside the allowed values', () => {
     const raw = validCampaign()
     raw.missions[0].risk = 'extremo'

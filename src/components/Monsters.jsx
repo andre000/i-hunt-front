@@ -38,7 +38,7 @@ export function Monsters(props) {
       easing: 'easeInOutSine',
       direction: 'alternate',
     }).add({
-      fill: '#f60',
+      fill: '#ff6b1a',
     }).add({
       targets: parentGroup.children,
       translateX: [

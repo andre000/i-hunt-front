@@ -59,7 +59,17 @@
           "hunters": { "description": "Ids dos hunters que estão na missão. Com hunters, ela fica Em andamento.", "type": "array", "items": { "description": "Id de um hunter.", "type": "string" } },
           "result": { "description": "Resultado definido pelo GM ao fim da missão.", "enum": ["concluída", "fracassada"] },
           "deadline": { "description": "Prazo da missão, com fuso. Se a data da campanha passar dele com a missão Disponível, ela fica Expirada.", "type": "string", "format": "date-time" },
-          "postedAt": { "description": "Horário da ficção em que a missão aparece. Se for depois da data da campanha, a missão fica agendada (oculta para os jogadores). Sem ele, aparece sempre.", "type": "string", "format": "date-time" }
+          "postedAt": { "description": "Horário da ficção em que a missão aparece. Se for depois da data da campanha, a missão fica agendada (oculta para os jogadores). Sem ele, aparece sempre.", "type": "string", "format": "date-time" },
+          "position": {
+            "description": "Onde a missão fica no mapa. Copie do Google Maps ou do OpenStreetMap (clique com o botão direito no lugar). Sem ela, a missão aparece só na lista. Ex.: { \"lat\": -30.0346, \"lng\": -51.2177 }.",
+            "type": "object",
+            "required": ["lat", "lng"],
+            "additionalProperties": false,
+            "properties": {
+              "lat": { "description": "Latitude, de -90 a 90.", "type": "number", "minimum": -90, "maximum": 90 },
+              "lng": { "description": "Longitude, de -180 a 180.", "type": "number", "minimum": -180, "maximum": 180 }
+            }
+          }
         }
       }
     },

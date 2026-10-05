@@ -17,14 +17,13 @@ export function SyncNotice() {
 }
 
 const syncNotice = css`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  flex-shrink: 0;
+  position: relative;
   z-index: 10;
-  padding: 4px 16px;
-  background-color: #333;
-  color: #fff;
+  padding: calc(6px + env(safe-area-inset-top, 0px)) 16px 6px;
+  background-color: var(--aviso-fundo);
+  color: var(--aviso);
+  font-weight: 600;
   font-size: 12px;
   text-align: center;
 `

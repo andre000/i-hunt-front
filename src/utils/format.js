@@ -1,3 +1,4 @@
 export function formatBRL(value) {
-  return `R$ ${value.toFixed(2).replace('.', ',')}`
+  const [whole, cents] = value.toFixed(2).split('.')
+  return `R$ ${whole.replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${cents}`
 }

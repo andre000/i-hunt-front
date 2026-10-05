@@ -38,8 +38,8 @@ const avatar = (size) => css`
   height: ${size}px;
   flex-shrink: 0;
   border-radius: 50%;
-  background-color: #333;
-  color: #fff;
+  background-color: var(--linha);
+  color: var(--texto);
   display: flex;
   align-items: center;
   justify-content: center;

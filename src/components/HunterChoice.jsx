@@ -7,6 +7,7 @@ import anime from 'animejs/lib/anime.es.js';
 import Logo from './Logo'
 import { Monsters } from './Monsters';
 import { chooseHunter } from '../store/campaign'
+import { ArrowRightIcon } from '@heroicons/react/24/outline'
 
 const sloganArray = [
   "Monstros à solta? Seu bico agora é caçá-los!",
@@ -85,7 +86,7 @@ export function HunterChoice () {
           <li key={hunter.id}>
             <button type='button' onClick={() => handleChoose(hunter.id)} className='button secondary'>
               {hunter.name}
-              <span className='login__arrow' aria-hidden='true'>→</span>
+              <ArrowRightIcon className='login__arrow' aria-hidden='true' />
             </button>
           </li>
         ))}
@@ -97,9 +98,9 @@ export function HunterChoice () {
 }
 
 const hunterChoice = css`
-  min-height: 100vh;
-  color: #777;
-  font-weight: 300;
+  min-height: 100dvh;
+  color: var(--apagado);
+  background-color: var(--asfalto);
   overflow: hidden;
   padding: 16px;
   position: relative;
@@ -117,9 +118,11 @@ const hunterChoice = css`
   }
 
   h1 {
-    font-size: 1.8rem;
-    width: 70%;
-    line-height: 1.2;
+    font-size: 2rem;
+    width: 85%;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: var(--texto);
   }
 
   .login__question {
@@ -138,10 +141,14 @@ const hunterChoice = css`
   .button {
     position: relative;
     width: 100%;
-    font-weight: 700;
-    height: 48px;
+    height: 52px;
     display: flex;
     align-items: center;
+    font-size: 16px;
+  }
+
+  .button:hover .login__arrow {
+    color: var(--laranja);
   }
 
   .login__monsters {
@@ -161,7 +168,7 @@ const hunterChoice = css`
     width: 1px;
     height: 1px;
     border-radius: 12px;
-    background-color: #333;
+    background-color: var(--asfalto);
     opacity: 0;
     pointer-events: none;
   }
@@ -169,5 +176,8 @@ const hunterChoice = css`
   .login__arrow {
     position: absolute;
     right: 16px;
+    width: 20px;
+    height: 20px;
+    color: var(--apagado);
   }
 `

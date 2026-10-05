@@ -27,6 +27,7 @@ Cada campo está explicado no próprio schema (`https://<endereço do app>/campa
   - **Expirada**: quando a data da campanha passa do `deadline` e a missão continua sem hunters.
   - **Disponível**: no resto.
 - **Ganhos** de um hunter: o `value` de cada missão Concluída, dividido igualmente entre os hunters dela.
+- **Posição no mapa** (`position`): opcional. Clique com o botão direito no lugar, no Google Maps ou no OpenStreetMap, e copie os dois números: `"position": { "lat": -30.0386, "lng": -51.2155 }`. Missão sem posição aparece só na lista, fora do mapa.
 - **Mensagens**: `"to": "all"` vai para todos os hunters; `"to": ["ana", "beto"]` vai só para esses. Um jogador nunca vê mensagem enviada só para outros hunters.
 
 ## 2. Validar no editor

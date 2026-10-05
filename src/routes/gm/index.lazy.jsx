@@ -184,6 +184,7 @@ const gmPage = css`
   gap: 24px;
   color: #333;
   background-color: #fff;
+  color-scheme: light;
 
   .gm__eyebrow {
     font-size: 12px;

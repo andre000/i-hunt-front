@@ -45,7 +45,8 @@ describe('app gate', () => {
   it('opens the app when campaign and hunter are set', async () => {
     await renderApp()
 
-    expect(await screen.findByText('Olá Ana')).toBeTruthy()
+    expect(await screen.findByText('Seus ganhos')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Lobisomem no Bom Fim' })).toBeTruthy()
   })
 
   it('opens the GM view without a hunter, even with an invalid JSON', async () => {

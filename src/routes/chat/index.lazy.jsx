@@ -3,6 +3,7 @@ import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
 import { useSelector } from 'react-redux'
 import { css } from '@emotion/react'
 import { Footer } from '../../components/Footer'
+import { Header } from '../../components/Header'
 import { Avatar } from '../../components/Avatar'
 import { inbox } from '../../campaign/messages'
 import { rowButton, stackedText } from '../../components/styles'
@@ -19,9 +20,7 @@ function InboxPage() {
 
   return (
     <main className='app-main'>
-      <header css={headerStyle}>
-        <h2>Mensagens</h2>
-      </header>
+      <Header title="Mensagens" />
 
       <div className='app-body' css={bodyStyle}>
         {conversations.length === 0 ? (
@@ -60,24 +59,13 @@ function InboxPage() {
   )
 }
 
-const headerStyle = css`
-  padding: 24px;
-  background-color: #f60;
-  color: #fff;
-
-  h2 {
-    font-weight: 700;
-    font-family: 'Open Sans', sans-serif;
-  }
-`
-
 const bodyStyle = css`
-  padding: 8px 0 80px;
+  padding: 0;
 
   .inbox__empty {
-    padding: 24px;
+    padding: 24px 16px;
     font-size: 14px;
-    color: #777;
+    color: var(--apagado);
   }
 
   ul {
@@ -86,16 +74,18 @@ const bodyStyle = css`
     padding: 0;
   }
 
+  li + li {
+    border-top: 1px solid var(--linha);
+  }
+
   .inbox__item {
     ${rowButton}
-    padding: 12px 24px;
-    border: none;
+    padding: 14px 16px;
     border-radius: 0;
   }
 
   .inbox__item:hover {
-    background-color: #f7f7f7;
-    color: #333;
+    background-color: var(--painel);
   }
 
   .item__content {
@@ -111,31 +101,31 @@ const bodyStyle = css`
   }
 
   .item__name {
-    font-weight: 700;
+    font-weight: 600;
+    font-size: 15px;
   }
 
   .item__time {
-    font-size: 11px;
-    color: #999;
+    font-size: 12px;
+    color: var(--apagado);
     white-space: nowrap;
   }
 
   .item__text {
-    font-size: 13px;
-    color: #777;
+    font-size: 14px;
+    color: var(--apagado);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .item__text--unread {
-    color: #333;
-    font-weight: 600;
+    color: var(--texto);
   }
 
   .item__time--unread {
-    color: #f60;
-    font-weight: 700;
+    color: var(--laranja);
+    font-weight: 600;
   }
 
   .item__badge {
@@ -143,8 +133,9 @@ const bodyStyle = css`
     height: 20px;
     padding: 0 6px;
     border-radius: 10px;
-    background-color: #f60;
-    color: #fff;
+    background-color: var(--laranja);
+    color: #120700;
+    font-family: var(--mono);
     font-size: 11px;
     font-weight: 700;
     display: flex;

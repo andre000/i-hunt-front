@@ -6,8 +6,8 @@ describe('formatBRL', () => {
     expect(formatBRL(250.5)).toBe('R$ 250,50')
   })
 
-  it('adds two decimal places to integer values', () => {
-    expect(formatBRL(1500)).toBe('R$ 1500,00')
+  it('adds two decimal places and groups thousands with a dot', () => {
+    expect(formatBRL(1500)).toBe('R$ 1.500,00')
   })
 
   it('rounds to two decimal places', () => {

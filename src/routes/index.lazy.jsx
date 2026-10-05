@@ -1,175 +1,325 @@
 /** @jsxImportSource @emotion/react */
-import { useEffect } from 'react';
-import { createLazyFileRoute, Link, useLocation, useNavigate } from '@tanstack/react-router'
+import { useState } from 'react'
+import { createLazyFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useSelector } from 'react-redux'
-import anime from 'animejs/lib/anime.es.js';
 import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
-import { Header } from '../components/Header';
+import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import { Footer } from '../components/Footer'
-import { FeaturedMission } from '../components/FeaturedMission';
-import { NearbyMission } from '../components/NearbyMission';
-import { homeView } from '../campaign/missions';
+import { CampaignClock } from '../components/CampaignClock'
+import { DeadlineRing } from '../components/DeadlineRing'
+import { MissionMap } from '../components/MissionMap'
+import { RiskChip, StatusLabel } from '../components/MissionTags'
+import { homeView } from '../campaign/missions'
+import { hunterProfile } from '../campaign/hunters'
+import { formatBRL } from '../utils/format'
 
 export const Route = createLazyFileRoute('/')({
   component: Index,
 })
 
-function playHomeEntrance() {
-  anime.timeline({
-    duration: 500,
-    easing: 'easeInOutSine',
-  }).add({
-    targets: ".home__header",
-    opacity: [0, 1],
-    translateY: [20, 0],
-  })
-  .add({
-    targets: ".home__body",
-    opacity: [0, 1],
-    translateY: ["100vw", 0],
-  })
-  .add({
-    targets: "footer",
-    translateY: [20, 0],
-    opacity: [0, 1],
-  })
-}
-
-function NearbySection({ missions, onMissionClick }) {
+function SelectedMission({ mission, hunterId, campaignDate }) {
   return (
-    <div className="home__body__nearby">
-      <div className="home__body__nearby__header">
-        <h2>Caças próximas</h2>
-        <Link to="/search" className="home__see-all">Ver todas</Link>
+    <div css={selectedStyle}>
+      <div className="selected__row">
+        <DeadlineRing mission={mission} campaignDate={campaignDate} />
+        <div className="selected__text">
+          <h2>{mission.name}</h2>
+          <span className="selected__meta">
+            {mission.location}{mission.nearHunters.includes(hunterId) && ' · perto de você'}
+          </span>
+          {mission.status !== 'available' && <StatusLabel status={mission.status} />}
+        </div>
+        <div className="selected__price">
+          <b className="num">{formatBRL(mission.value)}</b>
+          <RiskChip risk={mission.risk} />
+        </div>
       </div>
-
-      {missions.length === 0 && (
-        <p className="home__body__nearby__empty">Nenhuma caça perto de você agora.</p>
-      )}
-
-      {missions.map(mission => (
-        <NearbyMission key={mission.id} data={mission} onClick={() => onMissionClick(mission)} />
-      ))}
+      <Link className="button primary selected__cta" to="/mission/$missionId" params={{ missionId: mission.id }}>
+        Ver caça <ArrowRightIcon aria-hidden="true" />
+      </Link>
     </div>
   )
 }
 
-NearbySection.propTypes = {
-  missions: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string.isRequired })).isRequired,
-  onMissionClick: PropTypes.func.isRequired,
+SelectedMission.propTypes = {
+  mission: PropTypes.object.isRequired,
+  hunterId: PropTypes.string.isRequired,
+  campaignDate: PropTypes.string.isRequired,
 }
 
 function Index() {
-  const location = useLocation()
-  const { data, hunterId } = useSelector(state => state.campaign)
-  const { featured: featuredMission, nearby: nearbyMissions, available } = homeView(data, hunterId)
-
   const navigate = useNavigate()
-  const handleMissionClick = (mission) => {
-    navigate({ to: '/mission/$missionId', params: { missionId: mission.id } })
-  }
+  const { data, hunterId } = useSelector(state => state.campaign)
+  const { open } = homeView(data, hunterId)
+  const { earnings } = hunterProfile(data, hunterId)
+  const [selectedId, setSelectedId] = useState(null)
 
-  useEffect(() => {
-    if (location.state?.referer === 'login') playHomeEntrance()
-  }, [location.state?.referer])
+  const selected = open.find(mission => mission.id === selectedId) ?? open[0] ?? null
+  const others = open.filter(mission => mission !== selected)
+  const onMap = open.filter(mission => mission.position)
 
   return (
-    <main className='app-main'>
-      <Header className="home__header" />
-      <div className="home__body app-body" css={homeBody}>
-        <div className="home__body__header">
-          <h1>Encontre uma caça</h1>
+    <main className="app-main" css={home}>
+      <div className="home__stage">
+        {onMap.length > 0 && (
+          <MissionMap
+            className="home__map"
+            missions={onMap}
+            selectedId={selected?.id}
+            onSelect={setSelectedId}
+          />
+        )}
+        <div className="home__top">
+          <CampaignClock />
+          <span className="home__earnings">
+            <small>Seus ganhos</small>
+            <b className="num">{formatBRL(earnings)}</b>
+          </span>
         </div>
+      </div>
 
-        <div className="home__body__counter">
-          <div>
-            <h2>{available}</h2>
-            <p>caças disponíveis</p>
-          </div>
-          <Link to="/search">Ver todas</Link>
-        </div>
-
-        {featuredMission && (
-          <FeaturedMission data={featuredMission} onClick={() => handleMissionClick(featuredMission)} />
+      <section className="home__sheet" aria-label="Caças abertas">
+        <span className="home__grip" aria-hidden="true" />
+        {selected ? (
+          <SelectedMission mission={selected} hunterId={hunterId} campaignDate={data.campaign.date} />
+        ) : (
+          <p className="home__empty">Nenhuma caça aberta agora. Quando o GM publicar uma, ela aparece aqui.</p>
         )}
 
-        <NearbySection missions={nearbyMissions} onMissionClick={handleMissionClick} />
-      </div>
+        {others.length > 0 && (
+          <ul className="home__list">
+            {others.map(mission => (
+              <li key={mission.id}>
+                <button
+                  type="button"
+                  onClick={() => mission.position
+                    ? setSelectedId(mission.id)
+                    : navigate({ to: '/mission/$missionId', params: { missionId: mission.id } })}
+                >
+                  <span className="list__name">{mission.name}</span>
+                  <StatusLabel status={mission.status} />
+                  <b className="list__value num">{formatBRL(mission.value)}</b>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <Link className="home__all" to="/search">Ver todas as caças</Link>
+      </section>
       <Footer active="home" />
     </main>
   )
 }
 
-const homeBody = css`
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+const home = css`
+  position: relative;
 
-  h1, h2 {
-    font-size: 18px;
-    font-family: 'Open Sans', sans-serif;
+  .home__stage {
+    flex: 1;
+    min-height: 180px;
+    position: relative;
+    background:
+      radial-gradient(circle at 70% 40%, rgb(255 107 26 / 8%), transparent 45%),
+      #111419;
   }
 
-  .home__body__header {
+  .home__map {
+    position: absolute;
+    inset: 0 0 -24px;
+    z-index: 0;
+
+    .leaflet-bottom {
+      bottom: 32px;
+    }
+  }
+
+  .home__top {
+    position: relative;
+    z-index: 2;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-  }
+    align-items: flex-start;
+    gap: 8px;
+    padding: calc(12px + env(safe-area-inset-top, 0px)) 14px 0;
+    pointer-events: none;
 
-  .home__body__counter {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-
-    > div {
-      display: flex;
-      gap: 8px;
-      align-items: end;
-    }
-
-    a {
-      color: #f60;
-      font-size: 12px;
-      margin-bottom: 21px;
-      font-weight: 700;
-      text-decoration: none;
-    }
-
-    h2 {
-      font-size: 68px;
-      font-weight: 900;
-    }
-
-    p {
-      font-size: 12px;
-      color: #777;
-      margin-bottom: 21px;
+    > * {
+      pointer-events: auto;
+      box-shadow: 0 8px 20px -8px rgb(0 0 0 / 60%);
     }
   }
 
-  .home__body__nearby {
+  .home__earnings {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    padding: 6px 12px;
+    border-radius: 16px;
+    background-color: rgb(21 24 29 / 92%);
+    border: 1px solid var(--linha);
+
+    small {
+      font-size: 11px;
+      color: var(--apagado);
+      font-weight: 500;
+    }
+
+    b {
+      font-size: 15px;
+      white-space: nowrap;
+    }
   }
 
-  .home__body__nearby__header {
+  .home__sheet {
+    position: relative;
+    z-index: 3;
+    max-height: 62%;
+    overflow-y: auto;
+    flex-shrink: 0;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 14px;
+    padding: 10px 18px 16px;
+    background-color: var(--painel);
+    border-top: 1px solid var(--linha);
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -20px 40px -10px rgb(0 0 0 / 70%);
+    animation: sheet-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .home__see-all {
-    color: #f60;
-    font-size: 12px;
-    font-weight: 700;
-    text-decoration: none;
+  @keyframes sheet-up {
+    from { transform: translateY(40px); opacity: 0.4; }
+    to { transform: translateY(0); opacity: 1; }
   }
 
-  .home__body__nearby__empty {
+  @media (prefers-reduced-motion: reduce) {
+    .home__sheet { animation: none; }
+  }
+
+  .home__grip {
+    width: 36px;
+    height: 4px;
+    border-radius: 4px;
+    background-color: var(--linha);
+    align-self: center;
+  }
+
+  .home__empty {
     font-size: 14px;
-    color: #777;
+    color: var(--apagado);
+    padding: 8px 0;
+  }
+
+  .home__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--linha);
+
+    li + li {
+      border-top: 1px solid var(--linha);
+    }
+
+    button {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-radius: 0;
+      background: none;
+      color: var(--texto);
+      font-size: 14px;
+      font-weight: 500;
+      text-align: left;
+    }
+
+    .list__name {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .list__value {
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+      min-width: 92px;
+      text-align: right;
+    }
+
+    button:hover .list__name {
+      color: var(--laranja);
+    }
+  }
+
+  .home__all {
+    align-self: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--apagado);
+    text-underline-offset: 3px;
+  }
+
+  .home__all:hover {
+    color: var(--texto);
+  }
+`
+
+const selectedStyle = css`
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  .selected__row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .selected__text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  h2 {
+    font-size: 18px;
+    line-height: 1.15;
+  }
+
+  .selected__meta {
+    font-size: 13px;
+    color: var(--apagado);
+  }
+
+  .selected__price {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+
+    b {
+      font-size: 16px;
+      white-space: nowrap;
+    }
+  }
+
+  .selected__cta {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    height: 52px;
+    font-size: 16px;
+    font-weight: 700;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
   }
 `

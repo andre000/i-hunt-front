@@ -31,18 +31,19 @@ export function InviteConfirmation() {
 
 const inviteConfirmation = css`
   h1 {
-    font-size: 1.6rem;
-    line-height: 1.2;
+    font-size: 1.8rem;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
   }
 
   p {
     font-size: 14px;
-    color: #777;
+    color: var(--apagado);
     line-height: 1.5;
   }
 
   .button {
-    height: 48px;
-    font-weight: 700;
+    height: 52px;
+    font-size: 16px;
   }
 `

@@ -36,11 +36,12 @@ export default function Logo({ size = "medium", enableAnimation = false }) {
 }
 
 const logo = css`
-  font-weight: 700;
-  color: #333;
+  font-weight: 800;
+  color: var(--texto);
+  letter-spacing: -0.04em;
 
   span {
-    color: #f60;
+    color: var(--laranja);
     font-weight: 700;
     position: relative;
   }
@@ -52,7 +53,7 @@ const logo = css`
     left: 4px;
     width: 1px;
     height: 1px;
-    background-color: #f60;
+    background-color: var(--laranja);
     z-index: 100;
     border-radius: 50%;
   }

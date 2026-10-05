@@ -11,13 +11,14 @@ import { MISSION_STATUS_LABEL, RISKS, missionList } from '../../campaign/mission
 import { relativeToCampaign } from '../../campaign/time'
 import { formatBRL } from '../../utils/format'
 import { rowButton, stackedText } from '../../components/styles'
+import { RiskChip, StatusLabel } from '../../components/MissionTags'
 
 export const Route = createLazyFileRoute('/search/')({
   component: SearchPage,
 })
 
 const STATUS_OPTIONS = Object.entries(MISSION_STATUS_LABEL).map(([value, label]) => ({ value, label }))
-const RISK_OPTIONS = RISKS.map(risk => ({ value: risk, label: risk }))
+const RISK_OPTIONS = RISKS.map(risk => ({ value: risk, label: risk.charAt(0).toUpperCase() + risk.slice(1) }))
 
 function toggle(list, value) {
   return list.includes(value) ? list.filter(item => item !== value) : [...list, value]
@@ -64,10 +65,8 @@ function SearchPage() {
 
   return (
     <main className='app-main'>
-      <Header />
+      <Header title="Caças" />
       <div className="app-body" css={searchBody}>
-        <h1>Todas as caças</h1>
-
         <FilterGroup
           title="Estado"
           options={STATUS_OPTIONS}
@@ -95,11 +94,12 @@ function SearchPage() {
                   <span className="item__body">
                     <span className="item__name">{mission.name}</span>
                     <span className="item__meta">
-                      {MISSION_STATUS_LABEL[mission.status]} ● risco {mission.risk}
-                      {mission.deadline && ` ● prazo ${relativeToCampaign(mission.deadline, campaignDate)}`}
+                      <StatusLabel status={mission.status} />
+                      <RiskChip risk={mission.risk} />
+                      {mission.deadline && <span>prazo {relativeToCampaign(mission.deadline, campaignDate)}</span>}
                     </span>
                   </span>
-                  <span className="item__value">{formatBRL(mission.value)}</span>
+                  <span className="item__value num">{formatBRL(mission.value)}</span>
                   <ChevronRightIcon className="item__arrow" />
                 </button>
               </li>
@@ -119,66 +119,67 @@ const filterGroup = css`
 
   legend {
     font-size: 12px;
-    font-weight: 700;
-    color: #777;
-    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--apagado);
     margin-bottom: 8px;
   }
 
   .filter__chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
   }
 
   button {
-    border: 1px solid #ddd;
-    background-color: #fff;
-    color: #555;
-    border-radius: 16px;
+    background-color: var(--painel-2);
+    color: var(--apagado);
+    border-radius: 999px;
     padding: 6px 12px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
-    cursor: pointer;
+    box-shadow: inset 0 0 0 1px var(--linha);
+  }
+
+  button:hover {
+    color: var(--texto);
   }
 
   button[aria-pressed='true'] {
-    background-color: #f60;
-    border-color: #f60;
-    color: #fff;
+    background-color: var(--laranja-fundo);
+    color: var(--laranja);
+    box-shadow: inset 0 0 0 1px var(--laranja);
   }
 `
 
 const searchBody = css`
-  padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 20px;
 
-  h1 {
-    font-size: 18px;
-    font-family: 'Open Sans', sans-serif;
-  }
-
   .search__empty {
     font-size: 14px;
-    color: #777;
+    color: var(--apagado);
   }
 
   .search__list {
     list-style: none;
     margin: 0;
     padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    border-top: 1px solid var(--linha);
+  }
+
+  .search__list li {
+    border-bottom: 1px solid var(--linha);
   }
 
   .search__item {
     ${rowButton}
-    padding: 16px;
-    border: 1px solid #eee;
-    border-radius: 16px;
+    padding: 14px 0;
+    border-radius: 0;
+  }
+
+  .search__item:hover .item__name {
+    color: var(--laranja);
   }
 
   .item__body {
@@ -186,16 +187,22 @@ const searchBody = css`
   }
 
   .item__name {
-    font-weight: 700;
+    font-weight: 600;
+    font-size: 15px;
   }
 
   .item__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
     font-size: 12px;
-    color: #777;
+    color: var(--apagado);
   }
 
   .item__value {
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 500;
     white-space: nowrap;
   }
 
@@ -203,6 +210,6 @@ const searchBody = css`
     width: 18px;
     height: 18px;
     flex-shrink: 0;
-    color: #aaa;
+    color: var(--apagado);
   }
 `

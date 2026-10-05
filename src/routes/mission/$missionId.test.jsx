@@ -20,7 +20,7 @@ describe('mission detail', () => {
 
     expect(await screen.findByText('Caça X')).toBeTruthy()
     expect(screen.getByText('Disponível')).toBeTruthy()
-    expect(screen.getByText('Alto')).toBeTruthy()
+    expect(screen.getByText('Risco alto')).toBeTruthy()
     expect(screen.getByText('R$ 300,00')).toBeTruthy()
     expect(screen.getByText('em 3 dias')).toBeTruthy()
     expect(screen.getByText('há 3 horas')).toBeTruthy()
