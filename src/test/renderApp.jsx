@@ -42,7 +42,8 @@ export async function renderApp({
 } = {}) {
   const sync = demo ? demoSetup(demo) : realSetup({ body, status, hunterId, campaignUrl })
   const leaveDemo = vi.fn()
-  const store = createAppStore({ sync, pendingInvite, leaveDemo })
+  const saveFile = vi.fn()
+  const store = createAppStore({ sync, pendingInvite, leaveDemo, saveFile })
   store.dispatch(campaignLoaded(await sync.load()))
 
   const router = createRouter({ routeTree, history: createMemoryHistory({ initialEntries: [path] }) })
@@ -51,5 +52,5 @@ export async function renderApp({
       <RouterProvider router={router} />
     </Provider>,
   )
-  return { ...view, store, router, sync, leaveDemo }
+  return { ...view, store, router, sync, leaveDemo, saveFile }
 }

@@ -1,14 +1,22 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import { draftFrom, updateCampaign } from '../campaign/draft'
+import { draftFile, draftFileName, draftFrom, updateCampaign } from '../campaign/draft'
 
 export const openPublishedDraft = createAsyncThunk(
   'editor/openPublished',
   (_, { extra }) => extra.sync.readPublished(),
 )
 
+export const downloadDraft = createAsyncThunk(
+  'editor/download',
+  (_, { extra, getState }) => {
+    const { draft, fileName } = getState().editor
+    extra.saveFile(fileName, draftFile(draft, { schemaUrl: `${window.location.origin}/campaign.schema.json` }))
+  },
+)
+
 const editorSlice = createSlice({
   name: 'editor',
-  initialState: { status: 'empty', draft: null, error: null },
+  initialState: { status: 'empty', draft: null, fileName: null, error: null },
   reducers: {
     campaignEdited(state, { payload }) {
       state.draft = updateCampaign(state.draft, payload)
@@ -27,6 +35,7 @@ const editorSlice = createSlice({
         }
         state.status = 'ready'
         state.draft = draftFrom(payload.raw)
+        state.fileName = draftFileName(payload.url)
         state.error = null
       })
   },

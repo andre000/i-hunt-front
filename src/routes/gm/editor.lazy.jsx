@@ -6,7 +6,7 @@ import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
 import { CampaignStatus } from '../../components/CampaignStatus'
 import { useDesktopWidth } from '../../components/useDesktopWidth'
-import { campaignEdited, openPublishedDraft } from '../../store/editor'
+import { campaignEdited, downloadDraft, openPublishedDraft } from '../../store/editor'
 import { draftErrors } from '../../campaign/draft'
 
 export const Route = createLazyFileRoute('/gm/editor')({
@@ -147,6 +147,16 @@ function Editor() {
           <span className={errors.length > 0 ? 'editor__count editor__count--bad' : 'editor__count'}>
             {errorCount(errors.length)}
           </span>
+        )}
+        {draft && (
+          <button
+            type="button"
+            className="button primary editor__download"
+            disabled={errors.length > 0}
+            onClick={() => dispatch(downloadDraft())}
+          >
+            Baixar
+          </button>
         )}
       </div>
       <DraftErrors errors={errors} />
@@ -313,6 +323,16 @@ const editorPage = css`
     color: var(--ok);
     font-size: 13px;
     font-weight: 600;
+  }
+
+  .editor__download {
+    padding: 6px 14px;
+    font-size: 14px;
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
   }
 
   .editor__count--bad {

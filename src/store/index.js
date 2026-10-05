@@ -11,7 +11,14 @@ function goHome() {
   window.location.assign('/')
 }
 
-export function createAppStore({ sync, pendingInvite = null, leaveDemo = goHome }) {
+function saveToComputer(name, text) {
+  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }))
+  const link = Object.assign(document.createElement('a'), { href: url, download: name })
+  link.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+export function createAppStore({ sync, pendingInvite = null, leaveDemo = goHome, saveFile = saveToComputer }) {
   return configureStore({
     reducer: {
       campaign: campaignReducer,
@@ -27,6 +34,6 @@ export function createAppStore({ sync, pendingInvite = null, leaveDemo = goHome 
       }),
     },
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({ thunk: { extraArgument: { sync, leaveDemo } } }),
+      getDefaultMiddleware({ thunk: { extraArgument: { sync, leaveDemo, saveFile } } }),
   })
 }

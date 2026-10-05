@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { draftErrors, draftFrom, updateCampaign } from './draft'
+import { draftErrors, draftFile, draftFileName, draftFrom, updateCampaign } from './draft'
 import { validCampaign } from './fixtures'
 
 describe('draftFrom', () => {
@@ -53,5 +53,41 @@ describe('updateCampaign', () => {
     const draft = updateCampaign(draftFrom(validCampaign()), { name: '' })
 
     expect(draftErrors(draft)).toContainEqual(expect.objectContaining({ path: '/campaign/name' }))
+  })
+})
+
+describe('draftFile', () => {
+  const SCHEMA = 'https://ihunt.test/campaign.schema.json'
+
+  it('starts with the $schema of the app', () => {
+    const text = draftFile(draftFrom(validCampaign()), { schemaUrl: SCHEMA })
+
+    expect(Object.keys(JSON.parse(text))[0]).toBe('$schema')
+    expect(JSON.parse(text).$schema).toBe(SCHEMA)
+  })
+
+  it('replaces the $schema the file had', () => {
+    const raw = { $schema: './campaign.schema.json', ...validCampaign() }
+
+    const text = draftFile(draftFrom(raw), { schemaUrl: SCHEMA })
+
+    expect(JSON.parse(text).$schema).toBe(SCHEMA)
+  })
+
+  it('is indented and keeps the campaign', () => {
+    const text = draftFile(draftFrom(validCampaign()), { schemaUrl: SCHEMA })
+
+    expect(text).toContain('\n  "campaign": {\n    "name": "Noite em Porto Alegre",')
+    expect(JSON.parse(text).missions[2].name).toBe('Vampiro no bar')
+  })
+})
+
+describe('draftFileName', () => {
+  it('uses the name of the published file', () => {
+    expect(draftFileName('https://pub-123.r2.dev/mesas/noites.json?v=2')).toBe('noites.json')
+  })
+
+  it('is campanha.json without a published file', () => {
+    expect(draftFileName(null)).toBe('campanha.json')
   })
 })

@@ -102,4 +102,35 @@ describe('Editor da campanha', () => {
     expect(await screen.findByText('Noite em Porto Alegre')).toBeTruthy()
     expect(screen.queryByRole('link', { name: 'Editar' })).toBeNull()
   })
+
+  it('downloads the draft with the name of the published file', async () => {
+    const { saveFile } = await renderApp({ path: '/gm/editor', hunterId: null })
+
+    fireEvent.change(await screen.findByLabelText('Nome da campanha'), { target: { value: 'Noite em Pelotas' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Baixar' }))
+
+    expect(saveFile).toHaveBeenCalledTimes(1)
+    const [name, text] = saveFile.mock.calls[0]
+    expect(name).toBe('campanha.json')
+    expect(JSON.parse(text).$schema).toBe(`${window.location.origin}/campaign.schema.json`)
+    expect(JSON.parse(text).campaign.name).toBe('Noite em Pelotas')
+  })
+
+  it('locks Baixar while the draft has errors', async () => {
+    const { saveFile } = await renderApp({ path: '/gm/editor', hunterId: null })
+
+    fireEvent.change(await screen.findByLabelText('Nome da campanha'), { target: { value: '' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Baixar' }))
+
+    expect(screen.getByRole('button', { name: 'Baixar' }).disabled).toBe(true)
+    expect(saveFile).not.toHaveBeenCalled()
+  })
+
+  it('keeps the name of a published file with another name', async () => {
+    const { saveFile } = await renderApp({ path: '/gm/editor', hunterId: null, campaignUrl: 'https://pub-123.r2.dev/mesas/noites.json' })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Baixar' }))
+
+    expect(saveFile.mock.calls[0][0]).toBe('noites.json')
+  })
 })
