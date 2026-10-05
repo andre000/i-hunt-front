@@ -22,8 +22,11 @@ function byDay(items) {
   }, [])
 }
 
-function names(list) {
-  return list.join(', ')
+const NAMES_SHOWN = 2
+
+function names(list, open = true) {
+  if (open || list.length <= NAMES_SHOWN + 1) return list.join(', ')
+  return `${list.slice(0, NAMES_SHOWN).join(', ')} +${list.length - NAMES_SHOWN}`
 }
 
 function MissionBody({ item, open, date }) {
@@ -36,7 +39,7 @@ function MissionBody({ item, open, date }) {
       <span className="row__meta">
         {scheduled ? <span className="row__scheduled">Agendada</span> : <StatusLabel status={mission.status} />}
         <span>{mission.location}</span>
-        {mission.hunterNames.length > 0 && <span>com {names(mission.hunterNames)}</span>}
+        {mission.hunterNames.length > 0 && <span>com {names(mission.hunterNames, open)}</span>}
       </span>
       {open && (
         <span className="row__more">
@@ -70,7 +73,7 @@ function MessageBody({ item, open }) {
   return (
     <>
       <span className="row__title">
-        {npc?.name ?? message.npc} <span className="row__to">→ {recipients ? names(recipients) : 'Todos'}</span>
+        {npc?.name ?? message.npc} <span className="row__to">→ {recipients ? names(recipients, open) : 'Todos'}</span>
       </span>
       <span className={open ? 'row__text' : 'row__text row__text--short'}>{message.text}</span>
     </>
@@ -166,7 +169,7 @@ export function Timeline({ timeline, date, hunterName, openId, freshSince, showE
         ? <p className="timeline__empty">Nada publicado até agora.</p>
         : <Groups items={earlier.slice(hidden)} {...rowProps} />}
 
-      <div className="now">
+      <div className="now" id="gm-agora">
         <p className="now__line">
           <span className="now__label">Agora</span>
           <span>{clock.day} · <span className="num">{clock.hour}</span></span>

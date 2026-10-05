@@ -4,6 +4,7 @@ import { createLazyFileRoute, Link } from '@tanstack/react-router'
 import { useSelector } from 'react-redux'
 import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
+import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/16/solid'
 import { CampaignClock } from '../../components/CampaignClock'
 import { useDesktopWidth } from '../../components/useDesktopWidth'
 import { Timeline } from '../../components/gm/Timeline'
@@ -40,6 +41,73 @@ function mapMissions(timeline) {
     .map(({ mission, scheduled }) => (scheduled ? { ...mission, status: 'scheduled' } : mission))
 }
 
+function useWideScreen() {
+  const query = '(min-width: 1240px)'
+  const [wide, setWide] = useState(() => window.matchMedia?.(query).matches ?? false)
+
+  useEffect(() => {
+    const list = window.matchMedia?.(query)
+    if (!list) return undefined
+    const onChange = () => setWide(list.matches)
+    list.addEventListener('change', onChange)
+    return () => list.removeEventListener('change', onChange)
+  }, [])
+
+  return wide
+}
+
+function nowPlacement() {
+  const now = document.getElementById('gm-agora')?.getBoundingClientRect()
+  if (!now) return 'visible'
+  const top = document.querySelector('.gm__top')?.getBoundingClientRect().bottom ?? 0
+  if (now.bottom < top) return 'above'
+  if (now.top > window.innerHeight) return 'below'
+  return 'visible'
+}
+
+function useNowPlacement(date) {
+  const [placement, setPlacement] = useState('visible')
+
+  useEffect(() => {
+    let frame = 0
+    const measure = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => setPlacement(nowPlacement()))
+    }
+    measure()
+    document.addEventListener('scroll', measure, { capture: true, passive: true })
+    window.addEventListener('resize', measure)
+    return () => {
+      cancelAnimationFrame(frame)
+      document.removeEventListener('scroll', measure, { capture: true })
+      window.removeEventListener('resize', measure)
+    }
+  }, [date])
+
+  return placement
+}
+
+function goToNow(behavior) {
+  document.getElementById('gm-agora')?.scrollIntoView?.({ block: 'center', behavior })
+}
+
+function JumpToNow({ date }) {
+  const placement = useNowPlacement(date)
+  if (placement === 'visible') return null
+
+  const Arrow = placement === 'above' ? ArrowUpIcon : ArrowDownIcon
+  return (
+    <button type="button" className="gm__jump" onClick={() => goToNow(prefersCalm() ? 'auto' : 'smooth')}>
+      <Arrow aria-hidden="true" />
+      Ir para agora
+    </button>
+  )
+}
+
+JumpToNow.propTypes = {
+  date: PropTypes.string.isRequired,
+}
+
 function CampaignView({ data, desktop }) {
   const [hunterId, setHunterId] = useState(null)
   const [openId, setOpenId] = useState(null)
@@ -47,13 +115,18 @@ function CampaignView({ data, desktop }) {
   const [showMap, setShowMap] = useState(false)
   const [scrollTarget, setScrollTarget] = useState(null)
   const campaignUrl = useSelector(state => state.campaign.campaignUrl)
+  const wide = useWideScreen()
   const view = gmView(data, { hunterId })
   const freshSince = usePreviousDate(view.date)
   const hunterName = view.hunters.find(({ hunter }) => hunter.id === hunterId)?.hunter.name ?? null
 
   useEffect(() => {
+    if (desktop) goToNow('auto')
+  }, [desktop, view.date])
+
+  useEffect(() => {
     if (!scrollTarget) return
-    document.getElementById(`gm-${scrollTarget}`)?.scrollIntoView({ block: 'center', behavior: prefersCalm() ? 'auto' : 'smooth' })
+    document.getElementById(`gm-${scrollTarget}`)?.scrollIntoView?.({ block: 'center', behavior: prefersCalm() ? 'auto' : 'smooth' })
     setScrollTarget(null)
   }, [scrollTarget])
 
@@ -65,32 +138,23 @@ function CampaignView({ data, desktop }) {
   }
   const selectedMission = openId?.startsWith('mission:') ? openId.slice('mission:'.length) : null
   const map = <MapPanel missions={mapMissions(view.timeline)} selectedId={selectedMission} onSelect={selectPin} />
+  const extra = (
+    <>
+      <NpcList npcs={view.npcs} />
+      {campaignUrl && <InviteBox campaignUrl={campaignUrl} playable />}
+    </>
+  )
 
   return (
     <div className="gm__layout">
       <aside className="gm__side">
-        <div className="gm__head">
+        <div className="gm__title">
           <h1>{data.campaign.name}</h1>
           <SyncStatus />
-          <HunterFilter hunters={view.hunters} selectedId={hunterId} onSelect={setHunterId} />
         </div>
-        <div className="gm__extra">
-          <NpcList npcs={view.npcs} />
-          {campaignUrl && <InviteBox campaignUrl={campaignUrl} playable />}
-          {!desktop && <p className="gm__note">Para editar a campanha, abra o Editor no computador.</p>}
-        </div>
+        <HunterFilter hunters={view.hunters} selectedId={hunterId} onSelect={setHunterId} compact={!desktop} />
+        {desktop && extra}
       </aside>
-
-      {desktop
-        ? <div className="gm__map">{map}</div>
-        : (
-          <div className="gm__map">
-            <button type="button" className="button secondary gm__map-toggle" aria-expanded={showMap} onClick={() => setShowMap(shown => !shown)}>
-              {showMap ? 'Esconder mapa' : 'Ver mapa'}
-            </button>
-            {showMap && map}
-          </div>
-        )}
 
       <div className="gm__feed">
         <CampaignProblems editable={desktop} />
@@ -98,6 +162,14 @@ function CampaignView({ data, desktop }) {
           <h2>{hunterName ? `O que chega para ${hunterName}` : 'Linha do tempo'}</h2>
           {hunterName && <button type="button" className="gm__clear" onClick={() => setHunterId(null)}>Ver todos</button>}
         </div>
+        {!wide && (
+          <div className="gm__map gm__map--inline">
+            <button type="button" className="button secondary gm__map-toggle" aria-expanded={showMap} onClick={() => setShowMap(shown => !shown)}>
+              {showMap ? 'Esconder mapa' : 'Ver mapa'}
+            </button>
+            {showMap && map}
+          </div>
+        )}
         <Timeline
           timeline={view.timeline}
           date={view.date}
@@ -108,7 +180,17 @@ function CampaignView({ data, desktop }) {
           onShowEarlier={() => setShowEarlier(true)}
           onToggle={toggle}
         />
+        <JumpToNow date={view.date} />
       </div>
+
+      {wide && <div className="gm__map">{map}</div>}
+
+      {!desktop && (
+        <div className="gm__extra">
+          {extra}
+          <p className="gm__note">Para editar a campanha, abra o Editor no computador.</p>
+        </div>
+      )}
     </div>
   )
 }
@@ -219,33 +301,26 @@ const gmPage = css`
     padding: 20px 16px 48px;
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 32px;
   }
 
-  .gm__side {
-    display: contents;
-  }
-
-  .gm__head,
+  .gm__side,
   .gm__extra {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 24px;
   }
 
-  .gm__head { order: 1; }
-  .gm__map { order: 2; }
-  .gm__feed { order: 3; }
-  .gm__extra { order: 4; }
+  .gm__title {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
 
   h1 {
     font-size: 24px;
     line-height: 1.1;
     letter-spacing: -0.03em;
-  }
-
-  .gm__head h1 {
-    margin-bottom: -10px;
   }
 
   .gm__note {
@@ -266,12 +341,13 @@ const gmPage = css`
     font-size: 13px;
   }
 
-  .gm__map .map__map {
+  .gm__map--inline .map__map {
     flex: none;
-    height: 260px;
+    height: clamp(220px, 34vh, 320px);
   }
 
   .gm__feed {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -298,6 +374,42 @@ const gmPage = css`
     font-size: 13px;
   }
 
+  .gm__jump {
+    position: sticky;
+    bottom: 16px;
+    z-index: 2;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 0 16px;
+    border-radius: 999px;
+    background-color: var(--laranja);
+    color: #120700;
+    font-size: 13px;
+    box-shadow: 0 0 0 4px var(--asfalto);
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .gm__jump:hover {
+    background-color: var(--laranja-forte);
+  }
+
+  @media (pointer: coarse) {
+    .gm__clear,
+    .gm__map-toggle,
+    .gm__jump,
+    .health__refresh,
+    .timeline__earlier {
+      min-height: 44px;
+    }
+  }
+
   @media (min-width: 960px) {
     overflow: hidden;
 
@@ -308,59 +420,44 @@ const gmPage = css`
       padding: 0;
       display: grid;
       grid-template-columns: 340px minmax(0, 1fr);
-      grid-template-rows: 280px minmax(0, 1fr);
-      grid-template-areas: 'side map' 'side feed';
+      grid-template-rows: minmax(0, 1fr);
       gap: 0;
     }
 
     .gm__side {
-      grid-area: side;
-      display: flex;
-      flex-direction: column;
-      gap: 28px;
       min-height: 0;
       overflow-y: auto;
       padding: 24px 20px 32px;
       border-right: 1px solid var(--linha);
     }
 
-    .gm__map {
-      grid-area: map;
-      padding: 16px 24px 0;
-    }
-
-    .gm__map .map__map {
-      flex: 1;
-      height: auto;
-      min-height: 0;
-    }
-
     .gm__feed {
-      grid-area: feed;
       overflow-y: auto;
-      padding: 24px 24px 64px;
+      padding: 24px 32px 24px;
     }
 
     .gm__feed > * {
       width: 100%;
       max-width: 720px;
     }
+
+    .gm__feed > .gm__jump {
+      width: auto;
+    }
+
+    .gm__feed > section:last-of-type {
+      padding-bottom: 40vh;
+    }
   }
 
   @media (min-width: 1240px) {
     .gm__layout {
       grid-template-columns: 340px minmax(0, 1fr) minmax(360px, 32vw);
-      grid-template-rows: minmax(0, 1fr);
-      grid-template-areas: 'side feed map';
     }
 
     .gm__map {
       padding: 20px;
       border-left: 1px solid var(--linha);
-    }
-
-    .gm__feed {
-      padding: 24px 32px 64px;
     }
   }
 `

@@ -5,7 +5,40 @@ import { StarIcon } from '@heroicons/react/16/solid'
 import { Avatar } from '../Avatar'
 import { formatBRL } from '../../utils/format'
 
-export function HunterFilter({ hunters, selectedId, onSelect }) {
+function HunterChips({ hunters, selectedId, onSelect }) {
+  return (
+    <section css={roster} aria-labelledby="gm-hunters">
+      <h2 id="gm-hunters">Ver o que chega para</h2>
+      <ul className="chips">
+        <li>
+          <button type="button" className="chip" aria-pressed={selectedId === null} onClick={() => onSelect(null)}>Todos</button>
+        </li>
+        {hunters.map(({ hunter }) => (
+          <li key={hunter.id}>
+            <button
+              type="button"
+              className="chip"
+              aria-pressed={selectedId === hunter.id}
+              onClick={() => onSelect(selectedId === hunter.id ? null : hunter.id)}
+            >
+              {hunter.name}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+HunterChips.propTypes = {
+  hunters: PropTypes.array.isRequired,
+  selectedId: PropTypes.string,
+  onSelect: PropTypes.func.isRequired,
+}
+
+export function HunterFilter({ hunters, selectedId, onSelect, compact = false }) {
+  if (compact) return <HunterChips hunters={hunters} selectedId={selectedId} onSelect={onSelect} />
+
   return (
     <section css={roster} aria-labelledby="gm-hunters">
       <h2 id="gm-hunters">Hunters <span className="num">{hunters.length}</span></h2>
@@ -55,6 +88,7 @@ HunterFilter.propTypes = {
   })).isRequired,
   selectedId: PropTypes.string,
   onSelect: PropTypes.func.isRequired,
+  compact: PropTypes.bool,
 }
 
 function messageCount(sent, scheduled) {
@@ -73,8 +107,10 @@ export function NpcList({ npcs }) {
         {npcs.map(({ npc, sent, scheduled }) => (
           <li key={npc.id} className="roster__row roster__row--static">
             <Avatar person={npc} size={32} />
-            <span className="roster__name">{npc.name}</span>
-            <span className="roster__rating">{messageCount(sent, scheduled)}</span>
+            <span className="roster__stack">
+              <span className="roster__name">{npc.name}</span>
+              <span className="roster__rating">{messageCount(sent, scheduled)}</span>
+            </span>
           </li>
         ))}
       </ul>
@@ -165,6 +201,43 @@ const roster = css`
     font-family: var(--mono);
     font-size: 12px;
     color: var(--apagado);
+  }
+
+  .roster__stack {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .chips {
+    margin: 0 -16px;
+    padding: 0 16px 2px;
+    flex-direction: row;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .chip {
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background-color: var(--painel-2);
+    color: var(--apagado);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .chip[aria-pressed='true'] {
+    background-color: var(--laranja-fundo);
+    color: var(--laranja);
   }
 
   .roster__name {
