@@ -49,7 +49,7 @@ describe('GM view', () => {
     expect(screen.getByText('Risco alto')).toBeTruthy()
   })
 
-  it('shows only what reaches one hunter', async () => {
+  it('shows what one hunter sees, marking the missions near them', async () => {
     await renderApp({ path: '/gm', hunterId: null, body: campaignWithHistory() })
 
     fireEvent.click(await screen.findByRole('button', { name: /Beto.*sem nota/ }))
@@ -57,6 +57,8 @@ describe('GM view', () => {
     expect(screen.getByText('O que chega para Beto')).toBeTruthy()
     expect(screen.getByText('Beto, só para você.')).toBeTruthy()
     expect(screen.queryByText('Ana, venha à igreja.')).toBeNull()
+    expect(screen.getByText('Vampiro no bar')).toBeTruthy()
+    expect(screen.getByText('perto de Beto')).toBeTruthy()
 
     fireEvent.click(screen.getByText('Ver todos'))
     expect(screen.getByText('Ana, venha à igreja.')).toBeTruthy()

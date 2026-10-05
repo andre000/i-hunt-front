@@ -55,12 +55,26 @@ describe('gmView', () => {
     expect(toAll.recipients).toBeNull()
   })
 
-  it('shows only what reaches one hunter when filtered', () => {
+  it('keeps every mission but only the messages sent to the hunter when filtered', () => {
     const { timeline } = gmView(campaign(), { hunterId: 'beto' })
 
     expect(ids(timeline.origin)).toEqual(['mission:done', 'mission:open'])
-    expect(ids(timeline.past)).toEqual(['message:msg1', 'message:msg3'])
-    expect(ids(timeline.upcoming)).toEqual(['message:msg5'])
+    expect(ids(timeline.past)).toEqual(['message:msg1', 'mission:posted', 'message:msg3'])
+    expect(ids(timeline.upcoming)).toEqual(['message:msg5', 'mission:later'])
+  })
+
+  it('marks the missions the filtered hunter is on or near', () => {
+    const { timeline } = gmView(campaign(), { hunterId: 'beto' })
+    const links = [...timeline.origin, ...timeline.past, ...timeline.upcoming]
+      .filter(item => item.kind === 'mission')
+      .map(item => [item.id, item.hunterLink])
+
+    expect(links).toEqual([
+      ['mission:done', 'with'],
+      ['mission:open', 'near'],
+      ['mission:posted', null],
+      ['mission:later', null],
+    ])
   })
 
   it('handles a campaign without messages', () => {

@@ -29,13 +29,14 @@ function names(list, open = true) {
   return `${list.slice(0, NAMES_SHOWN).join(', ')} +${list.length - NAMES_SHOWN}`
 }
 
-function MissionBody({ item, open, date }) {
-  const { mission, scheduled, nearNames } = item
+function MissionBody({ item, open, date, hunterName }) {
+  const { mission, scheduled, nearNames, hunterLink } = item
   const left = mission.deadline ? timeLeft(mission.deadline, date) : null
 
   return (
     <>
       <span className="row__title">{mission.name}</span>
+      {hunterLink && <span className="row__link">{hunterLink === 'with' ? 'com' : 'perto de'} {hunterName}</span>}
       <span className="row__meta">
         {scheduled ? <span className="row__scheduled">Agendada</span> : <StatusLabel status={mission.status} />}
         <span>{mission.location}</span>
@@ -65,6 +66,7 @@ MissionBody.propTypes = {
   item: PropTypes.object.isRequired,
   open: PropTypes.bool.isRequired,
   date: PropTypes.string.isRequired,
+  hunterName: PropTypes.string,
 }
 
 function MessageBody({ item, open }) {
@@ -97,7 +99,7 @@ Node.propTypes = {
   item: PropTypes.object.isRequired,
 }
 
-function Row({ item, open, fresh, date, onToggle }) {
+function Row({ item, open, fresh, date, hunterName, onToggle }) {
   const closed = item.kind === 'mission' && ['completed', 'failed', 'expired'].includes(item.mission.status) && !item.scheduled
   const classes = ['row', open && 'is-open', fresh && 'is-fresh', closed && 'is-closed'].filter(Boolean).join(' ')
 
@@ -112,7 +114,7 @@ function Row({ item, open, fresh, date, onToggle }) {
         <span className="row__body">
           {fresh && <span className="row__fresh">Saiu agora</span>}
           {item.kind === 'mission'
-            ? <MissionBody item={item} open={open} date={date} />
+            ? <MissionBody item={item} open={open} date={date} hunterName={hunterName} />
             : <MessageBody item={item} open={open} />}
         </span>
         {item.kind === 'mission' && <span className="row__value num">{formatBRL(item.mission.value)}</span>}
@@ -126,11 +128,12 @@ Row.propTypes = {
   open: PropTypes.bool.isRequired,
   fresh: PropTypes.bool.isRequired,
   date: PropTypes.string.isRequired,
+  hunterName: PropTypes.string,
   onToggle: PropTypes.func.isRequired,
 }
 
 function Groups({ items, ...rowProps }) {
-  const { openId, freshSince, date } = rowProps
+  const { openId, freshSince, date, hunterName } = rowProps
   const isFresh = item => Boolean(freshSince && item.at && time(item.at) > time(freshSince) && time(item.at) <= time(date))
 
   return byDay(items).map(({ day, items: dayItems }) => (
@@ -144,6 +147,7 @@ function Groups({ items, ...rowProps }) {
             open={openId === item.id}
             fresh={isFresh(item)}
             date={date}
+            hunterName={hunterName}
             onToggle={rowProps.onToggle}
           />
         ))}
@@ -156,7 +160,7 @@ export function Timeline({ timeline, date, hunterName, openId, freshSince, showE
   const earlier = [...timeline.origin, ...timeline.past]
   const hidden = showEarlier ? 0 : Math.max(0, earlier.length - EARLIER_SHOWN)
   const clock = campaignClock(date)
-  const rowProps = { openId, freshSince, date, onToggle }
+  const rowProps = { openId, freshSince, date, hunterName, onToggle }
 
   return (
     <section css={timelineStyle} aria-label="Linha do tempo">
@@ -373,6 +377,17 @@ const timelineStyle = css`
 
   .row__fresh {
     align-self: flex-start;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background-color: var(--laranja-fundo);
+    color: var(--laranja);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .row__link {
+    align-self: flex-start;
+    order: -1;
     padding: 2px 8px;
     border-radius: 999px;
     background-color: var(--laranja-fundo);

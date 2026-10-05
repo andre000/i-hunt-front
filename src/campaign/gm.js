@@ -30,9 +30,15 @@ function messageItem(campaign, message) {
 }
 
 function reaches(item, hunterId) {
-  if (!hunterId) return true
-  if (item.kind === 'message') return item.message.to === 'all' || item.message.to.includes(hunterId)
-  return item.mission.hunters.includes(hunterId) || item.mission.nearHunters.includes(hunterId)
+  if (!hunterId || item.kind === 'mission') return true
+  return item.message.to === 'all' || item.message.to.includes(hunterId)
+}
+
+function withHunterLink(item, hunterId) {
+  if (!hunterId || item.kind !== 'mission') return item
+  const { hunters, nearHunters } = item.mission
+  const link = hunters.includes(hunterId) ? 'with' : nearHunters.includes(hunterId) ? 'near' : null
+  return { ...item, hunterLink: link }
 }
 
 const byTime = (a, b) => time(a.at) - time(b.at)
@@ -42,7 +48,7 @@ export function gmView(campaign, { hunterId = null } = {}) {
   const items = [
     ...campaign.missions.map(mission => missionItem(campaign, mission)),
     ...campaign.messages.map(message => messageItem(campaign, message)),
-  ].filter(item => reaches(item, hunterId))
+  ].filter(item => reaches(item, hunterId)).map(item => withHunterLink(item, hunterId))
 
   const dated = items.filter(item => item.at)
   return {
