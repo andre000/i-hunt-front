@@ -12,7 +12,7 @@ import { MissionBadge, MissionForm, NewMissionForm } from '../../components/edit
 import { MessageBadge, MessageForm, NewMessageForm } from '../../components/editor/MessageForm'
 import { useDesktopWidth } from '../../components/useDesktopWidth'
 import { campaignDateAdvanced, campaignEdited, itemAdded, itemMoved, messageAdded, downloadDraft, draftDiscarded, draftOpened, openDraftFile, openPublishedDraft } from '../../store/editor'
-import { blankDraft, dateFromInput, dateToInput, draftErrors, messageOrder, nextScheduled } from '../../campaign/draft'
+import { blankDraft, dateFromInput, dateToInput, explainErrors, messageOrder, nextScheduled } from '../../campaign/draft'
 
 export const Route = createLazyFileRoute('/gm/editor')({
   component: EditorPage,
@@ -199,14 +199,17 @@ const errorCount = (count) => {
   return count === 1 ? '1 erro' : `${count} erros`
 }
 
-function DraftErrors({ errors }) {
+function DraftErrors({ errors, onSelect }) {
   if (errors.length === 0) return null
   return (
     <section className="editor__errors" aria-label="Erros do rascunho">
       <ul>
-        {errors.map(({ path, message }, index) => (
+        {errors.map(({ path, where, message, target }, index) => (
           <li key={`${path}-${index}`}>
-            <code>{path || '(arquivo)'}</code> {message}
+            <button type="button" onClick={() => onSelect(target)}>
+              <strong>{where}</strong> {message}
+            </button>
+            <code>{path || '(arquivo)'}</code>
           </li>
         ))}
       </ul>
@@ -217,8 +220,11 @@ function DraftErrors({ errors }) {
 DraftErrors.propTypes = {
   errors: PropTypes.arrayOf(PropTypes.shape({
     path: PropTypes.string.isRequired,
+    where: PropTypes.string.isRequired,
     message: PropTypes.string.isRequired,
+    target: PropTypes.object.isRequired,
   })).isRequired,
+  onSelect: PropTypes.func.isRequired,
 }
 
 function CampaignDate({ draft }) {
@@ -328,7 +334,7 @@ function Editor() {
   const [selected, setSelected] = useState({ section: 'campaign' })
   const [choosing, setChoosing] = useState(false)
   const [confirm, setConfirm] = useState(null)
-  const errors = useMemo(() => (draft ? draftErrors(draft) : []), [draft])
+  const errors = useMemo(() => (draft ? explainErrors(draft) : []), [draft])
 
   useEffect(() => {
     if (!started && campaignUrl) dispatch(openPublishedDraft())
@@ -398,7 +404,7 @@ function Editor() {
       {loading && <p className="editor__loading">Carregando campanha…</p>}
       {!loading && draft && !choosing && (
         <>
-          <DraftErrors errors={errors} />
+          <DraftErrors errors={errors} onSelect={setSelected} />
           <div className="editor__body">
             <SectionList draft={draft} selected={selected} onSelect={setSelected} />
             <ItemPanel draft={draft} selected={selected} onSelect={setSelected} />
@@ -963,9 +969,34 @@ const editorPage = css`
     overflow-y: auto;
   }
 
+  .editor__errors li {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .editor__errors li button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--texto);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    strong {
+      color: var(--perigo);
+    }
+  }
+
   .editor__errors code {
     font-family: var(--mono);
-    color: var(--perigo);
+    font-size: 11px;
+    color: var(--apagado);
   }
 
   .editor__errors {

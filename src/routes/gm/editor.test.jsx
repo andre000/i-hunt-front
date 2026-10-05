@@ -487,6 +487,35 @@ describe('Mensagens', () => {
   })
 })
 
+describe('Erros do rascunho', () => {
+  it('opens the item that has the problem when the error is clicked', async () => {
+    const body = validCampaign()
+    body.missions[2].value = 'cem'
+    body.messages[3].npc = 'ninguem'
+    body.hunters[1].rating = 9
+    await renderApp({ path: '/gm/editor', hunterId: null, body })
+
+    const errors = await screen.findByRole('region', { name: 'Erros do rascunho' })
+    fireEvent.click(within(errors).getByRole('button', { name: /Missão “Vampiro no bar”/ }))
+    expect(screen.getByRole('heading', { level: 1, name: 'Vampiro no bar' })).toBeTruthy()
+
+    fireEvent.click(within(errors).getByRole('button', { name: /Hunter “Beto”/ }))
+    expect(screen.getByLabelText('Avaliação (0 a 5)').value).toBe('9')
+
+    fireEvent.click(within(errors).getByRole('button', { name: /Mensagem “Ana, cuidado.”/ }))
+    expect(screen.getByLabelText('Texto').value).toBe('Ana, cuidado.')
+  })
+
+  it('opens the new hunter form when the campaign has no hunter', async () => {
+    await renderApp({ path: '/gm/editor', hunterId: null, campaignUrl: null })
+    fireEvent.click(await screen.findByRole('button', { name: 'Começar em branco' }))
+
+    fireEvent.click(screen.getByRole('button', { name: /Adicione pelo menos um hunter/ }))
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Novo hunter' })).toBeTruthy()
+  })
+})
+
 describe('Editor da campanha', () => {
   it('opens the published campaign of the device as the draft', async () => {
     await renderApp({ path: '/gm/editor', hunterId: null })
