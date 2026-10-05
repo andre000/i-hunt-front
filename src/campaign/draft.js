@@ -266,17 +266,18 @@ function placeOf(draft, section, index) {
   return { where: `${PLACES[section]} ${label}`, target: { section, index } }
 }
 
-function plainMessage(path, message, field) {
+function plainMessage({ path, message, kind }, field) {
   if (/^\/messages\/\d+\/to$/.test(path)) return 'Escolha pelo menos um destinatário.'
-  if (message.includes('não existe em')) return message
+  if (kind === 'reference') return message
   const [label, withArticle] = FIELDS[field] ?? []
   if (!label) return message
-  if (message.includes('propriedade obrigatória')) return `Falta ${withArticle}.`
-  if (message.includes('mais curta que 1')) return `${label}: não pode ficar vazio.`
+  if (kind === 'required') return `Falta ${withArticle}.`
+  if (kind === 'minLength') return `${label}: não pode ficar vazio.`
   return `${label}: ${message}`
 }
 
-function explain(draft, { path, message }) {
+function explain(draft, error) {
+  const { path } = error
   if (path === '/hunters') {
     return { path, where: 'Hunters', message: 'Adicione pelo menos um hunter.', target: { section: 'hunters', adding: true } }
   }
@@ -285,7 +286,7 @@ function explain(draft, { path, message }) {
   const place = PLACES[section] && /^\d+$/.test(index ?? '') && draft[section][Number(index)] !== undefined
     ? placeOf(draft, section, Number(index))
     : { where: section === 'campaign' ? 'Campanha' : 'Arquivo', target: { section: 'campaign' } }
-  return { path, ...place, message: plainMessage(path, message, field) }
+  return { path, ...place, message: plainMessage(error, field) }
 }
 
 export function explainErrors(draft) {

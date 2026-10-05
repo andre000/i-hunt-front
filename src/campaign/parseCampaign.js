@@ -14,6 +14,7 @@ function schemaErrors() {
       ? `${error.instancePath}/${error.params.missingProperty}`
       : error.instancePath,
     message: error.message,
+    kind: error.keyword,
   }))
 }
 
@@ -27,6 +28,7 @@ function unknownHunterErrors(hunterIds, ids, path) {
     .map(({ hunterId, index }) => ({
       path: `${path}/${index}`,
       message: `hunter "${hunterId}" não existe em /hunters`,
+      kind: 'reference',
     }))
 }
 
@@ -44,7 +46,7 @@ function referenceErrors(raw) {
   const messageErrors = objectsIn(raw.messages).flatMap(({ item: message, index }) => [
     ...(message.npc === undefined || npcIds.has(message.npc)
       ? []
-      : [{ path: `/messages/${index}/npc`, message: `NPC "${message.npc}" não existe em /npcs` }]),
+      : [{ path: `/messages/${index}/npc`, message: `NPC "${message.npc}" não existe em /npcs`, kind: 'reference' }]),
     ...(message.to === 'all' ? [] : unknownHunterErrors(hunterIds, message.to, `/messages/${index}/to`)),
   ])
 

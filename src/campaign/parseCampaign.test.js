@@ -97,7 +97,7 @@ describe('parseCampaign with an invalid campaign', () => {
 
     expect(result.ok).toBe(false)
     expect(result.errors).toEqual([
-      { path: '/missions/1/nearHunters/1', message: 'hunter "carla" não existe em /hunters' },
+      { path: '/missions/1/nearHunters/1', message: 'hunter "carla" não existe em /hunters', kind: 'reference' },
     ])
   })
 
@@ -123,6 +123,17 @@ describe('mission fields in the schema', () => {
     expect(result.ok).toBe(true)
   })
 
+  it('tells a missing field from an empty one', () => {
+    const raw = validCampaign()
+    delete raw.missions[0].location
+    raw.missions[0].name = ''
+
+    expect(parseCampaign(raw).errors).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: '/missions/0/location', kind: 'required' }),
+      expect.objectContaining({ path: '/missions/0/name', kind: 'minLength' }),
+    ]))
+  })
+
   it('reports a result outside the allowed values', () => {
     const raw = validCampaign()
     raw.missions[0].result = 'abandonada'
@@ -142,7 +153,7 @@ describe('mission fields in the schema', () => {
     raw.missions[0].hunters = ['carla']
 
     expect(parseCampaign(raw).errors).toEqual([
-      { path: '/missions/0/hunters/0', message: 'hunter "carla" não existe em /hunters' },
+      { path: '/missions/0/hunters/0', message: 'hunter "carla" não existe em /hunters', kind: 'reference' },
     ])
   })
 })
@@ -161,7 +172,7 @@ describe('messages in the schema', () => {
     raw.messages[0].npc = 'ninguem'
 
     expect(parseCampaign(raw).errors).toEqual([
-      { path: '/messages/0/npc', message: 'NPC "ninguem" não existe em /npcs' },
+      { path: '/messages/0/npc', message: 'NPC "ninguem" não existe em /npcs', kind: 'reference' },
     ])
   })
 
@@ -170,7 +181,7 @@ describe('messages in the schema', () => {
     raw.messages[1].to = ['ana', 'carla']
 
     expect(parseCampaign(raw).errors).toEqual([
-      { path: '/messages/1/to/1', message: 'hunter "carla" não existe em /hunters' },
+      { path: '/messages/1/to/1', message: 'hunter "carla" não existe em /hunters', kind: 'reference' },
     ])
   })
 
@@ -203,7 +214,7 @@ describe('validation messages', () => {
     const raw = validCampaign()
     raw.missions[1].value = 'cem'
 
-    expect(parseCampaign(raw).errors).toContainEqual({ path: '/missions/1/value', message: 'deve ser um número' })
+    expect(parseCampaign(raw).errors).toContainEqual({ path: '/missions/1/value', message: 'deve ser um número', kind: 'type' })
   })
 })
 
