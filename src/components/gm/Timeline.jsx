@@ -1,6 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
+import { Link } from '@tanstack/react-router'
 import { ChatBubbleOvalLeftIcon } from '@heroicons/react/16/solid'
 import { RiskChip, StatusLabel } from '../MissionTags'
 import { campaignClock, time, timeLeft } from '../../campaign/time'
@@ -156,7 +157,16 @@ function Groups({ items, ...rowProps }) {
   ))
 }
 
-export function Timeline({ timeline, date, hunterName, openId, freshSince, showEarlier, onShowEarlier, onToggle }) {
+function EditorHint({ editable, children }) {
+  return editable ? <Link to="/gm/editor">{children}</Link> : <>{children} (no computador)</>
+}
+
+EditorHint.propTypes = {
+  editable: PropTypes.bool.isRequired,
+  children: PropTypes.node.isRequired,
+}
+
+export function Timeline({ timeline, date, hunterName, openId, freshSince, showEarlier, onShowEarlier, onToggle, editable = false }) {
   const earlier = [...timeline.origin, ...timeline.past]
   const hidden = showEarlier ? 0 : Math.max(0, earlier.length - EARLIER_SHOWN)
   const clock = campaignClock(date)
@@ -170,7 +180,12 @@ export function Timeline({ timeline, date, hunterName, openId, freshSince, showE
         </button>
       )}
       {earlier.length === 0
-        ? <p className="timeline__empty">Nada publicado até agora.</p>
+        ? (
+          <p className="timeline__empty">
+            Nada publicado até agora. Missões e mensagens com horário antes de agora aparecem aqui,
+            e os jogadores já conseguem vê-las.
+          </p>
+        )
         : <Groups items={earlier.slice(hidden)} {...rowProps} />}
 
       <div className="now" id="gm-agora">
@@ -185,7 +200,12 @@ export function Timeline({ timeline, date, hunterName, openId, freshSince, showE
       </div>
 
       {timeline.upcoming.length === 0
-        ? <p className="timeline__empty">Nada agendado depois de agora.</p>
+        ? (
+          <p className="timeline__empty">
+            Nada agendado. Para preparar a próxima cena, dê a uma missão ou mensagem um horário depois de agora
+            no <EditorHint editable={editable}>Editor</EditorHint>.
+          </p>
+        )
         : <Groups items={timeline.upcoming} {...rowProps} />}
     </section>
   )
@@ -204,6 +224,7 @@ Timeline.propTypes = {
   showEarlier: PropTypes.bool.isRequired,
   onShowEarlier: PropTypes.func.isRequired,
   onToggle: PropTypes.func.isRequired,
+  editable: PropTypes.bool,
 }
 
 const timelineStyle = css`
@@ -230,8 +251,15 @@ const timelineStyle = css`
 
   .timeline__empty {
     padding-left: var(--text-start);
+    max-width: 62ch;
     font-size: 14px;
+    line-height: 1.45;
     color: var(--apagado);
+
+    a {
+      color: var(--laranja);
+      text-underline-offset: 3px;
+    }
   }
 
   .day {

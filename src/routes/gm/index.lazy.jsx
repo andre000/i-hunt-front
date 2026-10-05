@@ -137,7 +137,7 @@ function CampaignView({ data, desktop }) {
     setScrollTarget(`mission:${missionId}`)
   }
   const selectedMission = openId?.startsWith('mission:') ? openId.slice('mission:'.length) : null
-  const map = <MapPanel missions={mapMissions(view.timeline)} selectedId={selectedMission} onSelect={selectPin} />
+  const map = <MapPanel missions={mapMissions(view.timeline)} selectedId={selectedMission} onSelect={selectPin} editable={desktop} />
   const extra = (
     <>
       <NpcList npcs={view.npcs} />
@@ -179,6 +179,7 @@ function CampaignView({ data, desktop }) {
           showEarlier={showEarlier}
           onShowEarlier={() => setShowEarlier(true)}
           onToggle={toggle}
+          editable={desktop}
         />
         <JumpToNow date={view.date} />
       </div>

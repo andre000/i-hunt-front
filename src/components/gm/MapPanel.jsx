@@ -1,6 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
+import { Link } from '@tanstack/react-router'
 import { MissionMap } from '../MissionMap'
 
 const LEGEND = [
@@ -12,9 +13,14 @@ const LEGEND = [
   ['scheduled', 'Agendada'],
 ]
 
-export function MapPanel({ missions, selectedId, onSelect }) {
+export function MapPanel({ missions, selectedId, onSelect, editable = false }) {
   if (missions.length === 0) {
-    return <p css={mapPanel} className="map__empty">Nenhuma missão com posição no mapa.</p>
+    return (
+      <p css={mapPanel} className="map__empty">
+        Nenhuma missão no mapa ainda. Marque o local de uma missão
+        {editable ? <> no <Link to="/gm/editor">Editor</Link></> : ' no Editor (no computador)'} e ela aparece aqui.
+      </p>
+    )
   }
 
   return (
@@ -33,6 +39,7 @@ MapPanel.propTypes = {
   missions: PropTypes.array.isRequired,
   selectedId: PropTypes.string,
   onSelect: PropTypes.func.isRequired,
+  editable: PropTypes.bool,
 }
 
 const mapPanel = css`
@@ -43,8 +50,16 @@ const mapPanel = css`
   min-height: 0;
 
   &.map__empty {
+    display: block;
+    flex: none;
     font-size: 13px;
+    line-height: 1.45;
     color: var(--apagado);
+
+    a {
+      color: var(--laranja);
+      text-underline-offset: 3px;
+    }
   }
 
   .map__map {

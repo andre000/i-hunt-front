@@ -79,6 +79,17 @@ describe('GM view', () => {
     fireEvent.change(screen.getByLabelText('Link da campanha'), { target: { value: 'campanha' } })
     fireEvent.click(screen.getByRole('button', { name: 'Abrir' }))
     expect(screen.getByText(/Isso não parece um link/)).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Abrir a campanha de exemplo' })).toBeTruthy()
+    expect(screen.getByText('Primeira campanha')).toBeTruthy()
+  })
+
+  it('explains how to schedule when nothing is scheduled', async () => {
+    const body = validCampaign()
+    body.messages = body.messages.filter(message => message.id !== 'msg5')
+    await renderApp({ path: '/gm', hunterId: null, body })
+
+    expect(await screen.findByText(/Nada agendado/)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Editor' })).toBeTruthy()
   })
 
   it('lists JSON errors by field, says players cannot open the campaign and blocks the Convite', async () => {

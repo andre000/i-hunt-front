@@ -50,9 +50,30 @@ export function OpenCampaign({ editable }) {
         </div>
         {invalid && <p id="gm-campaign-url-error" className="open__error">Isso não parece um link. Ele começa com https://</p>}
       </form>
-      {editable
-        ? <p>Ainda não tem um arquivo? <Link to="/gm/editor">Monte a campanha no Editor</Link>.</p>
-        : <p>Para montar uma campanha nova, abra o Editor no computador.</p>}
+      <div className="open__example">
+        <p>Quer ver como fica antes?</p>
+        <button
+          type="button"
+          className="button secondary"
+          onClick={() => dispatch(switchCampaign(`${window.location.origin}/exemplo-campanha.json`))}
+        >
+          Abrir a campanha de exemplo
+        </button>
+      </div>
+      <section className="open__steps" aria-labelledby="gm-steps">
+        <h2 id="gm-steps">Primeira campanha</h2>
+        <ol>
+          <li>
+            <span>
+              {editable
+                ? <><Link to="/gm/editor">Monte a campanha no Editor</Link> e baixe o arquivo JSON.</>
+                : 'Monte a campanha no Editor, no computador, e baixe o arquivo JSON.'}
+            </span>
+          </li>
+          <li><span>Publique o arquivo num endereço público, como um bucket ou um gist.</span></li>
+          <li><span>Cole o link aqui e mande o Convite para a mesa.</span></li>
+        </ol>
+      </section>
     </section>
   )
 }
@@ -126,6 +147,68 @@ const openCampaign = css`
 
   button {
     min-height: 48px;
+  }
+
+  .open__example {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+
+    .button {
+      min-height: 44px;
+      font-size: 14px;
+    }
+  }
+
+  .open__steps {
+    margin-top: 16px;
+    padding-top: 24px;
+    border-top: 1px solid var(--linha);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    h2 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--apagado);
+      letter-spacing: 0;
+    }
+
+    ol {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: step;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    li {
+      counter-increment: step;
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      gap: 12px;
+      font-size: 14px;
+      line-height: 1.45;
+      color: var(--texto);
+
+      &::before {
+        content: counter(step);
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 1px solid var(--linha);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--apagado);
+      }
+    }
   }
 
   .open__error {
