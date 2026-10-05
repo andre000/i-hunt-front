@@ -27,5 +27,5 @@ export async function fetchCampaign(fetch, url) {
   const result = parseCampaign(read.raw)
   return result.ok
     ? { raw: read.raw, campaign: result.campaign }
-    : { failure: 'invalid', errors: result.errors }
+    : { failure: 'invalid', errors: result.errors, raw: read.raw }
 }

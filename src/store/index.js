@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit'
 import campaignReducer, { initialCampaignState } from './campaign'
+import editorReducer from './editor'
 
 function demoState(sync) {
   if (!sync.isDemo) return null
@@ -14,6 +15,7 @@ export function createAppStore({ sync, pendingInvite = null, leaveDemo = goHome 
   return configureStore({
     reducer: {
       campaign: campaignReducer,
+      editor: editorReducer,
     },
     preloadedState: {
       campaign: initialCampaignState({

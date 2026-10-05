@@ -76,6 +76,11 @@ export function createSync({ fetch, storage }) {
     getHunterId: () => store.get(HUNTER_ID_KEY),
     setHunterId: (hunterId) => store.set(HUNTER_ID_KEY, hunterId),
     clearHunterId: () => store.remove(HUNTER_ID_KEY),
+    async readPublished() {
+      const fetched = await fetchCampaign(fetch, store.get(CAMPAIGN_URL_KEY))
+      if (fetched.raw !== undefined) return { raw: fetched.raw }
+      return { error: fetched.error ?? fetched.errors[0].message }
+    },
     load() {
       const url = store.get(CAMPAIGN_URL_KEY)
       return url ? loadCampaign(fetch, store, url) : Promise.resolve({ status: 'no-campaign' })

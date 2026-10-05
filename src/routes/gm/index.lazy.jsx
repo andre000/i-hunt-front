@@ -1,12 +1,13 @@
 /** @jsxImportSource @emotion/react */
 import { useRef, useState } from 'react'
-import { createLazyFileRoute } from '@tanstack/react-router'
+import { createLazyFileRoute, Link } from '@tanstack/react-router'
 import { useSelector } from 'react-redux'
 import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
 import { StarIcon } from '@heroicons/react/24/solid'
 import { Avatar } from '../../components/Avatar'
 import { CampaignClock } from '../../components/CampaignClock'
+import { useDesktopWidth } from '../../components/useDesktopWidth'
 import { MissionMap } from '../../components/MissionMap'
 import { StatusLabel } from '../../components/MissionTags'
 import { gmView } from '../../campaign/gm'
@@ -163,12 +164,16 @@ MissionList.propTypes = {
 function GmPage() {
   const { status, data, errors, error, campaignUrl } = useSelector(state => state.campaign)
   const view = data ? gmView(data) : null
+  const desktop = useDesktopWidth()
 
   return (
     <main css={gmPage}>
       <div className="gm__top">
         <span className="gm__brand"><span>i</span>Hunt <b>GM</b></span>
-        {view && <CampaignClock />}
+        <span className="gm__actions">
+          {view && <CampaignClock />}
+          {desktop && <Link className="button secondary gm__edit" to="/gm/editor">Editar</Link>}
+        </span>
       </div>
 
       <div className="gm__body">
@@ -216,6 +221,17 @@ const gmPage = css`
     background-color: rgb(12 14 17 / 92%);
     border-bottom: 1px solid var(--linha);
     backdrop-filter: blur(8px);
+  }
+
+  .gm__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .gm__edit {
+    padding: 6px 12px;
+    font-size: 13px;
   }
 
   .gm__brand {
