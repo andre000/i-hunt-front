@@ -2,9 +2,9 @@ import { fetchCampaign } from './fetchCampaign'
 import { parseCampaign } from './parseCampaign'
 import { attempt, safeStorage } from './storage'
 
-export const NIGHT_OFFSETS_HOURS = [0, 24, 60]
+const NIGHT_OFFSETS_HOURS = [0, 24, 60]
 export const LAST_NIGHT = NIGHT_OFFSETS_HOURS.length
-export const DEMO_CAMPAIGN_PATH = '/exemplo-campanha.json'
+const DEMO_CAMPAIGN_PATH = '/exemplo-campanha.json'
 
 const KEYS = {
   active: 'ihunt.demo.active',

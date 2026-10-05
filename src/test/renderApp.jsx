@@ -1,29 +1,34 @@
 import { render } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router'
+import { vi } from 'vitest'
 import { routeTree } from '../routeTree.gen'
 import { createAppStore } from '../store'
 import { campaignLoaded } from '../store/campaign'
 import { createSync } from '../campaign/sync'
+import { createDemoSync } from '../campaign/demoSync'
 import { validCampaign } from '../campaign/fixtures'
+import { memoryStorage, respondWith } from './fakes'
+import example from '../../public/exemplo-campanha.json'
 
 const CAMPAIGN_URL = 'https://pub-123.r2.dev/campanha.json'
 
-function memoryStorage(initial = {}) {
-  const items = new Map(Object.entries(initial))
-  return {
-    getItem: (key) => (items.has(key) ? items.get(key) : null),
-    setItem: (key, value) => items.set(key, String(value)),
-    removeItem: (key) => items.delete(key),
-  }
+function demoSetup({ hunterId, introSeen = true, night = 1, status = 200 }) {
+  const storage = memoryStorage({
+    'ihunt.demo.active': '1',
+    'ihunt.demo.night': String(night),
+    ...(hunterId ? { 'ihunt.demo.hunterId': hunterId } : {}),
+    ...(introSeen ? { 'ihunt.demo.introSeen': '1' } : {}),
+  })
+  return createDemoSync({ fetch: respondWith(status === 200 ? example : 'Not Found', status), storage, origin: 'https://ihunt.test' })
 }
 
-function respondWith(body, status = 200) {
-  return async () => ({
-    ok: status >= 200 && status < 300,
-    status,
-    text: async () => (typeof body === 'string' ? body : JSON.stringify(body)),
+function realSetup({ body, status, hunterId, campaignUrl }) {
+  const storage = memoryStorage({
+    ...(campaignUrl ? { 'ihunt.campaignUrl': campaignUrl } : {}),
+    ...(hunterId ? { 'ihunt.hunterId': hunterId } : {}),
   })
+  return createSync({ fetch: respondWith(body, status), storage })
 }
 
 export async function renderApp({
@@ -33,13 +38,11 @@ export async function renderApp({
   hunterId = 'ana',
   campaignUrl = CAMPAIGN_URL,
   pendingInvite = null,
+  demo = null,
 } = {}) {
-  const storage = memoryStorage({
-    ...(campaignUrl ? { 'ihunt.campaignUrl': campaignUrl } : {}),
-    ...(hunterId ? { 'ihunt.hunterId': hunterId } : {}),
-  })
-  const sync = createSync({ fetch: respondWith(body, status), storage })
-  const store = createAppStore({ sync, pendingInvite })
+  const sync = demo ? demoSetup(demo) : realSetup({ body, status, hunterId, campaignUrl })
+  const leaveDemo = vi.fn()
+  const store = createAppStore({ sync, pendingInvite, leaveDemo })
   store.dispatch(campaignLoaded(await sync.load()))
 
   const router = createRouter({ routeTree, history: createMemoryHistory({ initialEntries: [path] }) })
@@ -48,5 +51,5 @@ export async function renderApp({
       <RouterProvider router={router} />
     </Provider>,
   )
-  return { ...view, store, router, sync }
+  return { ...view, store, router, sync, leaveDemo }
 }
