@@ -112,6 +112,7 @@ const bar = css`
   }
 
   .demo__news {
+    animation: news-in 0.45s cubic-bezier(0.16, 1, 0.3, 1);
     margin-top: 8px;
     padding: 8px 12px;
     border-radius: 12px;
@@ -119,5 +120,14 @@ const bar = css`
     color: var(--laranja);
     font-size: 13px;
     font-weight: 600;
+  }
+
+  @keyframes news-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .demo__news { animation: none; }
   }
 `
