@@ -1,6 +1,6 @@
 import { isAfterCampaignDate, time } from './time'
 
-function messagesFor(campaign, hunterId) {
+export function messagesFor(campaign, hunterId) {
   return campaign.messages
     .filter(message => !isAfterCampaignDate(message.sentAt, campaign.campaign.date))
     .filter(message => message.to === 'all' || message.to.includes(hunterId))
