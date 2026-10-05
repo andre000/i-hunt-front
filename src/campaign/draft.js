@@ -2,7 +2,12 @@ import { parseCampaign } from './parseCampaign'
 import { isAfterCampaignDate, time } from './time'
 import { isScheduled, missionView } from './missions'
 
-const SECTIONS = ['hunters', 'missions', 'npcs', 'messages']
+const SECTIONS = {
+  hunters: { fallbackId: 'hunter', place: 'Hunter' },
+  missions: { fallbackId: 'missao', place: 'Missão' },
+  npcs: { fallbackId: 'npc', place: 'NPC' },
+  messages: { fallbackId: 'mensagem', place: 'Mensagem' },
+}
 
 const isObject = (value) => Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 
@@ -10,7 +15,7 @@ export function draftFrom(raw) {
   const source = isObject(raw) ? raw : {}
   const draft = structuredClone(source)
   draft.campaign = isObject(source.campaign) ? draft.campaign : {}
-  for (const section of SECTIONS) {
+  for (const section of Object.keys(SECTIONS)) {
     if (!Array.isArray(source[section])) draft[section] = []
   }
   return draft
@@ -19,8 +24,6 @@ export function draftFrom(raw) {
 export function updateCampaign(draft, changes) {
   return { ...draft, campaign: { ...draft.campaign, ...changes } }
 }
-
-const FALLBACK_IDS = { hunters: 'hunter', missions: 'missao', npcs: 'npc', messages: 'mensagem' }
 
 function slug(text) {
   return String(text ?? '')
@@ -33,7 +36,7 @@ function slug(text) {
 
 function uniqueId(draft, section, name) {
   const taken = new Set(draft[section].map(item => item?.id))
-  const base = slug(name) || FALLBACK_IDS[section]
+  const base = slug(name) || SECTIONS[section].fallbackId
   if (!taken.has(base)) return base
   let number = 2
   while (taken.has(`${base}-${number}`)) number += 1
@@ -235,8 +238,6 @@ export function readDraftText(text) {
   }
 }
 
-const PLACES = { hunters: 'Hunter', missions: 'Missão', npcs: 'NPC', messages: 'Mensagem' }
-
 const FIELDS = {
   name: ['Nome', 'o nome'],
   date: ['Data da campanha', 'a data da campanha'],
@@ -267,7 +268,7 @@ function placeOf(draft, section, index) {
   const item = draft[section][index]
   const name = [item?.name, item?.text].find(value => typeof value === 'string' && value.trim() !== '')
   const label = name ? `“${shortName(name)}”` : item?.id ?? `#${index + 1}`
-  return { where: `${PLACES[section]} ${label}`, target: { section, index } }
+  return { where: `${SECTIONS[section].place} ${label}`, target: { section, index } }
 }
 
 function plainMessage({ path, message, kind }, field) {
@@ -287,7 +288,7 @@ function explain(draft, error) {
   }
   const [section, index, ...rest] = path.split('/').slice(1)
   const field = [index, ...rest].filter(part => part && !/^\d+$/.test(part)).at(-1)
-  const place = PLACES[section] && /^\d+$/.test(index ?? '') && draft[section][Number(index)] !== undefined
+  const place = Object.hasOwn(SECTIONS, section) && /^\d+$/.test(index ?? '') && draft[section][Number(index)] !== undefined
     ? placeOf(draft, section, Number(index))
     : { where: section === 'campaign' ? 'Campanha' : 'Arquivo', target: { section: 'campaign' } }
   return { path, ...place, message: plainMessage(error, field) }
