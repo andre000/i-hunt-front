@@ -24,7 +24,9 @@ describe('example campaign', () => {
   })
 
   it('has a mission in every status', () => {
-    const statuses = new Set(gmView(parseCampaign(example).campaign).missions.map(m => m.status))
+    const { timeline } = gmView(parseCampaign(example).campaign)
+    const missions = [...timeline.origin, ...timeline.past, ...timeline.upcoming].filter(item => item.kind === 'mission')
+    const statuses = new Set(missions.map(item => item.mission.status))
 
     expect([...statuses].sort()).toEqual(['available', 'completed', 'expired', 'failed', 'in-progress'])
   })

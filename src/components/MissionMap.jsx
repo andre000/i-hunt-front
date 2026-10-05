@@ -120,7 +120,7 @@ const mapStyle = css`
   .leaflet-control-attribution {
     background-color: rgb(12 14 17 / 70%);
     color: var(--apagado);
-    font-size: 9px;
+    font-size: 11px;
 
     a {
       color: var(--apagado);
@@ -139,7 +139,6 @@ const mapStyle = css`
   .pin--in-progress { --pin: var(--texto); }
   .pin--completed { --pin: var(--ok); }
   .pin--failed { --pin: var(--perigo); }
-  .pin--scheduled { --pin: var(--aviso); }
 
   .pin__dot {
     position: absolute;
@@ -153,6 +152,12 @@ const mapStyle = css`
   .pin--in-progress .pin__dot {
     background-color: var(--asfalto);
     box-shadow: 0 0 0 3px var(--texto), 0 0 0 6px #111419;
+  }
+
+  .pin--scheduled .pin__dot {
+    background-color: #111419;
+    border: 2px dashed var(--apagado);
+    box-shadow: 0 0 0 2px #111419;
   }
 
   .pin--reveal {

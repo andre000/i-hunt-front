@@ -59,7 +59,7 @@ function onReturn(run) {
 
 createSyncLoop({
   load: () => sync.load(),
-  onResult: (result) => store.dispatch(campaignLoaded(result)),
+  onResult: (result) => store.dispatch(campaignLoaded({ ...result, checkedAt: Date.now() })),
   setInterval: (run, ms) => window.setInterval(run, ms),
   clearInterval: (id) => window.clearInterval(id),
   onReturn,

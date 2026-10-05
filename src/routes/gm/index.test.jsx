@@ -1,25 +1,65 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { cleanup, screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { renderApp } from '../../test/renderApp'
 import { validCampaign } from '../../campaign/fixtures'
 
 afterEach(cleanup)
 
+function campaignWithHistory() {
+  const body = validCampaign()
+  body.missions[0].hunters = ['ana']
+  body.missions[0].result = 'concluída'
+  body.missions.push({ id: 'later', name: 'Caça futura', location: 'Centro', value: 10, risk: 'baixo', postedAt: '2026-10-05T09:00:00-03:00' })
+  return body
+}
+
 describe('GM view', () => {
-  it('shows the campaign, its hunters with earnings and every mission', async () => {
-    const body = validCampaign()
-    body.missions[0].hunters = ['ana']
-    body.missions[0].result = 'concluída'
-    body.missions.push({ id: 'later', name: 'Caça futura', location: 'Centro', value: 10, risk: 'baixo', postedAt: '2026-10-05T09:00:00-03:00' })
-    await renderApp({ path: '/gm', hunterId: null, body })
+  it('shows the campaign, its hunters and NPCs', async () => {
+    await renderApp({ path: '/gm', hunterId: null, body: campaignWithHistory() })
 
     expect(await screen.findByText('Noite em Porto Alegre')).toBeTruthy()
     expect(screen.getByLabelText(/^Data da campanha:/)).toBeTruthy()
     expect(screen.getByText('4.5')).toBeTruthy()
-    expect(screen.getAllByText('R$ 800,00')).toHaveLength(2)
-    expect(screen.getByText('Concluída')).toBeTruthy()
-    expect(screen.getByText('Ana', { selector: '.gm__meta span' })).toBeTruthy()
-    expect(screen.getByText('Agendada · em 12 horas')).toBeTruthy()
+    expect(screen.getByText('sem nota')).toBeTruthy()
+    expect(screen.getByText('3 enviadas')).toBeTruthy()
+    expect(screen.getByText('1 enviada · 1 agendada')).toBeTruthy()
+  })
+
+  it('puts missions and messages on one timeline, with the scheduled ones after Agora', async () => {
+    await renderApp({ path: '/gm', hunterId: null, body: campaignWithHistory() })
+
+    const timeline = await screen.findByRole('region', { name: 'Linha do tempo' })
+    fireEvent.click(within(timeline).getByText('Mostrar 1 anterior'))
+    const text = timeline.textContent
+    expect(within(timeline).getByText('Concluída')).toBeTruthy()
+    expect(within(timeline).getByText('com Ana')).toBeTruthy()
+    expect(text.indexOf('Tem algo no parque.')).toBeLessThan(text.indexOf('Agora'))
+    expect(text.indexOf('Agora')).toBeLessThan(text.indexOf('Ainda não.'))
+    expect(within(timeline).getByText('em 12h')).toBeTruthy()
+  })
+
+  it('opens an item to show all of it', async () => {
+    await renderApp({ path: '/gm', hunterId: null, body: campaignWithHistory() })
+
+    fireEvent.click(await screen.findByText('Mostrar 1 anterior'))
+    expect(screen.queryByText('Algo anda atacando cachorros no parque.')).toBeNull()
+    fireEvent.click(screen.getByText('Lobisomem no Bom Fim').closest('button'))
+
+    expect(screen.getByText('Algo anda atacando cachorros no parque.')).toBeTruthy()
+    expect(screen.getByText('Risco alto')).toBeTruthy()
+  })
+
+  it('shows only what reaches one hunter', async () => {
+    await renderApp({ path: '/gm', hunterId: null, body: campaignWithHistory() })
+
+    fireEvent.click(await screen.findByRole('button', { name: /Beto.*sem nota/ }))
+
+    expect(screen.getByText('O que chega para Beto')).toBeTruthy()
+    expect(screen.getByText('Beto, só para você.')).toBeTruthy()
+    expect(screen.queryByText('Ana, venha à igreja.')).toBeNull()
+
+    fireEvent.click(screen.getByText('Ver todos'))
+    expect(screen.getByText('Ana, venha à igreja.')).toBeTruthy()
   })
 
   it('shows the Convite of the campaign', async () => {
@@ -27,9 +67,19 @@ describe('GM view', () => {
 
     const invite = await screen.findByLabelText('Convite da campanha')
     expect(invite.value).toContain('?campanha=https%3A%2F%2Fpub-123.r2.dev%2Fcampanha.json')
+    expect(screen.getByText('campanha.json')).toBeTruthy()
   })
 
-  it('lists JSON errors by field and says players cannot open the campaign', async () => {
+  it('asks for the campaign link when none is open', async () => {
+    await renderApp({ path: '/gm', hunterId: null, campaignUrl: null })
+
+    expect(await screen.findByText('Abra sua campanha')).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Link da campanha'), { target: { value: 'campanha' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir' }))
+    expect(screen.getByText(/Isso não parece um link/)).toBeTruthy()
+  })
+
+  it('lists JSON errors by field, says players cannot open the campaign and blocks the Convite', async () => {
     const body = validCampaign()
     body.missions[0].value = 'cem'
     await renderApp({ path: '/gm', hunterId: null, body })
@@ -37,6 +87,8 @@ describe('GM view', () => {
     expect(await screen.findByText('O JSON publicado tem erros')).toBeTruthy()
     expect(screen.getByText('/missions/0/value')).toBeTruthy()
     expect(screen.getByText('Os jogadores não conseguem abrir a campanha até o JSON ser corrigido.')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Copiar' }).disabled).toBe(true)
+    expect(screen.getByRole('button', { name: 'Recarregar' })).toBeTruthy()
   })
 
   it('explains when the JSON cannot be read at all', async () => {

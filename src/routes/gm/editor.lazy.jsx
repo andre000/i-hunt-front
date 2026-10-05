@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import { useEffect, useMemo, useState } from 'react'
-import { createLazyFileRoute } from '@tanstack/react-router'
+import { createLazyFileRoute, Link } from '@tanstack/react-router'
 import { useDispatch, useSelector } from 'react-redux'
 import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
@@ -362,6 +362,7 @@ function Editor() {
     <main className="gm-editor" css={editorPage}>
       <div className="editor__top">
         <span className="editor__brand"><span>i</span>Hunt <b>Editor</b></span>
+        <Link className="editor__link" to="/gm">Visão do GM</Link>
         {draft && (
           <>
             <button type="button" className="editor__link" onClick={() => setChoosing(true)}>Trocar rascunho</button>
@@ -425,7 +426,13 @@ function Editor() {
 }
 
 function EditorPage() {
-  if (!useDesktopWidth()) return <CampaignStatus title="Abra no computador para editar" />
+  if (!useDesktopWidth()) {
+    return (
+      <CampaignStatus title="Abra no computador para editar">
+        <Link className="button secondary" to="/gm">Voltar para a Visão do GM</Link>
+      </CampaignStatus>
+    )
+  }
   return <Editor />
 }
 
@@ -825,6 +832,7 @@ const editorPage = css`
   }
 
   .editor__link {
+    text-decoration: none;
     padding: 4px 6px;
     border: 0;
     background: none;

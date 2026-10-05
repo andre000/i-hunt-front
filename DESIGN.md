@@ -188,7 +188,7 @@ A densidade é de ferramenta de trabalho. Linhas de lista com divisórias em vez
 
 O movimento é curto e com freio (curva de saída expo), sempre com alternativa para quem pede movimento reduzido. O único movimento contínuo é o pulso da caça disponível no mapa.
 
-Visão do GM (`src/routes/gm`) ainda usa o estilo claro anterior e está fora deste sistema até herdá-lo.
+A Visão do GM (`src/routes/gm`) usa o mesmo sistema, pensada primeiro para o notebook: lateral com hunters (que filtram a tela), NPCs e Convite; uma linha do tempo única de missões e mensagens cortada pela marca laranja "Agora"; e o mapa ao lado. O que está agendado aparece com contorno tracejado, nunca em amarelo, porque amarelo é risco médio.
 
 **Key Characteristics:**
 - Escuro de verdade: asfalto, painel e painel-2 como três degraus de superfície, separados por linha de 1px.

@@ -1,203 +1,148 @@
 /** @jsxImportSource @emotion/react */
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createLazyFileRoute, Link } from '@tanstack/react-router'
 import { useSelector } from 'react-redux'
 import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
-import { StarIcon } from '@heroicons/react/24/solid'
-import { Avatar } from '../../components/Avatar'
 import { CampaignClock } from '../../components/CampaignClock'
 import { useDesktopWidth } from '../../components/useDesktopWidth'
-import { MissionMap } from '../../components/MissionMap'
-import { StatusLabel } from '../../components/MissionTags'
+import { Timeline } from '../../components/gm/Timeline'
+import { HunterFilter, NpcList } from '../../components/gm/Roster'
+import { InviteBox } from '../../components/gm/InviteBox'
+import { CampaignProblems, SyncStatus } from '../../components/gm/CampaignHealth'
+import { MapPanel } from '../../components/gm/MapPanel'
+import { OpenCampaign } from '../../components/gm/OpenCampaign'
 import { gmView } from '../../campaign/gm'
-import { relativeToCampaign } from '../../campaign/time'
-import { inviteLink } from '../../campaign/invite'
-import { formatBRL } from '../../utils/format'
 
 export const Route = createLazyFileRoute('/gm/')({
   component: GmPage,
 })
 
-function InviteBox({ campaignUrl }) {
-  const inputRef = useRef(null)
-  const [copied, setCopied] = useState(false)
-  const link = inviteLink(window.location.origin, campaignUrl)
+function usePreviousDate(date) {
+  const last = useRef(date)
+  const [previous, setPrevious] = useState(null)
 
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(link)
-      setCopied(true)
-    } catch {
-      inputRef.current.select()
-    }
+  useEffect(() => {
+    if (date && last.current && last.current !== date) setPrevious(last.current)
+    last.current = date
+  }, [date])
+
+  return previous
+}
+
+function prefersCalm() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? true
+}
+
+function mapMissions(timeline) {
+  return [...timeline.origin, ...timeline.past, ...timeline.upcoming]
+    .filter(item => item.kind === 'mission' && item.mission.position)
+    .map(({ mission, scheduled }) => (scheduled ? { ...mission, status: 'scheduled' } : mission))
+}
+
+function CampaignView({ data, desktop }) {
+  const [hunterId, setHunterId] = useState(null)
+  const [openId, setOpenId] = useState(null)
+  const [showEarlier, setShowEarlier] = useState(false)
+  const [showMap, setShowMap] = useState(false)
+  const [scrollTarget, setScrollTarget] = useState(null)
+  const campaignUrl = useSelector(state => state.campaign.campaignUrl)
+  const view = gmView(data, { hunterId })
+  const freshSince = usePreviousDate(view.date)
+  const hunterName = view.hunters.find(({ hunter }) => hunter.id === hunterId)?.hunter.name ?? null
+
+  useEffect(() => {
+    if (!scrollTarget) return
+    document.getElementById(`gm-${scrollTarget}`)?.scrollIntoView({ block: 'center', behavior: prefersCalm() ? 'auto' : 'smooth' })
+    setScrollTarget(null)
+  }, [scrollTarget])
+
+  const toggle = item => setOpenId(current => (current === item.id ? null : item.id))
+  const selectPin = missionId => {
+    setShowEarlier(true)
+    setOpenId(`mission:${missionId}`)
+    setScrollTarget(`mission:${missionId}`)
   }
+  const selectedMission = openId?.startsWith('mission:') ? openId.slice('mission:'.length) : null
+  const map = <MapPanel missions={mapMissions(view.timeline)} selectedId={selectedMission} onSelect={selectPin} />
 
   return (
-    <div className="invite">
-      <input ref={inputRef} readOnly value={link} aria-label="Convite da campanha" onFocus={e => e.target.select()} />
-      <button type="button" className="button primary" onClick={copy}>
-        {copied ? 'Copiado!' : 'Copiar'}
-      </button>
+    <div className="gm__layout">
+      <aside className="gm__side">
+        <div className="gm__head">
+          <h1>{data.campaign.name}</h1>
+          <SyncStatus />
+          <HunterFilter hunters={view.hunters} selectedId={hunterId} onSelect={setHunterId} />
+        </div>
+        <div className="gm__extra">
+          <NpcList npcs={view.npcs} />
+          {campaignUrl && <InviteBox campaignUrl={campaignUrl} playable />}
+          {!desktop && <p className="gm__note">Para editar a campanha, abra o Editor no computador.</p>}
+        </div>
+      </aside>
+
+      {desktop
+        ? <div className="gm__map">{map}</div>
+        : (
+          <div className="gm__map">
+            <button type="button" className="button secondary gm__map-toggle" aria-expanded={showMap} onClick={() => setShowMap(shown => !shown)}>
+              {showMap ? 'Esconder mapa' : 'Ver mapa'}
+            </button>
+            {showMap && map}
+          </div>
+        )}
+
+      <div className="gm__feed">
+        <CampaignProblems editable={desktop} />
+        <div className="gm__feed-head">
+          <h2>{hunterName ? `O que chega para ${hunterName}` : 'Linha do tempo'}</h2>
+          {hunterName && <button type="button" className="gm__clear" onClick={() => setHunterId(null)}>Ver todos</button>}
+        </div>
+        <Timeline
+          timeline={view.timeline}
+          date={view.date}
+          hunterName={hunterName}
+          openId={openId}
+          freshSince={freshSince}
+          showEarlier={showEarlier}
+          onShowEarlier={() => setShowEarlier(true)}
+          onToggle={toggle}
+        />
+      </div>
     </div>
   )
 }
 
-InviteBox.propTypes = {
-  campaignUrl: PropTypes.string.isRequired,
-}
-
-function JsonErrors({ errors, hasValidVersion }) {
-  return (
-    <section className="gm__errors" role="alert">
-      <h2>O JSON publicado tem erros</h2>
-      <p>
-        {hasValidVersion
-          ? 'Os jogadores continuam vendo a última versão válida.'
-          : 'Os jogadores não conseguem abrir a campanha até o JSON ser corrigido.'}
-      </p>
-      <ul>
-        {errors.map(({ path, message }, index) => (
-          <li key={`${path}-${index}`}>
-            <code>{path || '(arquivo)'}</code> {message}
-          </li>
-        ))}
-      </ul>
-    </section>
-  )
-}
-
-JsonErrors.propTypes = {
-  errors: PropTypes.arrayOf(PropTypes.shape({
-    path: PropTypes.string.isRequired,
-    message: PropTypes.string.isRequired,
-  })).isRequired,
-  hasValidVersion: PropTypes.bool.isRequired,
-}
-
-function HunterList({ hunters }) {
-  return (
-    <section className="gm__section">
-      <h2>Hunters <span className="num">{hunters.length}</span></h2>
-      <ul className="gm__list">
-        {hunters.map(({ hunter, earnings }) => (
-          <li key={hunter.id}>
-            <Avatar person={hunter} size={36} />
-            <span className="gm__name">{hunter.name}</span>
-            {hunter.rating !== undefined && (
-              <span className="gm__rating num">
-                <StarIcon aria-hidden="true" />
-                {hunter.rating.toFixed(1)}
-              </span>
-            )}
-            <span className="gm__value num">{formatBRL(earnings)}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )
-}
-
-HunterList.propTypes = {
-  hunters: PropTypes.arrayOf(PropTypes.shape({
-    hunter: PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
-      rating: PropTypes.number,
-    }).isRequired,
-    earnings: PropTypes.number.isRequired,
-  })).isRequired,
-}
-
-function MissionRow({ mission, date }) {
-  return (
-    <li>
-      <span className="gm__mission">
-        <span className="gm__name">{mission.name}</span>
-        <span className="gm__meta">
-          {mission.scheduled
-            ? <span className="gm__scheduled">Agendada · {relativeToCampaign(mission.postedAt, date)}</span>
-            : <StatusLabel status={mission.status} />}
-          {mission.hunterNames.length > 0 && <span>{mission.hunterNames.join(', ')}</span>}
-          {!mission.position && <span>Sem posição no mapa</span>}
-        </span>
-      </span>
-      <span className="gm__value num">{formatBRL(mission.value)}</span>
-    </li>
-  )
-}
-
-MissionRow.propTypes = {
-  mission: PropTypes.shape({
-    name: PropTypes.string.isRequired,
-    status: PropTypes.string.isRequired,
-    scheduled: PropTypes.bool.isRequired,
-    postedAt: PropTypes.string,
-    value: PropTypes.number.isRequired,
-    position: PropTypes.object,
-    hunterNames: PropTypes.arrayOf(PropTypes.string).isRequired,
+CampaignView.propTypes = {
+  data: PropTypes.shape({
+    campaign: PropTypes.shape({ name: PropTypes.string.isRequired }).isRequired,
   }).isRequired,
-  date: PropTypes.string.isRequired,
-}
-
-function MissionList({ missions, date }) {
-  const onMap = missions
-    .filter(mission => mission.position)
-    .map(mission => (mission.scheduled ? { ...mission, status: 'scheduled' } : mission))
-
-  return (
-    <section className="gm__section">
-      <h2>Missões <span className="num">{missions.length}</span></h2>
-      {onMap.length > 0 && <MissionMap className="gm__map" missions={onMap} />}
-      <ul className="gm__list">
-        {missions.map(mission => <MissionRow key={mission.id} mission={mission} date={date} />)}
-      </ul>
-    </section>
-  )
-}
-
-MissionList.propTypes = {
-  missions: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string.isRequired })).isRequired,
-  date: PropTypes.string.isRequired,
+  desktop: PropTypes.bool.isRequired,
 }
 
 function GmPage() {
-  const { status, data, errors, error, campaignUrl } = useSelector(state => state.campaign)
-  const view = data ? gmView(data) : null
+  const { status, data, campaignUrl } = useSelector(state => state.campaign)
   const desktop = useDesktopWidth()
 
   return (
-    <main css={gmPage}>
+    <main className="gm-view" css={gmPage}>
       <div className="gm__top">
         <span className="gm__brand"><span>i</span>Hunt <b>GM</b></span>
         <span className="gm__actions">
-          {view && <CampaignClock />}
+          {data && <CampaignClock />}
           {desktop && <Link className="button secondary gm__edit" to="/gm/editor">Editar</Link>}
         </span>
       </div>
 
-      <div className="gm__body">
-        <h1>{data?.campaign.name ?? 'Visão do GM'}</h1>
-
-        {errors.length > 0 && <JsonErrors errors={errors} hasValidVersion={Boolean(data)} />}
-
-        {status === 'error' && (
-          <section className="gm__errors" role="alert">
-            <h2>Não foi possível ler o JSON</h2>
-            <p>{error}. Confira a URL e a política de CORS do bucket.</p>
-          </section>
-        )}
-
-        {campaignUrl && (
-          <section className="gm__section">
-            <h2>Convite</h2>
-            <InviteBox campaignUrl={campaignUrl} />
-          </section>
-        )}
-
-        {view && <HunterList hunters={view.hunters} />}
-        {view && <MissionList missions={view.missions} date={view.date} />}
-      </div>
+      {data && <CampaignView data={data} desktop={desktop} />}
+      {!data && (
+        <div className="gm__alone">
+          {status !== 'no-campaign' && <h1>Visão do GM</h1>}
+          <CampaignProblems editable={desktop} />
+          {status === 'no-campaign' && <OpenCampaign editable={desktop} />}
+          {status !== 'no-campaign' && campaignUrl && <InviteBox campaignUrl={campaignUrl} playable={false} />}
+        </div>
+      )}
     </main>
   )
 }
@@ -230,12 +175,12 @@ const gmPage = css`
   }
 
   .gm__edit {
-    padding: 6px 12px;
+    padding: 7px 14px;
     font-size: 13px;
   }
 
   .gm__brand {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 800;
     letter-spacing: -0.04em;
     display: flex;
@@ -257,150 +202,165 @@ const gmPage = css`
     }
   }
 
-  .gm__body {
+  .gm__alone {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
     padding: 20px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .gm__layout {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 16px 48px;
     display: flex;
     flex-direction: column;
     gap: 28px;
   }
 
+  .gm__side {
+    display: contents;
+  }
+
+  .gm__head,
+  .gm__extra {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .gm__head { order: 1; }
+  .gm__map { order: 2; }
+  .gm__feed { order: 3; }
+  .gm__extra { order: 4; }
+
   h1 {
-    font-size: 30px;
-    line-height: 1.05;
+    font-size: 24px;
+    line-height: 1.1;
     letter-spacing: -0.03em;
   }
 
-  .gm__section {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  .gm__head h1 {
+    margin-bottom: -10px;
   }
 
-  h2 {
-    font-size: 13px;
-    font-weight: 600;
+  .gm__note {
+    font-size: 12px;
     color: var(--apagado);
-    letter-spacing: 0;
-    display: flex;
-    gap: 6px;
-  }
-
-  .gm__errors {
-    border: 1px solid rgb(255 107 107 / 40%);
-    background-color: var(--perigo-fundo);
-    border-radius: 16px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-
-    h2 {
-      color: var(--perigo);
-      font-size: 15px;
-    }
-
-    p {
-      font-size: 14px;
-    }
-
-    ul {
-      margin: 0;
-      padding-left: 18px;
-      font-size: 13px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    code {
-      font-family: var(--mono);
-      color: var(--perigo);
-    }
-  }
-
-  .invite {
-    display: flex;
-    gap: 8px;
-
-    input {
-      flex: 1;
-      min-width: 0;
-      padding: 10px 12px;
-      border: 1px solid var(--linha);
-      border-radius: 14px;
-      background-color: var(--painel);
-      color: var(--apagado);
-      font-family: var(--mono);
-      font-size: 12px;
-    }
   }
 
   .gm__map {
-    height: 220px;
-    border-radius: 16px;
-    border: 1px solid var(--linha);
-    overflow: hidden;
-  }
-
-  .gm__list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    border-top: 1px solid var(--linha);
-
-    li {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--linha);
-    }
-  }
-
-  .gm__mission {
-    flex: 1;
-    min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 12px;
+    min-height: 0;
   }
 
-  .gm__name {
-    flex: 1;
-    min-width: 0;
-    font-size: 15px;
-    font-weight: 600;
+  .gm__map-toggle {
+    align-self: flex-start;
+    min-height: 40px;
+    font-size: 13px;
   }
 
-  .gm__meta {
+  .gm__map .map__map {
+    flex: none;
+    height: 260px;
+  }
+
+  .gm__feed {
     display: flex;
-    flex-wrap: wrap;
-    gap: 4px 12px;
-    font-size: 12px;
-    color: var(--apagado);
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
   }
 
-  .gm__scheduled {
-    color: var(--aviso);
-    font-weight: 600;
-  }
+  .gm__feed-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
 
-  .gm__rating {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    color: var(--apagado);
-
-    svg {
-      width: 13px;
-      height: 13px;
-      color: var(--aviso);
+    h2 {
+      font-size: 18px;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
     }
   }
 
-  .gm__value {
-    font-size: 14px;
-    white-space: nowrap;
+  .gm__clear {
+    padding: 4px 0;
+    background: none;
+    color: var(--laranja);
+    font-size: 13px;
+  }
+
+  @media (min-width: 960px) {
+    overflow: hidden;
+
+    .gm__layout {
+      flex: 1;
+      min-height: 0;
+      max-width: none;
+      padding: 0;
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      grid-template-rows: 280px minmax(0, 1fr);
+      grid-template-areas: 'side map' 'side feed';
+      gap: 0;
+    }
+
+    .gm__side {
+      grid-area: side;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 24px 20px 32px;
+      border-right: 1px solid var(--linha);
+    }
+
+    .gm__map {
+      grid-area: map;
+      padding: 16px 24px 0;
+    }
+
+    .gm__map .map__map {
+      flex: 1;
+      height: auto;
+      min-height: 0;
+    }
+
+    .gm__feed {
+      grid-area: feed;
+      overflow-y: auto;
+      padding: 24px 24px 64px;
+    }
+
+    .gm__feed > * {
+      width: 100%;
+      max-width: 720px;
+    }
+  }
+
+  @media (min-width: 1240px) {
+    .gm__layout {
+      grid-template-columns: 340px minmax(0, 1fr) minmax(360px, 32vw);
+      grid-template-rows: minmax(0, 1fr);
+      grid-template-areas: 'side feed map';
+    }
+
+    .gm__map {
+      padding: 20px;
+      border-left: 1px solid var(--linha);
+    }
+
+    .gm__feed {
+      padding: 24px 32px 64px;
+    }
   }
 `

@@ -69,6 +69,11 @@ export const reloadCampaign = createAsyncThunk(
   (_, { extra }) => extra.sync.load(),
 )
 
+export const refreshCampaign = createAsyncThunk(
+  'campaign/refresh',
+  async (_, { extra }) => ({ ...await extra.sync.load(), checkedAt: Date.now() }),
+)
+
 export function initialCampaignState({ hunterId = null, pendingInvite = null, readMessageIds = [], campaignUrl = null, demo = null } = {}) {
   return {
     status: 'loading',
@@ -77,6 +82,8 @@ export function initialCampaignState({ hunterId = null, pendingInvite = null, re
     error: null,
     offline: false,
     updateError: null,
+    checkedAt: null,
+    refreshing: false,
     hunterId,
     pendingInvite,
     readMessageIds,
@@ -92,6 +99,7 @@ function applyLoadResult(state, result) {
   state.error = result.error ?? null
   state.offline = result.offline ?? false
   state.updateError = result.updateError ?? null
+  state.checkedAt = result.checkedAt ?? null
 }
 
 const campaignSlice = createSlice({
@@ -145,6 +153,16 @@ const campaignSlice = createSlice({
       })
       .addCase(reloadCampaign.fulfilled, (state, { payload }) => {
         applyLoadResult(state, payload)
+      })
+      .addCase(refreshCampaign.pending, (state) => {
+        state.refreshing = true
+      })
+      .addCase(refreshCampaign.fulfilled, (state, { payload }) => {
+        applyLoadResult(state, payload)
+        state.refreshing = false
+      })
+      .addCase(refreshCampaign.rejected, (state) => {
+        state.refreshing = false
       })
   },
 })

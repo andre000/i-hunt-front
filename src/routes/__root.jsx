@@ -62,8 +62,8 @@ function RootScreen({ isGmView, isEditor }) {
   if (pendingInvite) return <InviteConfirmation />
   if (isEditor) return <Outlet />
   if (status === 'loading') return <CampaignStatus title="Carregando campanha…" />
-  if (status === 'no-campaign') return <NoCampaign />
   if (isGmView) return <Outlet />
+  if (status === 'no-campaign') return <NoCampaign />
   if (status !== 'ready') return <LoadFailed demo={Boolean(demo)} />
   return <PlayerScreen data={data} hunterId={hunterId} demo={demo} />
 }
