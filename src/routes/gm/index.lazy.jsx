@@ -14,19 +14,31 @@ import { CampaignProblems, SyncStatus } from '../../components/gm/CampaignHealth
 import { MapPanel } from '../../components/gm/MapPanel'
 import { OpenCampaign } from '../../components/gm/OpenCampaign'
 import { gmView } from '../../campaign/gm'
+import { attempt, safeStorage } from '../../campaign/storage'
 
 export const Route = createLazyFileRoute('/gm/')({
   component: GmPage,
 })
 
-function usePreviousDate(date) {
-  const last = useRef(date)
-  const [previous, setPrevious] = useState(null)
+const SEEN_DATE_KEY = 'ihunt.gm.seenDate'
+
+function seenDates() {
+  return safeStorage(attempt(() => window.localStorage))
+}
+
+function useLastSeenDate(date, campaignUrl) {
+  const key = `${SEEN_DATE_KEY}:${campaignUrl ?? 'demo'}`
+  const last = useRef(null)
+  const [previous, setPrevious] = useState(() => {
+    const seen = seenDates().get(key)
+    return seen && seen !== date ? seen : null
+  })
 
   useEffect(() => {
-    if (date && last.current && last.current !== date) setPrevious(last.current)
+    if (last.current && last.current !== date) setPrevious(last.current)
     last.current = date
-  }, [date])
+    seenDates().set(key, date)
+  }, [date, key])
 
   return previous
 }
@@ -117,7 +129,7 @@ function CampaignView({ data, desktop }) {
   const campaignUrl = useSelector(state => state.campaign.campaignUrl)
   const wide = useWideScreen()
   const view = gmView(data, { hunterId })
-  const freshSince = usePreviousDate(view.date)
+  const freshSince = useLastSeenDate(view.date, campaignUrl)
   const hunterName = view.hunters.find(({ hunter }) => hunter.id === hunterId)?.hunter.name ?? null
 
   useEffect(() => {

@@ -1,9 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { renderApp } from '../../test/renderApp'
-import { validCampaign } from '../../campaign/fixtures'
+import { parsed, validCampaign } from '../../campaign/fixtures'
+import { campaignLoaded } from '../../store/campaign'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  window.localStorage.clear()
+})
 
 function campaignWithHistory() {
   const body = validCampaign()
@@ -36,6 +40,37 @@ describe('GM view', () => {
     expect(text.indexOf('Tem algo no parque.')).toBeLessThan(text.indexOf('Agora'))
     expect(text.indexOf('Agora')).toBeLessThan(text.indexOf('Ainda não.'))
     expect(within(timeline).getByText('em 12h')).toBeTruthy()
+  })
+
+  it('names the next scheduled item at Agora and opens it', async () => {
+    await renderApp({ path: '/gm', hunterId: null, body: campaignWithHistory() })
+
+    const next = await screen.findByRole('button', { name: /Próximo, em 2h/ })
+    expect(within(next).getByText('Padre Júlio → Todos')).toBeTruthy()
+    fireEvent.click(next)
+    expect(screen.getByText('Ainda não.').closest('button').getAttribute('aria-expanded')).toBe('true')
+  })
+
+  it('tells what just came out when the campaign date moves', async () => {
+    const { store } = await renderApp({ path: '/gm', hunterId: null, body: campaignWithHistory() })
+    expect(await screen.findByText('Noite em Porto Alegre')).toBeTruthy()
+
+    const later = campaignWithHistory()
+    later.campaign.date = '2026-10-05T10:00:00-03:00'
+    act(() => {
+      store.dispatch(campaignLoaded({ status: 'ready', campaign: parsed(later) }))
+    })
+
+    expect(await screen.findByText('Acabou de sair: 1 missão e 1 mensagem.')).toBeTruthy()
+    expect(screen.getAllByText('Saiu agora')).toHaveLength(2)
+  })
+
+  it('tells what came out since the last visit to the GM view', async () => {
+    window.localStorage.setItem('ihunt.gm.seenDate:https://pub-123.r2.dev/campanha.json', '2026-10-04T18:30:00-03:00')
+    await renderApp({ path: '/gm', hunterId: null, body: campaignWithHistory() })
+
+    expect(await screen.findByText('Acabou de sair: 3 mensagens.')).toBeTruthy()
+    expect(window.localStorage.getItem('ihunt.gm.seenDate:https://pub-123.r2.dev/campanha.json')).toBe('2026-10-04T21:00:00-03:00')
   })
 
   it('opens an item to show all of it', async () => {

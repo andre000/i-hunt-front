@@ -133,9 +133,13 @@ Row.propTypes = {
   onToggle: PropTypes.func.isRequired,
 }
 
+function freshTest(freshSince, date) {
+  return item => Boolean(freshSince && item.at && time(item.at) > time(freshSince) && time(item.at) <= time(date))
+}
+
 function Groups({ items, ...rowProps }) {
   const { openId, freshSince, date, hunterName } = rowProps
-  const isFresh = item => Boolean(freshSince && item.at && time(item.at) > time(freshSince) && time(item.at) <= time(date))
+  const isFresh = freshTest(freshSince, date)
 
   return byDay(items).map(({ day, items: dayItems }) => (
     <div className="day" key={day}>
@@ -157,6 +161,63 @@ function Groups({ items, ...rowProps }) {
   ))
 }
 
+function count(total, one, many) {
+  return `${total} ${total === 1 ? one : many}`
+}
+
+function arrivals(items) {
+  const missions = items.filter(item => item.kind === 'mission').length
+  const messages = items.length - missions
+  return [missions && count(missions, 'missão', 'missões'), messages && count(messages, 'mensagem', 'mensagens')]
+    .filter(Boolean)
+    .join(' e ')
+}
+
+function itemLabel(item) {
+  if (item.kind === 'mission') return item.mission.name
+  const to = item.recipients ? names(item.recipients, false) : 'Todos'
+  return `${item.npc?.name ?? item.message.npc} → ${to}`
+}
+
+function NowBand({ date, next, fresh, hunterName, onReveal }) {
+  const clock = campaignClock(date)
+  const viewer = hunterName ? `${hunterName} vê` : 'Os jogadores veem'
+
+  return (
+    <div className={fresh.length > 0 ? 'now is-moved' : 'now'} id="gm-agora">
+      <p className="now__rule">
+        <span className="now__label"><span className="now__dot" aria-hidden="true" />Agora</span>
+      </p>
+      <p className="now__clock">
+        <span className="now__hour num">{clock.hour}</span>
+        <span className="now__day">{clock.day}</span>
+      </p>
+      {fresh.length > 0 && (
+        <p className="now__moved" role="status">
+          Acabou de sair: {arrivals(fresh)}.
+        </p>
+      )}
+      {next && (
+        <button type="button" className="now__next" onClick={() => onReveal(next)}>
+          <span className="now__next-label">Próximo, em {timeLeft(next.at, date)}</span>
+          <span className="now__next-item">{itemLabel(next)}</span>
+        </button>
+      )}
+      <p className="now__hint">
+        {viewer} o que está acima. O que está abaixo entra quando a data da campanha avançar.
+      </p>
+    </div>
+  )
+}
+
+NowBand.propTypes = {
+  date: PropTypes.string.isRequired,
+  next: PropTypes.object,
+  fresh: PropTypes.array.isRequired,
+  hunterName: PropTypes.string,
+  onReveal: PropTypes.func.isRequired,
+}
+
 function EditorHint({ editable, children }) {
   return editable ? <Link to="/gm/editor">{children}</Link> : <>{children} (no computador)</>
 }
@@ -169,8 +230,12 @@ EditorHint.propTypes = {
 export function Timeline({ timeline, date, hunterName, openId, freshSince, showEarlier, onShowEarlier, onToggle, editable = false }) {
   const earlier = [...timeline.origin, ...timeline.past]
   const hidden = showEarlier ? 0 : Math.max(0, earlier.length - EARLIER_SHOWN)
-  const clock = campaignClock(date)
   const rowProps = { openId, freshSince, date, hunterName, onToggle }
+  const fresh = timeline.past.filter(freshTest(freshSince, date))
+  const reveal = item => {
+    if (openId !== item.id) onToggle(item)
+    document.getElementById(`gm-${item.id}`)?.scrollIntoView?.({ block: 'center' })
+  }
 
   return (
     <section css={timelineStyle} aria-label="Linha do tempo">
@@ -188,16 +253,7 @@ export function Timeline({ timeline, date, hunterName, openId, freshSince, showE
         )
         : <Groups items={earlier.slice(hidden)} {...rowProps} />}
 
-      <div className="now" id="gm-agora">
-        <p className="now__line">
-          <span className="now__label">Agora</span>
-          <span>{clock.day} · <span className="num">{clock.hour}</span></span>
-        </p>
-        <p className="now__hint">
-          {hunterName ?? 'Os jogadores'} {hunterName ? 'vê' : 'veem'} o que está acima.
-          O que está abaixo entra quando a data da campanha avançar.
-        </p>
-      </div>
+      <NowBand date={date} next={timeline.upcoming[0] ?? null} fresh={fresh} hunterName={hunterName} onReveal={reveal} />
 
       {timeline.upcoming.length === 0
         ? (
@@ -206,7 +262,7 @@ export function Timeline({ timeline, date, hunterName, openId, freshSince, showE
             no <EditorHint editable={editable}>Editor</EditorHint>.
           </p>
         )
-        : <Groups items={timeline.upcoming} {...rowProps} />}
+        : <div className="timeline__upcoming"><Groups items={timeline.upcoming} {...rowProps} /></div>}
     </section>
   )
 }
@@ -476,19 +532,47 @@ const timelineStyle = css`
     white-space: nowrap;
   }
 
-  .now {
+  .timeline__upcoming {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 4px 0;
+    gap: 20px;
+
+    ol::before {
+      background: none;
+      border-left: 1px dashed var(--linha);
+    }
   }
 
-  .now__line {
+  .is-fresh .node::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid var(--laranja);
+    opacity: 0;
+    animation: node-arrive 1.4s cubic-bezier(0.16, 1, 0.3, 1) 3;
+  }
+
+  @keyframes node-arrive {
+    from { transform: scale(0.6); opacity: 0.9; }
+    to { transform: scale(1.8); opacity: 0; }
+  }
+
+  .now {
+    margin: 12px 0 4px;
+    padding-left: var(--text-start);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .now__rule {
+    align-self: stretch;
+    margin-left: calc(var(--text-start) * -1);
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    font-weight: 600;
+    gap: 12px;
 
     &::after {
       content: '';
@@ -499,20 +583,120 @@ const timelineStyle = css`
   }
 
   .now__label {
-    padding: 4px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
     border-radius: 999px;
     background-color: var(--laranja);
     color: #120700;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .now__dot {
+    position: relative;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: #120700;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -5px;
+      border-radius: 50%;
+      background-color: #120700;
+      opacity: 0;
+    }
+  }
+
+  .is-moved .now__dot::after {
+    animation: now-pulse 1.4s cubic-bezier(0.16, 1, 0.3, 1) 3;
+  }
+
+  @keyframes now-pulse {
+    from { transform: scale(0.3); opacity: 0.45; }
+    to { transform: scale(1); opacity: 0; }
+  }
+
+  .now__clock {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .now__hour {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .now__day {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--apagado);
+  }
+
+  .now__moved {
+    padding: 6px 12px;
+    border-radius: 12px;
+    background-color: var(--laranja-fundo);
+    color: var(--laranja);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .is-moved .now__moved {
+    animation: now-moved 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes now-moved {
+    from { opacity: 0; transform: translateY(-6px); }
+  }
+
+  .now__next {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    margin-left: -10px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: none;
+    color: var(--texto);
+    text-align: left;
+    font-weight: 400;
+    transition: background-color 0.2s ease;
+  }
+
+  .now__next:hover {
+    background-color: var(--painel);
+  }
+
+  .now__next-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--apagado);
+  }
+
+  .now__next-item {
+    font-size: 15px;
+    font-weight: 600;
   }
 
   .now__hint {
+    max-width: 62ch;
     font-size: 12px;
-    color: var(--apagado);
     line-height: 1.4;
+    color: var(--apagado);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .is-fresh .row__button {
+    .is-fresh .row__button,
+    .is-fresh .node::after,
+    .is-moved .now__dot::after,
+    .is-moved .now__moved {
       animation: none;
     }
   }
