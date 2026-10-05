@@ -21,3 +21,28 @@ AvatarField.propTypes = {
   person: PropTypes.shape({ name: PropTypes.string, avatar: PropTypes.string }).isRequired,
   onChange: PropTypes.func.isRequired,
 }
+
+export function HunterPicker({ legend, hunters, selected, onChange }) {
+  const picked = Array.isArray(selected) ? selected : []
+  const toggle = (id) => onChange(picked.includes(id) ? picked.filter(item => item !== id) : [...picked, id])
+
+  return (
+    <fieldset className="editor__picker">
+      <legend>{legend}</legend>
+      {hunters.length === 0 && <p>Nenhum hunter na campanha.</p>}
+      {hunters.map(hunter => (
+        <label key={hunter.id}>
+          <input type="checkbox" checked={picked.includes(hunter.id)} onChange={() => toggle(hunter.id)} />
+          <span>{hunter.name || hunter.id}</span>
+        </label>
+      ))}
+    </fieldset>
+  )
+}
+
+HunterPicker.propTypes = {
+  legend: PropTypes.string.isRequired,
+  hunters: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string, name: PropTypes.string })).isRequired,
+  selected: PropTypes.arrayOf(PropTypes.string),
+  onChange: PropTypes.func.isRequired,
+}

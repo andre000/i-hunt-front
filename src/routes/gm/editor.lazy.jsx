@@ -9,9 +9,10 @@ import { HunterForm } from '../../components/editor/HunterForm'
 import { NewItemForm } from '../../components/editor/NewItemForm'
 import { NpcForm } from '../../components/editor/NpcForm'
 import { MissionBadge, MissionForm, NewMissionForm } from '../../components/editor/MissionForm'
+import { MessageBadge, MessageForm, NewMessageForm } from '../../components/editor/MessageForm'
 import { useDesktopWidth } from '../../components/useDesktopWidth'
-import { campaignDateAdvanced, campaignEdited, itemAdded, itemMoved, downloadDraft, draftDiscarded, draftOpened, openDraftFile, openPublishedDraft } from '../../store/editor'
-import { blankDraft, dateFromInput, dateToInput, draftErrors, nextScheduled } from '../../campaign/draft'
+import { campaignDateAdvanced, campaignEdited, itemAdded, itemMoved, messageAdded, downloadDraft, draftDiscarded, draftOpened, openDraftFile, openPublishedDraft } from '../../store/editor'
+import { blankDraft, dateFromInput, dateToInput, draftErrors, messageOrder, nextScheduled } from '../../campaign/draft'
 
 export const Route = createLazyFileRoute('/gm/editor')({
   component: EditorPage,
@@ -30,7 +31,17 @@ const SECTIONS = [
     Badge: MissionBadge,
   },
   { key: 'npcs', title: 'NPCs', label: item => item.name, add: 'Adicionar NPC', newTitle: 'Novo NPC', Form: NpcForm },
-  { key: 'messages', title: 'Mensagens', label: item => item.text },
+  {
+    key: 'messages',
+    title: 'Mensagens',
+    label: item => item.text,
+    add: 'Adicionar mensagem',
+    added: fields => messageAdded(fields),
+    NewForm: NewMessageForm,
+    Form: MessageForm,
+    Badge: MessageBadge,
+    order: messageOrder,
+  },
 ]
 
 const itemLabel = (section, item) => (typeof section.label(item) === 'string' && section.label(item)) || '(sem nome)'
@@ -106,8 +117,8 @@ function SectionList({ draft, selected, onSelect }) {
               </button>
             )}
           </h2>
-          <ul>
-            {draft[section.key].map((item, index) => (
+          <ul aria-label={section.title}>
+            {(section.order ? section.order(draft) : draft[section.key].map((_, index) => index)).map(index => (
               <li key={index} {...dragProps(section, index)}>
                 <button
                   type="button"
@@ -115,7 +126,7 @@ function SectionList({ draft, selected, onSelect }) {
                   aria-current={isSelected(section.key, index)}
                   onClick={() => onSelect({ section: section.key, index })}
                 >
-                  {itemLabel(section, item)}
+                  {itemLabel(section, draft[section.key][index])}
                 </button>
                 {section.Badge && <section.Badge draft={draft} index={index} />}
               </li>
@@ -160,10 +171,10 @@ function ItemPanel({ draft, selected, onSelect }) {
   const section = SECTIONS.find(({ key }) => key === selected.section)
   if (selected.adding) {
     const add = (fields) => {
-      dispatch(itemAdded({ section: section.key, fields }))
+      dispatch(section.added ? section.added(fields) : itemAdded({ section: section.key, fields }))
       onSelect({ section: section.key, index: draft[section.key].length })
     }
-    if (section.NewForm) return <section.NewForm key={section.key} onAdd={add} />
+    if (section.NewForm) return <section.NewForm key={section.key} npcs={draft.npcs} onAdd={add} />
     return <NewItemForm key={section.key} title={section.newTitle} onAdd={add} />
   }
   const item = draft[section.key][selected.index]
@@ -420,8 +431,8 @@ const editorPage = css`
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px 16px;
-    padding: 12px 20px;
+    gap: 10px 12px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--linha);
     white-space: nowrap;
   }

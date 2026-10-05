@@ -370,13 +370,13 @@ describe('Missões', () => {
 
     fireEvent.change(screen.getByLabelText('Publicação'), { target: { value: '2026-10-04T22:00' } })
 
-    const sections = screen.getByRole('navigation', { name: 'Seções do rascunho' })
-    expect(within(sections).getByText('Agendado')).toBeTruthy()
+    const missions = screen.getByRole('list', { name: 'Missões' })
+    expect(within(missions).getByText('Agendado')).toBeTruthy()
     expect(screen.getByText('Agendado', { selector: '.editor__meta *' })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Avançar até o próximo agendado' }))
 
-    expect(within(sections).queryByText('Agendado')).toBeNull()
+    expect(within(missions).queryByText('Agendado')).toBeNull()
     expect(screen.queryByText('Agendado', { selector: '.editor__meta *' })).toBeNull()
   })
 
@@ -416,6 +416,74 @@ describe('Missões', () => {
     fireEvent.click(within(screen.getByRole('alertdialog', { name: 'Apagar Fantasma no ônibus T5?' })).getByRole('button', { name: 'Apagar' }))
 
     expect(store.getState().editor.draft.missions.map(mission => mission.id)).toEqual(['m1', 'm3'])
+  })
+})
+
+describe('Mensagens', () => {
+  const messages = (store) => store.getState().editor.draft.messages
+
+  async function openMessage(text, options = {}) {
+    const result = await renderApp({ path: '/gm/editor', hunterId: null, ...options })
+    const sections = await screen.findByRole('navigation', { name: 'Seções do rascunho' })
+    fireEvent.click(within(sections).getByRole('button', { name: text }))
+    return result
+  }
+
+  it('writes a message from a NPC chosen in a list, at the campaign date', async () => {
+    const { store } = await renderApp({ path: '/gm/editor', hunterId: null })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Adicionar mensagem' }))
+    fireEvent.change(screen.getByLabelText('NPC'), { target: { value: 'padre' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar' }))
+    fireEvent.change(screen.getByLabelText('Texto'), { target: { value: 'Venham todos.' } })
+
+    expect(messages(store).at(-1)).toEqual({ id: 'msg-padre', npc: 'padre', to: 'all', sentAt: '2026-10-04T21:00:00-03:00', text: 'Venham todos.' })
+    expect(screen.getByLabelText('Hora').value).toBe('2026-10-04T21:00')
+    expect(screen.queryByText('Agendado', { selector: '.editor__meta *' })).toBeNull()
+  })
+
+  it('changes the NPC and sends to specific hunters', async () => {
+    const { store } = await openMessage('Tem algo no parque.')
+
+    fireEvent.change(screen.getByLabelText('NPC'), { target: { value: 'padre' } })
+    fireEvent.click(screen.getByLabelText('Hunters específicos'))
+    fireEvent.click(within(screen.getByRole('group', { name: 'Para' })).getByLabelText('Beto'))
+
+    expect(messages(store)[0]).toMatchObject({ npc: 'padre', to: ['beto'] })
+
+    fireEvent.click(screen.getByLabelText('Todos os hunters'))
+    expect(messages(store)[0].to).toBe('all')
+  })
+
+  it('shows Agendado for a time after the campaign date', async () => {
+    await openMessage('Tem algo no parque.')
+
+    fireEvent.change(screen.getByLabelText('Hora'), { target: { value: '2026-10-04T22:00' } })
+
+    expect(screen.getByText('Agendado', { selector: '.editor__meta *' })).toBeTruthy()
+    const sections = screen.getByRole('navigation', { name: 'Seções do rascunho' })
+    expect(within(sections).getAllByText('Agendado')).toHaveLength(2)
+  })
+
+  it('lists the messages in time order', async () => {
+    const body = validCampaign()
+    body.messages[0].sentAt = '2026-10-04T19:45:00-03:00'
+    await renderApp({ path: '/gm/editor', hunterId: null, body })
+
+    const sections = await screen.findByRole('navigation', { name: 'Seções do rascunho' })
+    const list = within(sections).getByRole('list', { name: 'Mensagens' })
+    expect(within(list).getAllByRole('button').map(button => button.textContent)).toEqual([
+      'Ana, venha à igreja.', 'Beto, só para você.', 'Tem algo no parque.', 'Ana, cuidado.', 'Ainda não.',
+    ])
+  })
+
+  it('deletes a message after confirming', async () => {
+    const { store } = await openMessage('Beto, só para você.')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar mensagem' }))
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Apagar' }))
+
+    expect(messages(store).map(message => message.id)).toEqual(['msg1', 'msg2', 'msg4', 'msg5'])
   })
 })
 

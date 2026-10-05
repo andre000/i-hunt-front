@@ -111,6 +111,24 @@ export function parseCoordinates(text) {
   return { lat: numbers[0], lng: numbers[1] }
 }
 
+export function addMessage(draft, { npc }) {
+  const message = { id: uniqueId(draft, 'messages', `msg-${npc}`), npc, to: 'all', sentAt: draft.campaign.date, text: '' }
+  return { ...draft, messages: [...draft.messages, message] }
+}
+
+export function messageScheduled(draft, index) {
+  const { sentAt } = draft.messages[index]
+  return isDate(sentAt) && isDate(draft.campaign.date) && isAfterCampaignDate(sentAt, draft.campaign.date)
+}
+
+export function messageOrder(draft) {
+  const sortTime = (message) => (isDate(message?.sentAt) ? time(message.sentAt) : Infinity)
+  return draft.messages
+    .map((message, index) => ({ index, at: sortTime(message) }))
+    .sort((a, b) => (a.at === b.at ? a.index - b.index : a.at - b.at))
+    .map(({ index }) => index)
+}
+
 export function missionPreview(draft, index) {
   const mission = { ...draft.missions[index] }
   mission.hunters = Array.isArray(mission.hunters) ? mission.hunters : []

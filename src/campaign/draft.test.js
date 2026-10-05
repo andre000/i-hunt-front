@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addItem, advanceToNextScheduled, blankDraft, hunterImpact, missionPreview, moveItem, parseCoordinates, setMissionPosition, removeHunter, removeItem, removeNpc, updateItem, dateFromInput, dateToInput, draftErrors, nextScheduled, draftFile, draftFileName, draftFrom, readDraftText, updateCampaign } from './draft'
+import { addItem, advanceToNextScheduled, blankDraft, addMessage, hunterImpact, messageOrder, messageScheduled, missionPreview, moveItem, parseCoordinates, setMissionPosition, removeHunter, removeItem, removeNpc, updateItem, dateFromInput, dateToInput, draftErrors, nextScheduled, draftFile, draftFileName, draftFrom, readDraftText, updateCampaign } from './draft'
 import { validCampaign } from './fixtures'
 
 describe('draftFrom', () => {
@@ -383,5 +383,39 @@ describe('moveItem', () => {
 
     expect(moveItem(draft, 'missions', 1, 1)).toBe(draft)
     expect(moveItem(draft, 'missions', 1, 5)).toBe(draft)
+  })
+})
+
+describe('messages', () => {
+  it('starts a message from a NPC to everyone, at the campaign date', () => {
+    const draft = addMessage(draftFrom(validCampaign()), { npc: 'padre' })
+
+    expect(draft.messages.at(-1)).toEqual({ id: 'msg-padre', npc: 'padre', to: 'all', sentAt: '2026-10-04T21:00:00-03:00', text: '' })
+    expect(messageScheduled(draft, 5)).toBe(false)
+  })
+
+  it('never repeats a message id', () => {
+    let draft = addMessage(draftFrom(validCampaign()), { npc: 'padre' })
+    draft = addMessage(draft, { npc: 'padre' })
+
+    expect(draft.messages.slice(-2).map(message => message.id)).toEqual(['msg-padre', 'msg-padre-2'])
+  })
+
+  it('is Agendado when sent after the campaign date', () => {
+    expect(messageScheduled(draftFrom(validCampaign()), 4)).toBe(true)
+  })
+
+  it('orders the messages by time, across time zones', () => {
+    const raw = validCampaign()
+    raw.messages[0].sentAt = '2026-10-05T03:00:00Z'
+
+    expect(messageOrder(draftFrom(raw))).toEqual([1, 2, 3, 4, 0])
+  })
+
+  it('puts messages without a valid time at the end, keeping their order', () => {
+    const raw = validCampaign()
+    raw.messages[1].sentAt = 'ontem'
+
+    expect(messageOrder(draftFrom(raw))).toEqual([0, 2, 3, 4, 1])
   })
 })

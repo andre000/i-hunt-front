@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import { addItem, advanceToNextScheduled, moveItem, draftFile, draftFileName, draftFrom, readDraftText, removeHunter, removeItem, removeNpc, setMissionPosition, updateCampaign, updateItem } from '../campaign/draft'
+import { addItem, addMessage, advanceToNextScheduled, moveItem, draftFile, draftFileName, draftFrom, readDraftText, removeHunter, removeItem, removeNpc, setMissionPosition, updateCampaign, updateItem } from '../campaign/draft'
 
 export const openPublishedDraft = createAsyncThunk(
   'editor/openPublished',
@@ -69,6 +69,10 @@ const editorSlice = createSlice({
       state.draft = setMissionPosition(state.draft, payload.index, payload.position)
       state.unsaved = true
     },
+    messageAdded(state, { payload }) {
+      state.draft = addMessage(state.draft, payload)
+      state.unsaved = true
+    },
     itemMoved(state, { payload }) {
       state.draft = moveItem(state.draft, payload.section, payload.from, payload.to)
       state.unsaved = true
@@ -119,5 +123,5 @@ const editorSlice = createSlice({
   },
 })
 
-export const { campaignDateAdvanced, campaignEdited, draftDiscarded, draftOpened, hunterRemoved, itemAdded, itemMoved, itemRemoved, itemUpdated, missionPositioned, npcRemoved } = editorSlice.actions
+export const { campaignDateAdvanced, campaignEdited, draftDiscarded, draftOpened, hunterRemoved, itemAdded, itemMoved, itemRemoved, itemUpdated, messageAdded, missionPositioned, npcRemoved } = editorSlice.actions
 export default editorSlice.reducer

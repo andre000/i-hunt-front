@@ -6,6 +6,7 @@ import { MISSION_STATUS_LABEL, RISKS } from '../../campaign/missions'
 import { itemRemoved, itemUpdated, missionPositioned } from '../../store/editor'
 import { DeleteItem } from './DeleteItem'
 import { PositionPicker } from './PositionPicker'
+import { HunterPicker } from './fields'
 
 const RESULTS = [
   { value: '', label: 'Sem resultado' },
@@ -27,33 +28,6 @@ export function MissionBadge({ draft, index }) {
 MissionBadge.propTypes = {
   draft: PropTypes.object.isRequired,
   index: PropTypes.number.isRequired,
-}
-
-function HunterPicker({ legend, hunters, selected, onChange }) {
-  const picked = Array.isArray(selected) ? selected : []
-  const toggle = (id) => onChange(optionalList(
-    picked.includes(id) ? picked.filter(item => item !== id) : [...picked, id],
-  ))
-
-  return (
-    <fieldset className="editor__picker">
-      <legend>{legend}</legend>
-      {hunters.length === 0 && <p>Nenhum hunter na campanha.</p>}
-      {hunters.map(hunter => (
-        <label key={hunter.id}>
-          <input type="checkbox" checked={picked.includes(hunter.id)} onChange={() => toggle(hunter.id)} />
-          <span>{hunter.name || hunter.id}</span>
-        </label>
-      ))}
-    </fieldset>
-  )
-}
-
-HunterPicker.propTypes = {
-  legend: PropTypes.string.isRequired,
-  hunters: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string, name: PropTypes.string })).isRequired,
-  selected: PropTypes.arrayOf(PropTypes.string),
-  onChange: PropTypes.func.isRequired,
 }
 
 function PositionField({ draft, index }) {
@@ -198,8 +172,8 @@ export function MissionForm({ draft, index, onRemoved }) {
         </label>
       </div>
       <PositionField draft={draft} index={index} />
-      <HunterPicker legend="Hunters na missão" hunters={draft.hunters} selected={mission.hunters} onChange={hunters => update({ hunters })} />
-      <HunterPicker legend="Aparece como perto para" hunters={draft.hunters} selected={mission.nearHunters} onChange={nearHunters => update({ nearHunters })} />
+      <HunterPicker legend="Hunters na missão" hunters={draft.hunters} selected={mission.hunters} onChange={hunters => update({ hunters: optionalList(hunters) })} />
+      <HunterPicker legend="Aparece como perto para" hunters={draft.hunters} selected={mission.nearHunters} onChange={nearHunters => update({ nearHunters: optionalList(nearHunters) })} />
       {deleting
         ? <DeleteItem name={mission.name || 'esta missão'} onConfirm={remove} onCancel={() => setDeleting(false)} />
         : (
