@@ -1,9 +1,9 @@
-import { useState } from 'react'
 import PropTypes from 'prop-types'
 import { useDispatch } from 'react-redux'
 import { removeNpc } from '../../campaign/draft'
 import { itemUpdated, npcRemoved } from '../../store/editor'
 import { AvatarField } from './fields'
+import { DeleteButton, DeleteItem } from './DeleteItem'
 
 function DeleteNpc({ draft, index, onCancel, onRemoved }) {
   const dispatch = useDispatch()
@@ -29,15 +29,7 @@ function DeleteNpc({ draft, index, onCancel, onRemoved }) {
     dispatch(npcRemoved(index))
   }
 
-  return (
-    <section className="editor__delete" role="alertdialog" aria-label={`Apagar ${npc.name}?`}>
-      <h2>Apagar {npc.name}?</h2>
-      <div className="editor__actions">
-        <button type="button" className="button danger" onClick={remove}>Apagar</button>
-        <button type="button" className="button secondary" onClick={onCancel}>Cancelar</button>
-      </div>
-    </section>
-  )
+  return <DeleteItem name={npc.name} onConfirm={remove} onCancel={onCancel} />
 }
 
 DeleteNpc.propTypes = {
@@ -49,7 +41,6 @@ DeleteNpc.propTypes = {
 
 export function NpcForm({ draft, index, onRemoved }) {
   const dispatch = useDispatch()
-  const [deleting, setDeleting] = useState(false)
   const npc = draft.npcs[index]
   const update = (changes) => dispatch(itemUpdated({ section: 'npcs', index, changes }))
 
@@ -62,13 +53,9 @@ export function NpcForm({ draft, index, onRemoved }) {
         <input value={npc.name ?? ''} onChange={e => update({ name: e.target.value })} />
       </label>
       <AvatarField person={npc} onChange={avatar => update({ avatar })} />
-      {deleting
-        ? <DeleteNpc draft={draft} index={index} onCancel={() => setDeleting(false)} onRemoved={onRemoved} />
-        : (
-          <div className="editor__actions">
-            <button type="button" className="button secondary" onClick={() => setDeleting(true)}>Apagar NPC</button>
-          </div>
-        )}
+      <DeleteButton label="Apagar NPC">
+        {close => <DeleteNpc draft={draft} index={index} onCancel={close} onRemoved={onRemoved} />}
+      </DeleteButton>
     </form>
   )
 }

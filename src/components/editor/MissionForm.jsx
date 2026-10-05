@@ -4,7 +4,7 @@ import { useDispatch } from 'react-redux'
 import { dateFromInput, dateToInput, missionPreview, parseCoordinates } from '../../campaign/draft'
 import { MISSION_STATUS_LABEL, RISKS } from '../../campaign/missions'
 import { itemRemoved, itemUpdated, missionPositioned } from '../../store/editor'
-import { DeleteItem } from './DeleteItem'
+import { DeleteButton, DeleteItem } from './DeleteItem'
 import { PositionPicker } from './PositionPicker'
 import { HunterPicker } from './fields'
 
@@ -111,7 +111,6 @@ export function MissionForm({ draft, index, onRemoved }) {
   const dispatch = useDispatch()
   const mission = draft.missions[index]
   const [tags, setTags] = useState(Array.isArray(mission.tags) ? mission.tags.join(', ') : '')
-  const [deleting, setDeleting] = useState(false)
   const { status, scheduled } = missionPreview(draft, index)
   const campaignDate = draft.campaign.date
   const update = (changes) => dispatch(itemUpdated({ section: 'missions', index, changes }))
@@ -174,13 +173,9 @@ export function MissionForm({ draft, index, onRemoved }) {
       <PositionField draft={draft} index={index} />
       <HunterPicker legend="Hunters na missão" hunters={draft.hunters} selected={mission.hunters} onChange={hunters => update({ hunters: optionalList(hunters) })} />
       <HunterPicker legend="Aparece como perto para" hunters={draft.hunters} selected={mission.nearHunters} onChange={nearHunters => update({ nearHunters: optionalList(nearHunters) })} />
-      {deleting
-        ? <DeleteItem name={mission.name || 'esta missão'} onConfirm={remove} onCancel={() => setDeleting(false)} />
-        : (
-          <div className="editor__actions">
-            <button type="button" className="button secondary" onClick={() => setDeleting(true)}>Apagar missão</button>
-          </div>
-        )}
+      <DeleteButton label="Apagar missão">
+        {close => <DeleteItem name={mission.name || 'esta missão'} onConfirm={remove} onCancel={close} />}
+      </DeleteButton>
     </form>
   )
 }

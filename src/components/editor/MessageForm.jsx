@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { useDispatch } from 'react-redux'
 import { dateFromInput, dateToInput, messageScheduled } from '../../campaign/draft'
 import { itemRemoved, itemUpdated } from '../../store/editor'
-import { DeleteItem } from './DeleteItem'
+import { DeleteButton, DeleteItem } from './DeleteItem'
 import { HunterPicker } from './fields'
 
 export function MessageBadge({ draft, index }) {
@@ -37,7 +37,6 @@ NpcSelect.propTypes = {
 
 export function MessageForm({ draft, index, onRemoved }) {
   const dispatch = useDispatch()
-  const [deleting, setDeleting] = useState(false)
   const message = draft.messages[index]
   const campaignDate = draft.campaign.date
   const toAll = message.to === 'all'
@@ -83,13 +82,9 @@ export function MessageForm({ draft, index, onRemoved }) {
         <span>Texto</span>
         <textarea rows={5} value={message.text ?? ''} onChange={e => update({ text: e.target.value })} />
       </label>
-      {deleting
-        ? <DeleteItem name="esta mensagem" onConfirm={remove} onCancel={() => setDeleting(false)} />
-        : (
-          <div className="editor__actions">
-            <button type="button" className="button secondary" onClick={() => setDeleting(true)}>Apagar mensagem</button>
-          </div>
-        )}
+      <DeleteButton label="Apagar mensagem">
+        {close => <DeleteItem name="esta mensagem" onConfirm={remove} onCancel={close} />}
+      </DeleteButton>
     </form>
   )
 }

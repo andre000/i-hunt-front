@@ -1,9 +1,9 @@
-import { useState } from 'react'
 import PropTypes from 'prop-types'
 import { useDispatch } from 'react-redux'
 import { hunterImpact } from '../../campaign/draft'
 import { hunterRemoved, itemUpdated } from '../../store/editor'
 import { AvatarField } from './fields'
+import { DeleteButton, DeleteItem } from './DeleteItem'
 
 const optionalNumber = (value) => (value === '' ? undefined : Number(value))
 
@@ -17,8 +17,7 @@ function DeleteHunter({ draft, index, onCancel, onRemoved }) {
   }
 
   return (
-    <section className="editor__delete" role="alertdialog" aria-label={`Apagar ${hunter.name}?`}>
-      <h2>Apagar {hunter.name}?</h2>
+    <DeleteItem name={hunter.name} onConfirm={remove} onCancel={onCancel}>
       {impact.missions.length + impact.messages.length === 0
         ? <p>Este hunter não aparece em nenhuma missão ou mensagem.</p>
         : <p>O hunter vai sair destas missões e mensagens:</p>}
@@ -45,11 +44,7 @@ function DeleteHunter({ draft, index, onCancel, onRemoved }) {
             : `${impact.withoutRecipient.length} mensagens ficariam sem destinatário. Elas vão aparecer nos erros para você decidir o que fazer.`}
         </p>
       )}
-      <div className="editor__actions">
-        <button type="button" className="button danger" onClick={remove}>Apagar</button>
-        <button type="button" className="button secondary" onClick={onCancel}>Cancelar</button>
-      </div>
-    </section>
+    </DeleteItem>
   )
 }
 
@@ -62,7 +57,6 @@ DeleteHunter.propTypes = {
 
 export function HunterForm({ draft, index, onRemoved }) {
   const dispatch = useDispatch()
-  const [deleting, setDeleting] = useState(false)
   const hunter = draft.hunters[index]
   const update = (changes) => dispatch(itemUpdated({ section: 'hunters', index, changes }))
 
@@ -86,13 +80,9 @@ export function HunterForm({ draft, index, onRemoved }) {
           onChange={e => update({ rating: optionalNumber(e.target.value) })}
         />
       </label>
-      {deleting
-        ? <DeleteHunter draft={draft} index={index} onCancel={() => setDeleting(false)} onRemoved={onRemoved} />
-        : (
-          <div className="editor__actions">
-            <button type="button" className="button secondary" onClick={() => setDeleting(true)}>Apagar hunter</button>
-          </div>
-        )}
+      <DeleteButton label="Apagar hunter">
+        {close => <DeleteHunter draft={draft} index={index} onCancel={close} onRemoved={onRemoved} />}
+      </DeleteButton>
     </form>
   )
 }
