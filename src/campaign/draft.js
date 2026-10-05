@@ -19,6 +19,65 @@ export function updateCampaign(draft, changes) {
   return { ...draft, campaign: { ...draft.campaign, ...changes } }
 }
 
+const FALLBACK_IDS = { hunters: 'hunter', missions: 'missao', npcs: 'npc', messages: 'mensagem' }
+
+function slug(text) {
+  return String(text ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+function uniqueId(draft, section, name) {
+  const taken = new Set(draft[section].map(item => item?.id))
+  const base = slug(name) || FALLBACK_IDS[section]
+  if (!taken.has(base)) return base
+  let number = 2
+  while (taken.has(`${base}-${number}`)) number += 1
+  return `${base}-${number}`
+}
+
+const withoutEmpty = (item) => Object.fromEntries(Object.entries(item).filter(([, value]) => value !== undefined))
+
+export function addItem(draft, section, fields) {
+  const item = withoutEmpty({ id: uniqueId(draft, section, fields.name), ...fields })
+  return { ...draft, [section]: [...draft[section], item] }
+}
+
+export function updateItem(draft, section, index, changes) {
+  const rest = { ...changes }
+  delete rest.id
+  const items = draft[section].map((item, at) => (at === index ? withoutEmpty({ ...item, ...rest }) : item))
+  return { ...draft, [section]: items }
+}
+
+const includes = (list, id) => Array.isArray(list) && list.includes(id)
+const without = (list, id) => (Array.isArray(list) ? list.filter(item => item !== id) : list)
+
+export function hunterImpact(draft, index) {
+  const { id } = draft.hunters[index]
+  const messages = draft.messages.filter(message => includes(message.to, id))
+  return {
+    missions: draft.missions
+      .filter(mission => includes(mission.hunters, id) || includes(mission.nearHunters, id))
+      .map(mission => mission.name),
+    messages: messages.map(message => message.text),
+    withoutRecipient: messages.filter(message => message.to.length === 1).map(message => message.text),
+  }
+}
+
+export function removeHunter(draft, index) {
+  const { id } = draft.hunters[index]
+  const missions = draft.missions.map(mission => {
+    if (!includes(mission.hunters, id) && !includes(mission.nearHunters, id)) return mission
+    return withoutEmpty({ ...mission, hunters: without(mission.hunters, id), nearHunters: without(mission.nearHunters, id) })
+  })
+  const messages = draft.messages.map(message => (includes(message.to, id) ? { ...message, to: without(message.to, id) } : message))
+  return { ...draft, hunters: draft.hunters.filter((_, at) => at !== index), missions, messages }
+}
+
 export function draftErrors(draft) {
   const result = parseCampaign(draft)
   return result.ok ? [] : result.errors

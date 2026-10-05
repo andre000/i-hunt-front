@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { advanceToNextScheduled, blankDraft, dateFromInput, dateToInput, draftErrors, nextScheduled, draftFile, draftFileName, draftFrom, readDraftText, updateCampaign } from './draft'
+import { addItem, advanceToNextScheduled, blankDraft, hunterImpact, removeHunter, updateItem, dateFromInput, dateToInput, draftErrors, nextScheduled, draftFile, draftFileName, draftFrom, readDraftText, updateCampaign } from './draft'
 import { validCampaign } from './fixtures'
 
 describe('draftFrom', () => {
@@ -197,5 +197,79 @@ describe('next scheduled', () => {
     const draft = draftWith({})
 
     expect(advanceToNextScheduled(draft)).toBe(draft)
+  })
+})
+
+describe('ids made from the name', () => {
+  it('is lowercase, without accents, with hyphens', () => {
+    const draft = addItem(draftFrom(validCampaign()), 'hunters', { name: 'João da Silva' })
+
+    expect(draft.hunters.at(-1)).toEqual({ id: 'joao-da-silva', name: 'João da Silva' })
+  })
+
+  it('never repeats an id of the section', () => {
+    let draft = addItem(draftFrom(validCampaign()), 'hunters', { name: 'Ana' })
+    draft = addItem(draft, 'hunters', { name: 'ANA!' })
+
+    expect(draft.hunters.map(hunter => hunter.id)).toEqual(['ana', 'beto', 'ana-2', 'ana-3'])
+  })
+
+  it('has a fallback for a name without letters', () => {
+    const draft = addItem(draftFrom(validCampaign()), 'hunters', { name: '???' })
+
+    expect(draft.hunters.at(-1).id).toBe('hunter')
+  })
+
+  it('does not change when the item is renamed', () => {
+    const draft = updateItem(draftFrom(validCampaign()), 'hunters', 0, { name: 'Ana Souza', id: 'outra' })
+
+    expect(draft.hunters[0]).toMatchObject({ id: 'ana', name: 'Ana Souza' })
+  })
+})
+
+describe('updateItem', () => {
+  it('removes a field left empty', () => {
+    const draft = updateItem(draftFrom(validCampaign()), 'hunters', 0, { avatar: undefined, rating: 3 })
+
+    expect(draft.hunters[0]).toEqual({ id: 'ana', name: 'Ana', rating: 3 })
+  })
+})
+
+describe('removing a hunter', () => {
+  function draftWithAnaEverywhere() {
+    const raw = validCampaign()
+    raw.missions[2].hunters = ['ana', 'beto']
+    return draftFrom(raw)
+  }
+
+  it('lists the missions and messages where the hunter appears', () => {
+    const impact = hunterImpact(draftWithAnaEverywhere(), 0)
+
+    expect(impact.missions).toEqual(['Lobisomem no Bom Fim', 'Fantasma no ônibus T5', 'Vampiro no bar'])
+    expect(impact.messages).toEqual(['Ana, venha à igreja.', 'Ana, cuidado.'])
+  })
+
+  it('warns about messages that would have no recipient', () => {
+    const raw = validCampaign()
+    raw.messages[1].to = ['ana', 'beto']
+
+    const impact = hunterImpact(draftFrom(raw), 0)
+
+    expect(impact.withoutRecipient).toEqual(['Ana, cuidado.'])
+  })
+
+  it('takes the hunter out of every mission and message', () => {
+    const draft = removeHunter(draftWithAnaEverywhere(), 0)
+
+    expect(draft.hunters.map(hunter => hunter.id)).toEqual(['beto'])
+    expect(draft.missions.map(mission => mission.nearHunters ?? [])).toEqual([[], ['beto'], []])
+    expect(draft.missions[2].hunters).toEqual(['beto'])
+    expect(draft.messages.map(message => message.to)).toEqual(['all', [], ['beto'], [], 'all'])
+  })
+
+  it('leaves the messages without recipient as errors to fix', () => {
+    const draft = removeHunter(draftWithAnaEverywhere(), 0)
+
+    expect(draftErrors(draft)).toContainEqual(expect.objectContaining({ path: '/messages/1/to' }))
   })
 })

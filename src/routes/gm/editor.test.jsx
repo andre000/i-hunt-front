@@ -174,6 +174,81 @@ describe('Data da campanha', () => {
   })
 })
 
+describe('Hunters', () => {
+  async function openHunter(name, options = {}) {
+    const result = await renderApp({ path: '/gm/editor', hunterId: null, ...options })
+    const sections = await screen.findByRole('navigation', { name: 'Seções do rascunho' })
+    fireEvent.click(within(sections).getByRole('button', { name }))
+    return result
+  }
+
+  it('adds a hunter with an id made from the name', async () => {
+    const { store } = await renderApp({ path: '/gm/editor', hunterId: null })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Adicionar hunter' }))
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'João da Silva' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar' }))
+
+    const sections = screen.getByRole('navigation', { name: 'Seções do rascunho' })
+    expect(within(sections).getByRole('button', { name: 'João da Silva' }).getAttribute('aria-current')).toBe('true')
+    expect(screen.getByText('joao-da-silva')).toBeTruthy()
+    expect(store.getState().editor.draft.hunters.at(-1)).toEqual({ id: 'joao-da-silva', name: 'João da Silva' })
+  })
+
+  it('renames a hunter without changing the id', async () => {
+    const { store } = await openHunter('Ana')
+
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Souza' } })
+
+    expect(within(screen.getByRole('navigation', { name: 'Seções do rascunho' })).getByRole('button', { name: 'Ana Souza' })).toBeTruthy()
+    expect(store.getState().editor.draft.hunters[0]).toMatchObject({ id: 'ana', name: 'Ana Souza' })
+  })
+
+  it('edits the avatar with a preview and the rating', async () => {
+    const { store } = await openHunter('Beto')
+
+    fireEvent.change(screen.getByLabelText('Avatar (endereço da imagem)'), { target: { value: 'https://example.com/beto.png' } })
+    fireEvent.change(screen.getByLabelText('Avaliação (0 a 5)'), { target: { value: '3.5' } })
+
+    expect(screen.getByRole('img', { name: 'Prévia do avatar' }).querySelector('img').getAttribute('src')).toBe('https://example.com/beto.png')
+    expect(store.getState().editor.draft.hunters[1]).toEqual({ id: 'beto', name: 'Beto', avatar: 'https://example.com/beto.png', rating: 3.5 })
+  })
+
+  it('reports a rating above 5', async () => {
+    await openHunter('Beto')
+
+    fireEvent.change(screen.getByLabelText('Avaliação (0 a 5)'), { target: { value: '7' } })
+
+    expect(screen.getByText('/hunters/1/rating')).toBeTruthy()
+  })
+
+  it('shows where the hunter appears before deleting', async () => {
+    await openHunter('Ana')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar hunter' }))
+
+    const dialog = screen.getByRole('alertdialog', { name: 'Apagar Ana?' })
+    expect(within(dialog).getByText('Lobisomem no Bom Fim')).toBeTruthy()
+    expect(within(dialog).getByText('Fantasma no ônibus T5')).toBeTruthy()
+    expect(within(dialog).getByText('Ana, venha à igreja.')).toBeTruthy()
+    expect(within(dialog).getByText(/ficariam sem destinatário/)).toBeTruthy()
+  })
+
+  it('takes the hunter out of the whole draft after confirming', async () => {
+    const { store } = await openHunter('Ana')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar hunter' }))
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Apagar' }))
+
+    const { draft } = store.getState().editor
+    expect(draft.hunters.map(hunter => hunter.id)).toEqual(['beto'])
+    expect(draft.missions[1].nearHunters).toEqual(['beto'])
+    expect(within(screen.getByRole('navigation', { name: 'Seções do rascunho' })).queryByRole('button', { name: 'Ana' })).toBeNull()
+    expect(screen.getAllByText('/messages/1/to').length).toBeGreaterThan(0)
+    expect(screen.getByRole('heading', { level: 1, name: 'Campanha' })).toBeTruthy()
+  })
+})
+
 describe('Editor da campanha', () => {
   it('opens the published campaign of the device as the draft', async () => {
     await renderApp({ path: '/gm/editor', hunterId: null })

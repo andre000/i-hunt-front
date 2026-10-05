@@ -5,8 +5,10 @@ import { useDispatch, useSelector } from 'react-redux'
 import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
 import { CampaignStatus } from '../../components/CampaignStatus'
+import { HunterForm } from '../../components/editor/HunterForm'
+import { NewItemForm } from '../../components/editor/NewItemForm'
 import { useDesktopWidth } from '../../components/useDesktopWidth'
-import { campaignDateAdvanced, campaignEdited, downloadDraft, draftDiscarded, draftOpened, openDraftFile, openPublishedDraft } from '../../store/editor'
+import { campaignDateAdvanced, campaignEdited, itemAdded, downloadDraft, draftDiscarded, draftOpened, openDraftFile, openPublishedDraft } from '../../store/editor'
 import { blankDraft, dateFromInput, dateToInput, draftErrors, nextScheduled } from '../../campaign/draft'
 
 export const Route = createLazyFileRoute('/gm/editor')({
@@ -14,7 +16,7 @@ export const Route = createLazyFileRoute('/gm/editor')({
 })
 
 const SECTIONS = [
-  { key: 'hunters', title: 'Hunters', label: item => item.name },
+  { key: 'hunters', title: 'Hunters', label: item => item.name, add: 'Adicionar hunter', newTitle: 'Novo hunter', Form: HunterForm },
   { key: 'missions', title: 'Missões', label: item => item.name },
   { key: 'npcs', title: 'NPCs', label: item => item.name },
   { key: 'messages', title: 'Mensagens', label: item => item.text },
@@ -37,7 +39,20 @@ function SectionList({ draft, selected, onSelect }) {
       </button>
       {SECTIONS.map(section => (
         <section key={section.key}>
-          <h2>{section.title} <span className="num">{draft[section.key].length}</span></h2>
+          <h2>
+            {section.title} <span className="num">{draft[section.key].length}</span>
+            {section.add && (
+              <button
+                type="button"
+                className="editor__add"
+                aria-label={section.add}
+                title={section.add}
+                onClick={() => onSelect({ section: section.key, adding: true })}
+              >
+                +
+              </button>
+            )}
+          </h2>
           <ul>
             {draft[section.key].map((item, index) => (
               <li key={index}>
@@ -60,7 +75,7 @@ function SectionList({ draft, selected, onSelect }) {
 
 SectionList.propTypes = {
   draft: PropTypes.object.isRequired,
-  selected: PropTypes.shape({ section: PropTypes.string.isRequired, index: PropTypes.number }).isRequired,
+  selected: PropTypes.shape({ section: PropTypes.string.isRequired, index: PropTypes.number, adding: PropTypes.bool }).isRequired,
   onSelect: PropTypes.func.isRequired,
 }
 
@@ -85,10 +100,25 @@ CampaignForm.propTypes = {
   campaign: PropTypes.shape({ name: PropTypes.string }).isRequired,
 }
 
-function ItemPanel({ draft, selected }) {
+function ItemPanel({ draft, selected, onSelect }) {
+  const dispatch = useDispatch()
   if (selected.section === 'campaign') return <CampaignForm campaign={draft.campaign} />
   const section = SECTIONS.find(({ key }) => key === selected.section)
+  if (selected.adding) {
+    return (
+      <NewItemForm
+        key={section.key}
+        title={section.newTitle}
+        onAdd={fields => {
+          dispatch(itemAdded({ section: section.key, fields }))
+          onSelect({ section: section.key, index: draft[section.key].length })
+        }}
+      />
+    )
+  }
   const item = draft[section.key][selected.index]
+  if (!item) return <CampaignForm campaign={draft.campaign} />
+  if (section.Form) return <section.Form key={`${section.key}-${selected.index}`} draft={draft} index={selected.index} onRemoved={() => onSelect({ section: 'campaign' })} />
   return (
     <div className="editor__form">
       <h1>{itemLabel(section, item)}</h1>
@@ -98,8 +128,9 @@ function ItemPanel({ draft, selected }) {
 }
 
 ItemPanel.propTypes = {
+  onSelect: PropTypes.func.isRequired,
   draft: PropTypes.object.isRequired,
-  selected: PropTypes.shape({ section: PropTypes.string.isRequired, index: PropTypes.number }).isRequired,
+  selected: PropTypes.shape({ section: PropTypes.string.isRequired, index: PropTypes.number, adding: PropTypes.bool }).isRequired,
 }
 
 const errorCount = (count) => {
@@ -309,7 +340,7 @@ function Editor() {
           <DraftErrors errors={errors} />
           <div className="editor__body">
             <SectionList draft={draft} selected={selected} onSelect={setSelected} />
-            <ItemPanel draft={draft} selected={selected} />
+            <ItemPanel draft={draft} selected={selected} onSelect={setSelected} />
           </div>
         </>
       )}
@@ -457,6 +488,87 @@ const editorPage = css`
       font: inherit;
       font-size: 15px;
     }
+  }
+
+  .editor__add {
+    margin-left: auto;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid var(--linha);
+    border-radius: 6px;
+    background: none;
+    color: var(--apagado);
+    font: inherit;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--laranja);
+      border-color: var(--laranja);
+    }
+  }
+
+  .editor__actions {
+    display: flex;
+    gap: 8px;
+
+    .button {
+      padding: 8px 16px;
+      font-size: 14px;
+    }
+  }
+
+  .button.danger {
+    background-color: var(--perigo);
+    color: #1a0505;
+  }
+
+  .editor__avatar {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+
+    label {
+      flex: 1;
+    }
+  }
+
+  .editor__short input {
+    max-width: 140px;
+  }
+
+  .editor__delete {
+    padding: 16px;
+    border: 1px solid rgb(255 107 107 / 40%);
+    border-radius: 12px;
+    background-color: var(--perigo-fundo);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 14px;
+
+    h2 {
+      font-size: 16px;
+    }
+
+    h3 {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--apagado);
+      letter-spacing: 0;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+  }
+
+  .editor__warning {
+    color: var(--aviso);
+    font-weight: 600;
   }
 
   .editor__id {
