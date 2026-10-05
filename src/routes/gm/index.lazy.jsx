@@ -438,6 +438,7 @@ const gmPage = css`
     }
 
     .gm__feed > * {
+      flex-shrink: 0;
       width: 100%;
       max-width: 720px;
     }
