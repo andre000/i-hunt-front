@@ -155,7 +155,7 @@ const DEFAULT_FILE_NAME = 'campanha.json'
 
 export function draftFileName(publishedUrl) {
   if (!publishedUrl) return DEFAULT_FILE_NAME
-  const name = new URL(publishedUrl).pathname.split('/').pop()
+  const name = decodeURIComponent(new URL(publishedUrl).pathname.split('/').pop())
   return name || DEFAULT_FILE_NAME
 }
 

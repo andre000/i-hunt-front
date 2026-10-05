@@ -17,7 +17,10 @@ function readText(file) {
 
 export const openDraftFile = createAsyncThunk(
   'editor/openFile',
-  async (file) => ({ ...readDraftText(await readText(file)), fileName: file.name }),
+  async (file, { getState }) => {
+    const { campaignUrl } = getState().campaign
+    return { ...readDraftText(await readText(file)), fileName: campaignUrl ? draftFileName(campaignUrl) : file.name }
+  },
 )
 
 export const downloadDraft = createAsyncThunk(

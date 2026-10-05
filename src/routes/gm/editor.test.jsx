@@ -87,6 +87,18 @@ describe('Starting a Rascunho', () => {
     expect(saveFile.mock.calls[0][0]).toBe('mesa.json')
   })
 
+  it('downloads a file from the computer with the name of the published file', async () => {
+    const { saveFile } = await renderApp({ path: '/gm/editor', hunterId: null, campaignUrl: 'https://pub-9.r2.dev/noites.json' })
+    await screen.findByLabelText('Nome da campanha')
+    fireEvent.click(screen.getByRole('button', { name: 'Trocar rascunho' }))
+    fireEvent.change(screen.getByLabelText('Abrir arquivo do computador'), { target: { files: [new File([JSON.stringify(validCampaign())], 'noites (1).json')] } })
+    fireEvent.click(screen.getByRole('button', { name: 'Substituir' }))
+
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull())
+    fireEvent.click(screen.getByRole('button', { name: 'Baixar' }))
+    expect(saveFile.mock.calls[0][0]).toBe('noites.json')
+  })
+
   it('explains when the file from the computer is not readable JSON', async () => {
     await renderApp({ path: '/gm/editor', hunterId: null, campaignUrl: null })
     const file = new File(['não é json'], 'notas.txt')

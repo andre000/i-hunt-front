@@ -87,6 +87,10 @@ describe('draftFileName', () => {
     expect(draftFileName('https://pub-123.r2.dev/mesas/noites.json?v=2')).toBe('noites.json')
   })
 
+  it('decodes the name of the published file', () => {
+    expect(draftFileName('https://pub-123.r2.dev/noites%20de%20porto.json')).toBe('noites de porto.json')
+  })
+
   it('is campanha.json without a published file', () => {
     expect(draftFileName(null)).toBe('campanha.json')
   })
