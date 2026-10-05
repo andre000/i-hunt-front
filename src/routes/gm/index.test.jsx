@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { renderApp } from '../../test/renderApp'
 import { parsed, validCampaign } from '../../campaign/fixtures'
 import { campaignLoaded } from '../../store/campaign'
+import { memoryStorage } from '../../test/fakes'
 
 afterEach(() => {
   cleanup()
@@ -104,6 +105,45 @@ describe('GM view', () => {
     expect(slider.value).toBe('720')
     fireEvent.keyDown(slider, { key: 'ArrowLeft' })
     expect(slider.value).toBe('120')
+  })
+
+  it('carries the rehearsed date to the Editor', async () => {
+    const { store } = await renderApp({ path: '/gm', hunterId: null, body: campaignWithHistory() })
+
+    fireEvent.change(await screen.findByLabelText('Ensaiar a data da campanha'), { target: { value: '120' } })
+    fireEvent.click(screen.getByRole('link', { name: 'Levar esta data pro Editor' }))
+
+    await waitFor(() => expect(store.getState().editor.draft?.campaign.date).toBe('2026-10-04T23:00:00-03:00'))
+    expect(store.getState().editor.unsaved).toBe(true)
+  })
+
+  it('opens the published campaign before carrying the date over an old draft', async () => {
+    const old = validCampaign()
+    old.campaign.name = 'Rascunho velho'
+    const editorStorage = memoryStorage({ 'ihunt.editor.draft': JSON.stringify({ draft: old, fileName: 'velho.json', unsaved: false }) })
+    const { store } = await renderApp({ path: '/gm', hunterId: null, body: campaignWithHistory(), editorStorage })
+
+    fireEvent.change(await screen.findByLabelText('Ensaiar a data da campanha'), { target: { value: '120' } })
+    fireEvent.click(screen.getByRole('link', { name: 'Levar esta data pro Editor' }))
+
+    await waitFor(() => expect(store.getState().editor.draft?.campaign.date).toBe('2026-10-04T23:00:00-03:00'))
+    expect(store.getState().editor.draft.campaign.name).toBe('Noite em Porto Alegre')
+    expect(store.getState().editor.draft.missions.map(mission => mission.id)).toContain('later')
+  })
+
+  it('asks before replacing a draft with changes not downloaded', async () => {
+    const old = validCampaign()
+    old.campaign.name = 'Rascunho com mudanças'
+    const editorStorage = memoryStorage({ 'ihunt.editor.draft': JSON.stringify({ draft: old, fileName: 'velho.json', unsaved: true }) })
+    const { store } = await renderApp({ path: '/gm', hunterId: null, body: campaignWithHistory(), editorStorage })
+
+    fireEvent.change(await screen.findByLabelText('Ensaiar a data da campanha'), { target: { value: '120' } })
+    fireEvent.click(screen.getByRole('link', { name: 'Levar esta data pro Editor' }))
+
+    expect(await screen.findByText(/O rascunho atual tem mudanças não baixadas/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(store.getState().editor.draft.campaign.name).toBe('Rascunho com mudanças')
+    expect(store.getState().editor.carriedDate).toBeNull()
   })
 
   it('opens an item to show all of it', async () => {

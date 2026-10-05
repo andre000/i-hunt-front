@@ -11,7 +11,7 @@ import { NpcForm } from '../../components/editor/NpcForm'
 import { MissionBadge, MissionForm, NewMissionForm } from '../../components/editor/MissionForm'
 import { MessageBadge, MessageForm, NewMessageForm } from '../../components/editor/MessageForm'
 import { useDesktopWidth } from '../../components/useDesktopWidth'
-import { campaignDateAdvanced, campaignEdited, itemAdded, itemMoved, messageAdded, downloadDraft, draftDiscarded, draftOpened, openDraftFile, openPublishedDraft } from '../../store/editor'
+import { campaignDateAdvanced, campaignEdited, carriedDateApplied, carriedDateDropped, itemAdded, itemMoved, messageAdded, downloadDraft, draftDiscarded, draftOpened, openDraftFile, openPublishedDraft } from '../../store/editor'
 import { blankDraft, messageOrder, nextScheduled } from '../../campaign/draft'
 import { dateFromInput, dateToInput } from '../../campaign/draftDates'
 import { explainErrors } from '../../campaign/explainErrors'
@@ -331,7 +331,7 @@ Confirm.propTypes = {
 
 function Editor() {
   const dispatch = useDispatch()
-  const { started, draft, error, loading, unsaved } = useSelector(state => state.editor)
+  const { started, draft, error, loading, unsaved, carriedDate, carriedReady } = useSelector(state => state.editor)
   const campaignUrl = useSelector(state => state.campaign.campaignUrl)
   const [selected, setSelected] = useState({ section: 'campaign' })
   const [choosing, setChoosing] = useState(false)
@@ -342,9 +342,26 @@ function Editor() {
     if (!started && campaignUrl) dispatch(openPublishedDraft())
   }, [started, campaignUrl, dispatch])
 
-  const ask = (question, confirmLabel, action) => setConfirm({
+  useEffect(() => {
+    if (!carriedDate || !started || loading || confirm) return
+    if (carriedReady) {
+      dispatch(carriedDateApplied())
+    } else if (draft && unsaved) {
+      ask(
+        'Abrir a campanha publicada para levar a data? O rascunho atual tem mudanças não baixadas e será substituído.',
+        'Abrir a publicada',
+        () => dispatch(openPublishedDraft()),
+        () => dispatch(carriedDateDropped()),
+      )
+    } else {
+      dispatch(openPublishedDraft())
+    }
+  })
+
+  const ask = (question, confirmLabel, action, cancel) => setConfirm({
     question,
     confirmLabel,
+    cancel,
     run: () => {
       setConfirm(null)
       setChoosing(false)
@@ -395,7 +412,10 @@ function Editor() {
           question={confirm.question}
           confirmLabel={confirm.confirmLabel}
           onConfirm={confirm.run}
-          onCancel={() => setConfirm(null)}
+          onCancel={() => {
+            confirm.cancel?.()
+            setConfirm(null)
+          }}
         />
       )}
       {error && (

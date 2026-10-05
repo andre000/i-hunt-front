@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { createLazyFileRoute, Link } from '@tanstack/react-router'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
 import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/16/solid'
@@ -16,6 +16,7 @@ import { MapPanel } from '../../components/gm/MapPanel'
 import { OpenCampaign } from '../../components/gm/OpenCampaign'
 import { gmView } from '../../campaign/gm'
 import { addMinutes, time } from '../../campaign/time'
+import { dateCarried } from '../../store/editor'
 import { attempt, safeStorage } from '../../campaign/storage'
 
 export const Route = createLazyFileRoute('/gm/')({
@@ -176,6 +177,7 @@ function CampaignView({ data, desktop }) {
   const campaignUrl = useSelector(state => state.campaign.campaignUrl)
   const wide = useWideScreen()
   const [offset, setOffset] = useState(0)
+  const dispatch = useDispatch()
   const realView = gmView(data, { hunterId })
   const marks = [...new Set(realView.timeline.upcoming.map(item => item.at))]
   const realTime = time(realView.date)
@@ -269,6 +271,7 @@ function CampaignView({ data, desktop }) {
               span,
               minutes,
               onMove: rehearse,
+              onCarry: desktop ? () => dispatch(dateCarried(rehearsalDate)) : null,
             }
             : null}
         />

@@ -263,6 +263,9 @@ function NowBand({ date, next, fresh, hunterName, onReveal, rehearsal }) {
           <p className="now__hint now__hint--rehearsal" role="status">
             Os jogadores ainda não veem isto.
             <button type="button" className="now__action" onClick={() => rehearsal.onMove(0)}>Voltar para agora</button>
+            {rehearsal.onCarry && (
+              <Link className="now__action" to="/gm/editor" onClick={rehearsal.onCarry}>Levar esta data pro Editor</Link>
+            )}
           </p>
         )
         : (
@@ -287,6 +290,7 @@ NowBand.propTypes = {
     span: PropTypes.number.isRequired,
     minutes: PropTypes.number.isRequired,
     onMove: PropTypes.func.isRequired,
+    onCarry: PropTypes.func,
   }),
 }
 

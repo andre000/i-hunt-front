@@ -36,6 +36,8 @@ export function initialEditorState(saved = null) {
     started: Boolean(saved),
     loading: false,
     error: null,
+    carriedDate: null,
+    carriedReady: false,
   }
 }
 
@@ -90,6 +92,19 @@ const editorSlice = createSlice({
     campaignEdited(state, { payload }) {
       edit(state, draft => updateCampaign(draft, payload))
     },
+    dateCarried(state, { payload }) {
+      state.carriedDate = payload
+      state.carriedReady = false
+    },
+    carriedDateApplied(state) {
+      if (state.draft && state.carriedDate) edit(state, draft => updateCampaign(draft, { date: state.carriedDate }))
+      state.carriedDate = null
+      state.carriedReady = false
+    },
+    carriedDateDropped(state) {
+      state.carriedDate = null
+      state.carriedReady = false
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -102,9 +117,13 @@ const editorSlice = createSlice({
         state.loading = false
         if (payload.error) state.error = payload.error
         else open(state, draftFrom(payload.raw), draftFileName(payload.url))
+        if (payload.error) state.carriedDate = null
+        state.carriedReady = Boolean(state.carriedDate)
       })
       .addCase(openPublishedDraft.rejected, (state) => {
         state.loading = false
+        state.carriedDate = null
+        state.carriedReady = false
         state.error = 'Não foi possível carregar a campanha.'
       })
       .addCase(openDraftFile.fulfilled, (state, { payload }) => {
@@ -122,5 +141,5 @@ const editorSlice = createSlice({
   },
 })
 
-export const { campaignDateAdvanced, campaignEdited, draftDiscarded, draftOpened, hunterRemoved, itemAdded, itemMoved, itemRemoved, itemUpdated, messageAdded, missionPositioned, npcRemoved } = editorSlice.actions
+export const { campaignDateAdvanced, campaignEdited, carriedDateApplied, carriedDateDropped, dateCarried, draftDiscarded, draftOpened, hunterRemoved, itemAdded, itemMoved, itemRemoved, itemUpdated, messageAdded, missionPositioned, npcRemoved } = editorSlice.actions
 export default editorSlice.reducer
