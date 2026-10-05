@@ -7,12 +7,21 @@ import 'leaflet/dist/leaflet.css'
 const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
 const ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 
-function markerHtml(mission, selected) {
-  const classes = ['pin', `pin--${mission.status}`, selected && 'pin--selected'].filter(Boolean).join(' ')
-  return `<span class="${classes}"><span class="pin__pulse"></span><span class="pin__dot"></span></span>`
+function markerHtml(mission, selected, revealDelay) {
+  const revealing = revealDelay !== null
+  const classes = ['pin', `pin--${mission.status}`, selected && 'pin--selected', revealing && 'pin--reveal'].filter(Boolean).join(' ')
+  const style = revealing ? ` style="--reveal-delay: ${Math.round(revealDelay)}ms"` : ''
+  return `<span class="${classes}"${style}><span class="pin__pulse"></span><span class="pin__dot"></span></span>`
 }
 
-export function MissionMap({ missions, selectedId, onSelect, interactive = true, zoom, className }) {
+function revealDelayAt(map, point, revealFrom) {
+  if (!revealFrom) return null
+  const { x, y } = map.latLngToContainerPoint(point)
+  const distance = Math.hypot(x - revealFrom.x, y - revealFrom.y)
+  return Math.max(0, revealFrom.at + distance / revealFrom.speed - performance.now())
+}
+
+export function MissionMap({ missions, selectedId, onSelect, interactive = true, zoom, revealFrom, className }) {
   const element = useRef(null)
   const map = useRef(null)
   const layer = useRef(null)
@@ -57,10 +66,18 @@ export function MissionMap({ missions, selectedId, onSelect, interactive = true,
     const L = leaflet.current
     if (!L || !map.current) return
     layer.current.clearLayers()
-    const points = missions.map(mission => {
-      const point = [mission.position.lat, mission.position.lng]
+    const points = missions.map(mission => [mission.position.lat, mission.position.lng])
+    const selected = missions.find(mission => mission.id === selectedId)
+    if (zoom && selected) {
+      map.current.setView([selected.position.lat, selected.position.lng], zoom)
+    } else if (points.length > 0) {
+      map.current.fitBounds(points, { padding: [48, 48], maxZoom: 15 })
+    }
+    missions.forEach((mission, index) => {
+      const point = points[index]
+      const delay = revealDelayAt(map.current, point, revealFrom)
       const marker = L.marker(point, {
-        icon: L.divIcon({ className: '', html: markerHtml(mission, mission.id === selectedId), iconSize: [28, 28], iconAnchor: [14, 14] }),
+        icon: L.divIcon({ className: '', html: markerHtml(mission, mission.id === selectedId, delay), iconSize: [28, 28], iconAnchor: [14, 14] }),
         title: mission.name,
         keyboard: interactive,
         interactive,
@@ -68,14 +85,7 @@ export function MissionMap({ missions, selectedId, onSelect, interactive = true,
       })
       marker.on('click', () => select.current?.(mission.id))
       marker.addTo(layer.current)
-      return point
     })
-    const selected = missions.find(mission => mission.id === selectedId)
-    if (zoom && selected) {
-      map.current.setView([selected.position.lat, selected.position.lng], zoom)
-    } else if (points.length > 0) {
-      map.current.fitBounds(points, { padding: [48, 48], maxZoom: 15 })
-    }
   }
 
   return <div ref={element} css={mapStyle} className={className} aria-hidden={!interactive} />
@@ -92,6 +102,7 @@ MissionMap.propTypes = {
   onSelect: PropTypes.func,
   interactive: PropTypes.bool,
   zoom: PropTypes.number,
+  revealFrom: PropTypes.shape({ x: PropTypes.number.isRequired, y: PropTypes.number.isRequired, at: PropTypes.number.isRequired, speed: PropTypes.number.isRequired }),
   className: PropTypes.string,
 }
 
@@ -140,6 +151,16 @@ const mapStyle = css`
     box-shadow: 0 0 0 3px var(--texto), 0 0 0 6px #111419;
   }
 
+  .pin--reveal {
+    animation: pin-reveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay) both;
+  }
+
+  @keyframes pin-reveal {
+    from { transform: scale(0); opacity: 0; filter: brightness(3); }
+    35% { transform: scale(1.35); opacity: 1; }
+    to { transform: scale(1); opacity: 1; filter: none; }
+  }
+
   .pin--selected .pin__dot {
     transform: scale(1.5);
   }
@@ -164,6 +185,10 @@ const mapStyle = css`
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .pin--reveal {
+      animation: none;
+    }
+
     .pin--available .pin__pulse {
       animation: none;
       opacity: 0.18;

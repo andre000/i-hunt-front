@@ -1,15 +1,20 @@
 /** @jsxImportSource @emotion/react */
-import { useEffect } from 'react';
+import { useRef, useState } from 'react'
+import PropTypes from 'prop-types'
 import { useNavigate } from '@tanstack/react-router'
 import { useDispatch, useSelector } from 'react-redux'
 import { css } from '@emotion/react'
-import anime from 'animejs/lib/anime.es.js';
-import Logo from './Logo'
-import { Monsters } from './Monsters';
-import { chooseHunter } from '../store/campaign'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
+import { StarIcon } from '@heroicons/react/24/solid'
+import { chooseHunter } from '../store/campaign'
+import { visibleMissions } from '../campaign/missions'
+import { Avatar } from './Avatar'
+import { CampaignClock } from './CampaignClock'
+import { MissionMap } from './MissionMap'
+import { SignalReveal } from './SignalReveal'
+import { TIMELINE, useSignalIntro } from './useSignalIntro'
 
-const sloganArray = [
+const SLOGANS = [
   "Monstros à solta? Seu bico agora é caçá-los!",
   "Transforme medo em renda com #iHunt.",
   "Acabe com os monstros e com suas contas!",
@@ -19,165 +24,368 @@ const sloganArray = [
   "Caçar monstros nunca foi tão rentável!",
   "Monstros à vista? Faça dinheiro com isso!",
   "Salve o mundo e seu orçamento com #iHunt.",
-];
+]
 
-const randomSlogan = sloganArray[Math.floor(Math.random() * sloganArray.length)];
+const slogan = SLOGANS[Math.floor(Math.random() * SLOGANS.length)]
 
-function revealChoices() {
-  anime({
-    targets: ".login h1, .login .button",
-    opacity: [0, 1],
-    translateY: [20, 0],
-    duration: 1000,
-    delay: anime.stagger(1000, {start: 2000}),
-    easing: 'easeInOutSine',
-  });
+const LEAVE_MS = 480
+const OPEN_STATUSES = ['available', 'in-progress']
+
+function HunterRow({ hunter, index, disabled, onChoose }) {
+  return (
+    <li style={{ '--i': index }}>
+      <button type="button" onClick={() => onChoose(hunter.id)} disabled={disabled}>
+        <Avatar person={hunter} size={40} />
+        <span className="choice__name">{hunter.name}</span>
+        {hunter.rating !== undefined && (
+          <span className="choice__rating num" aria-hidden="true">
+            <StarIcon /> {hunter.rating.toFixed(1)}
+          </span>
+        )}
+        <ArrowRightIcon className="choice__arrow" aria-hidden="true" />
+      </button>
+    </li>
+  )
 }
 
-function playEnterTransition() {
-  return anime.timeline({
-    duration: 1000,
-    easing: 'easeInOutSine',
-  })
-  .add({
-    targets: ".login__enter",
-    width: "100%",
-    height: "100%",
-    opacity: [0, 1],
-    duration: 200,
-    endDelay: 200,
-    translateX: ["-50%", "-50%"],
-    translateY: ["-50%", "-50%"],
-  })
-  .add({
-    targets: ".login__enter",
-    scale: [1, 500],
-  })
-  .finished
+HunterRow.propTypes = {
+  hunter: PropTypes.shape({ id: PropTypes.string.isRequired, name: PropTypes.string.isRequired, rating: PropTypes.number }).isRequired,
+  index: PropTypes.number.isRequired,
+  disabled: PropTypes.bool.isRequired,
+  onChoose: PropTypes.func.isRequired,
 }
 
 export function HunterChoice () {
-  const hunters = useSelector(state => state.campaign.data.hunters)
+  const data = useSelector(state => state.campaign.data)
   const dispatch = useDispatch()
-
-  useEffect(revealChoices, [])
-
   const navigate = useNavigate()
+  const mainRef = useRef(null)
+  const logoRef = useRef(null)
+  const letterRef = useRef(null)
+  const { intro, done, skipped, skip, fallback, revealFrom, stateClasses } = useSignalIntro({ main: mainRef, logo: logoRef, letter: letterRef })
+  const [leaving, setLeaving] = useState(false)
+
+  const missions = visibleMissions(data).filter(mission => OPEN_STATUSES.includes(mission.status) && mission.position)
+
   const handleChoose = (hunterId) => {
-    playEnterTransition().then(() => {
+    if (leaving) return
+    setLeaving(true)
+    const go = () => {
       dispatch(chooseHunter(hunterId))
-      navigate({ to: '/', state: { referer: 'login' }})
-    })
+      navigate({ to: '/', state: { referer: 'login' } })
+    }
+    setTimeout(go, intro?.mode === 'calm' ? 0 : LEAVE_MS)
   }
 
-  return <main css={hunterChoice} className='login'>
-    <header>
-      <Logo enableAnimation />
-    </header>
+  const classes = [...stateClasses, leaving && 'is-leaving'].filter(Boolean).join(' ')
+  const originStyle = intro?.origin && { '--ox': `${intro.origin.x}px`, '--oy': `${intro.origin.y}px` }
 
-    <Monsters className="login__monsters" />
+  return (
+    <main
+      ref={mainRef}
+      css={choice}
+      className={classes}
+      style={originStyle || undefined}
+      onPointerDown={skip}
+      onKeyDown={skip}
+    >
+      <div className="choice__stage">
+        {intro && missions.length > 0 && (
+          <MissionMap className="choice__map" missions={missions} interactive={false} revealFrom={revealFrom} />
+        )}
+      </div>
 
-    <div className='login__bottom'>
-      <h1>{randomSlogan}</h1>
-      <p className='login__question'>Quem é você nesta campanha?</p>
+      {intro?.mode === 'signal' && !done && (
+        <SignalReveal origin={intro.origin} start={intro.start} timeline={TIMELINE} skipped={skipped} onFallback={fallback} />
+      )}
 
-      <ul className='login__hunters'>
-        {hunters.map(hunter => (
-          <li key={hunter.id}>
-            <button type='button' onClick={() => handleChoose(hunter.id)} className='button secondary'>
-              {hunter.name}
-              <ArrowRightIcon className='login__arrow' aria-hidden='true' />
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
+      <div className="choice__top">
+        <div className="choice__logo" ref={logoRef} aria-label="iHunt">
+          <span ref={letterRef} className="choice__i">i</span>Hunt
+        </div>
+        <CampaignClock className="choice__clock" />
+      </div>
 
-    <span className='login__enter'></span>
-  </main>
+      <p className="choice__slogan">{slogan}</p>
+
+      <section className="choice__sheet" aria-labelledby="choice-title">
+        <span className="choice__grip" aria-hidden="true" />
+        <div>
+          <h2 id="choice-title">Quem é você nesta campanha?</h2>
+          <p>{data.campaign.name}</p>
+        </div>
+        <ul>
+          {data.hunters.map((hunter, index) => (
+            <HunterRow key={hunter.id} hunter={hunter} index={index} disabled={leaving} onChoose={handleChoose} />
+          ))}
+        </ul>
+      </section>
+    </main>
+  )
 }
 
-const hunterChoice = css`
-  min-height: 100dvh;
-  color: var(--apagado);
-  background-color: var(--asfalto);
-  overflow: hidden;
-  padding: 16px;
+const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)'
+
+const choice = css`
   position: relative;
-  max-width: 100vw;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  background-color: var(--asfalto);
+  isolation: isolate;
 
-  .login__bottom {
-    margin-top: auto;
+  .choice__stage {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at var(--ox, 50%) var(--oy, 38%), rgb(255 107 26 / 10%), transparent 55%),
+      #111419;
+    transition: transform ${LEAVE_MS}ms ${EASE};
+  }
+
+  .choice__stage::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgb(12 14 17 / 55%) 0%, transparent 22%, transparent 45%, var(--asfalto) 80%);
+  }
+
+  .choice__map {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  .choice__top {
     position: relative;
+    z-index: 5;
     display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding-bottom: 12px;
-  }
-
-  h1 {
-    font-size: 2rem;
-    width: 85%;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
-    color: var(--texto);
-  }
-
-  .login__question {
-    font-size: 14px;
-  }
-
-  .login__hunters {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .button {
-    position: relative;
-    width: 100%;
-    height: 52px;
-    display: flex;
+    justify-content: space-between;
     align-items: center;
-    font-size: 16px;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 0;
+    transition: opacity 0.25s ease;
   }
 
-  .button:hover .login__arrow {
+  .choice__logo {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    transform-origin: 0 0;
+  }
+
+  .choice__i {
     color: var(--laranja);
   }
 
-  .login__monsters {
-    position: absolute;
-    top: 20%;
-    left: 0;
-    scale: 1.5;
-    transform: rotate(30deg);
-    opacity: 0.1;
+  .choice__slogan {
+    position: relative;
+    z-index: 3;
+    margin-top: auto;
+    padding: 0 16px 18px;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+    max-width: 14ch;
+    transition: opacity 0.25s ease;
   }
 
-  .login__enter {
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 1px;
-    height: 1px;
-    border-radius: 12px;
-    background-color: var(--asfalto);
-    opacity: 0;
-    pointer-events: none;
+  .choice__sheet {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 10px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+    background-color: var(--painel);
+    border-top: 1px solid var(--linha);
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -20px 40px -10px rgb(0 0 0 / 70%);
+    transition: transform ${LEAVE_MS}ms ${EASE};
+
+    h2 {
+      font-size: 17px;
+    }
+
+    p {
+      font-size: 13px;
+      color: var(--apagado);
+    }
+
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border-top: 1px solid var(--linha);
+    }
+
+    li + li {
+      border-top: 1px solid var(--linha);
+    }
+
+    button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-radius: 0;
+      background: none;
+      color: var(--texto);
+      text-align: left;
+    }
+
+    button:hover .choice__name,
+    button:hover .choice__arrow {
+      color: var(--laranja);
+    }
+
+    button:hover .choice__arrow {
+      transform: translateX(3px);
+    }
   }
 
-  .login__arrow {
-    position: absolute;
-    right: 16px;
+  .choice__grip {
+    width: 36px;
+    height: 4px;
+    border-radius: 4px;
+    background-color: var(--linha);
+    align-self: center;
+  }
+
+  .choice__name {
+    flex: 1;
+    min-width: 0;
+    font-size: 16px;
+    font-weight: 600;
+    transition: color 0.2s ease;
+  }
+
+  .choice__rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--apagado);
+
+    svg {
+      width: 13px;
+      height: 13px;
+      color: var(--aviso);
+    }
+  }
+
+  .choice__arrow {
     width: 20px;
     height: 20px;
     color: var(--apagado);
+    transition: color 0.2s ease, transform 0.3s ${EASE};
+  }
+
+  &.is-signal,
+  &.is-fallback {
+    .choice__i {
+      animation: ignite 0.6s ease-out ${TIMELINE.beacon}ms both;
+    }
+
+    .choice__clock {
+      animation: rise 0.6s ${EASE} ${TIMELINE.logo + 150}ms both;
+    }
+
+    .choice__slogan {
+      animation: rise 0.7s ${EASE} ${TIMELINE.logo + 250}ms both;
+    }
+
+    .choice__sheet {
+      animation: sheet-in 0.8s ${EASE} ${TIMELINE.logo + 350}ms both;
+    }
+
+    li {
+      animation: rise 0.5s ${EASE} calc(${TIMELINE.logo + 550}ms + var(--i) * 70ms) both;
+    }
+  }
+
+  &.is-fallback .choice__stage {
+    animation: reveal-circle 0.9s cubic-bezier(0.5, 0, 0.2, 1) ${TIMELINE.waves[2]}ms both;
+  }
+
+  &:not([class*='is-']) {
+    .choice__logo,
+    .choice__clock,
+    .choice__slogan,
+    .choice__sheet {
+      opacity: 0;
+    }
+  }
+
+  &:not(.is-done) .choice__sheet {
+    pointer-events: none;
+  }
+
+  &.is-skipped {
+    .choice__i,
+    .choice__clock,
+    .choice__slogan,
+    .choice__sheet,
+    .choice__stage,
+    li,
+    .pin--reveal {
+      animation-delay: 0s !important;
+      animation-duration: 0.25s !important;
+    }
+  }
+
+  &.is-calm {
+    .choice__sheet,
+    .choice__slogan {
+      animation: fade 0.4s ease both;
+    }
+  }
+
+  &.is-leaving {
+    .choice__sheet {
+      transform: translateY(105%);
+    }
+
+    .choice__slogan,
+    .choice__top {
+      opacity: 0;
+    }
+
+    .choice__stage {
+      transform: scale(1.12);
+    }
+  }
+
+  @keyframes ignite {
+    0% { color: var(--texto); text-shadow: none; }
+    40% { color: #fff3e8; text-shadow: 0 0 18px rgb(255 107 26 / 90%), 0 0 4px #fff; }
+    100% { color: var(--laranja); text-shadow: 0 0 0 transparent; }
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes sheet-in {
+    from { transform: translateY(100%); }
+    to { transform: none; }
+  }
+
+  @keyframes fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes reveal-circle {
+    from { clip-path: circle(0 at var(--ox) var(--oy)); }
+    to { clip-path: circle(150% at var(--ox) var(--oy)); }
   }
 `
