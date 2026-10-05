@@ -58,6 +58,15 @@ export function removeItem(draft, section, index) {
   return { ...draft, [section]: draft[section].filter((_, at) => at !== index) }
 }
 
+export function moveItem(draft, section, from, to) {
+  const items = draft[section]
+  const inside = (index) => index >= 0 && index < items.length
+  if (from === to || !inside(from) || !inside(to)) return draft
+  const moved = items.filter((_, at) => at !== from)
+  moved.splice(to, 0, items[from])
+  return { ...draft, [section]: moved }
+}
+
 export function removeNpc(draft, index) {
   const { id } = draft.npcs[index]
   const messages = draft.messages.filter(message => message?.npc === id).length

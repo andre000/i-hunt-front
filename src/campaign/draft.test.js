@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addItem, advanceToNextScheduled, blankDraft, hunterImpact, missionPreview, parseCoordinates, setMissionPosition, removeHunter, removeItem, removeNpc, updateItem, dateFromInput, dateToInput, draftErrors, nextScheduled, draftFile, draftFileName, draftFrom, readDraftText, updateCampaign } from './draft'
+import { addItem, advanceToNextScheduled, blankDraft, hunterImpact, missionPreview, moveItem, parseCoordinates, setMissionPosition, removeHunter, removeItem, removeNpc, updateItem, dateFromInput, dateToInput, draftErrors, nextScheduled, draftFile, draftFileName, draftFrom, readDraftText, updateCampaign } from './draft'
 import { validCampaign } from './fixtures'
 
 describe('draftFrom', () => {
@@ -364,5 +364,24 @@ describe('parseCoordinates', () => {
   it('is null for a single number or text', () => {
     expect(parseCoordinates('-30.0346')).toBeNull()
     expect(parseCoordinates('Bom Fim')).toBeNull()
+  })
+})
+
+describe('moveItem', () => {
+  const ids = (draft) => draft.missions.map(mission => mission.id)
+
+  it('moves a mission down', () => {
+    expect(ids(moveItem(draftFrom(validCampaign()), 'missions', 0, 2))).toEqual(['m2', 'm3', 'm1'])
+  })
+
+  it('moves a mission up', () => {
+    expect(ids(moveItem(draftFrom(validCampaign()), 'missions', 2, 0))).toEqual(['m3', 'm1', 'm2'])
+  })
+
+  it('leaves the draft alone for the same place or a place outside the list', () => {
+    const draft = draftFrom(validCampaign())
+
+    expect(moveItem(draft, 'missions', 1, 1)).toBe(draft)
+    expect(moveItem(draft, 'missions', 1, 5)).toBe(draft)
   })
 })

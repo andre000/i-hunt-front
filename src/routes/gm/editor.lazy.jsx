@@ -10,7 +10,7 @@ import { NewItemForm } from '../../components/editor/NewItemForm'
 import { NpcForm } from '../../components/editor/NpcForm'
 import { MissionBadge, MissionForm, NewMissionForm } from '../../components/editor/MissionForm'
 import { useDesktopWidth } from '../../components/useDesktopWidth'
-import { campaignDateAdvanced, campaignEdited, itemAdded, downloadDraft, draftDiscarded, draftOpened, openDraftFile, openPublishedDraft } from '../../store/editor'
+import { campaignDateAdvanced, campaignEdited, itemAdded, itemMoved, downloadDraft, draftDiscarded, draftOpened, openDraftFile, openPublishedDraft } from '../../store/editor'
 import { blankDraft, dateFromInput, dateToInput, draftErrors, nextScheduled } from '../../campaign/draft'
 
 export const Route = createLazyFileRoute('/gm/editor')({
@@ -24,6 +24,7 @@ const SECTIONS = [
     title: 'Missões',
     label: item => item.name,
     add: 'Adicionar missão',
+    reorder: true,
     NewForm: NewMissionForm,
     Form: MissionForm,
     Badge: MissionBadge,
@@ -34,8 +35,50 @@ const SECTIONS = [
 
 const itemLabel = (section, item) => (typeof section.label(item) === 'string' && section.label(item)) || '(sem nome)'
 
+function followMove(selected, section, from, to) {
+  if (selected.section !== section || selected.index === undefined) return selected
+  const { index } = selected
+  if (index === from) return { ...selected, index: to }
+  if (from < index && index <= to) return { ...selected, index: index - 1 }
+  if (to <= index && index < from) return { ...selected, index: index + 1 }
+  return selected
+}
+
 function SectionList({ draft, selected, onSelect }) {
+  const dispatch = useDispatch()
+  const [drag, setDrag] = useState(null)
   const isSelected = (key, index) => selected.section === key && selected.index === index
+
+  const dragProps = (section, index) => {
+    if (!section.reorder) return {}
+    return {
+      draggable: true,
+      className: [
+        'editor__draggable',
+        drag?.from === index && 'editor__draggable--dragging',
+        drag?.over === index && drag.from > index && 'editor__draggable--above',
+        drag?.over === index && drag.from < index && 'editor__draggable--below',
+      ].filter(Boolean).join(' '),
+      onDragStart: (e) => {
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', String(index))
+        setDrag({ from: index, over: index })
+      },
+      onDragOver: (e) => {
+        if (!drag) return
+        e.preventDefault()
+        if (drag.over !== index) setDrag({ ...drag, over: index })
+      },
+      onDrop: (e) => {
+        e.preventDefault()
+        if (!drag) return
+        dispatch(itemMoved({ section: section.key, from: drag.from, to: index }))
+        onSelect(followMove(selected, section.key, drag.from, index))
+        setDrag(null)
+      },
+      onDragEnd: () => setDrag(null),
+    }
+  }
 
   return (
     <nav className="editor__sections" aria-label="Seções do rascunho">
@@ -65,7 +108,7 @@ function SectionList({ draft, selected, onSelect }) {
           </h2>
           <ul>
             {draft[section.key].map((item, index) => (
-              <li key={index}>
+              <li key={index} {...dragProps(section, index)}>
                 <button
                   type="button"
                   className="editor__item"
@@ -582,6 +625,23 @@ const editorPage = css`
     display: flex;
     align-items: center;
     gap: 6px;
+  }
+
+  .editor__draggable {
+    border-radius: 8px;
+    cursor: grab;
+  }
+
+  .editor__draggable--dragging {
+    opacity: 0.4;
+  }
+
+  .editor__draggable--above {
+    box-shadow: inset 0 2px 0 var(--laranja);
+  }
+
+  .editor__draggable--below {
+    box-shadow: inset 0 -2px 0 var(--laranja);
   }
 
   .editor__sections .editor__badge {
