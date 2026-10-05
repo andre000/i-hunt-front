@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import { addItem, addMessage, advanceToNextScheduled, moveItem, draftFile, draftFileName, draftFrom, readDraftText, removeHunter, removeItem, removeNpc, setMissionPosition, updateCampaign, updateItem } from '../campaign/draft'
+import { addItem, addMessage, advanceToNextScheduled, moveItem, draftFile, draftFileName, draftFrom, localFileName, readDraftText, removeHunter, removeItem, removeNpc, setMissionPosition, updateCampaign, updateItem } from '../campaign/draft'
 
 export const openPublishedDraft = createAsyncThunk(
   'editor/openPublished',
@@ -17,10 +17,7 @@ function readText(file) {
 
 export const openDraftFile = createAsyncThunk(
   'editor/openFile',
-  async (file, { getState }) => {
-    const { campaignUrl } = getState().campaign
-    return { ...readDraftText(await readText(file)), fileName: campaignUrl ? draftFileName(campaignUrl) : file.name }
-  },
+  async (file) => ({ ...readDraftText(await readText(file)), fileName: localFileName(file.name) }),
 )
 
 export const downloadDraft = createAsyncThunk(

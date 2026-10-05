@@ -159,6 +159,10 @@ export function draftFileName(publishedUrl) {
   return name || DEFAULT_FILE_NAME
 }
 
+export function localFileName(name) {
+  return name.replace(/ \(\d+\)(?=\.[^.]+$)/, '')
+}
+
 const pad = (number) => String(number).padStart(2, '0')
 
 const MINUTE = 60 * 1000

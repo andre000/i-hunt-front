@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addItem, advanceToNextScheduled, blankDraft, addMessage, explainErrors, hunterImpact, messageOrder, messageScheduled, missionPreview, moveItem, parseCoordinates, setMissionPosition, removeHunter, removeItem, removeNpc, updateItem, dateFromInput, dateToInput, draftErrors, nextScheduled, draftFile, draftFileName, draftFrom, readDraftText, updateCampaign } from './draft'
+import { addItem, advanceToNextScheduled, blankDraft, addMessage, explainErrors, hunterImpact, messageOrder, messageScheduled, missionPreview, moveItem, parseCoordinates, setMissionPosition, removeHunter, removeItem, removeNpc, updateItem, dateFromInput, dateToInput, draftErrors, nextScheduled, draftFile, draftFileName, draftFrom, localFileName, readDraftText, updateCampaign } from './draft'
 import { validCampaign } from './fixtures'
 
 describe('draftFrom', () => {
@@ -79,6 +79,18 @@ describe('draftFile', () => {
 
     expect(text).toContain('\n  "campaign": {\n    "name": "Noite em Porto Alegre",')
     expect(JSON.parse(text).missions[2].name).toBe('Vampiro no bar')
+  })
+})
+
+describe('localFileName', () => {
+  it('drops the copy number the browser adds', () => {
+    expect(localFileName('noites (1).json')).toBe('noites.json')
+    expect(localFileName('mesa (12).json')).toBe('mesa.json')
+  })
+
+  it('keeps any other name', () => {
+    expect(localFileName('outra.json')).toBe('outra.json')
+    expect(localFileName('mesa (rascunho).json')).toBe('mesa (rascunho).json')
   })
 })
 

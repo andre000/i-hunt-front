@@ -87,16 +87,18 @@ describe('Starting a Rascunho', () => {
     expect(saveFile.mock.calls[0][0]).toBe('mesa.json')
   })
 
-  it('downloads a file from the computer with the name of the published file', async () => {
+  it('downloads a file from the computer with its own name, without the copy number', async () => {
     const { saveFile } = await renderApp({ path: '/gm/editor', hunterId: null, campaignUrl: 'https://pub-9.r2.dev/noites.json' })
+    const other = validCampaign()
+    other.campaign.name = 'Outra mesa'
     await screen.findByLabelText('Nome da campanha')
     fireEvent.click(screen.getByRole('button', { name: 'Trocar rascunho' }))
-    fireEvent.change(screen.getByLabelText('Abrir arquivo do computador'), { target: { files: [new File([JSON.stringify(validCampaign())], 'noites (1).json')] } })
+    fireEvent.change(screen.getByLabelText('Abrir arquivo do computador'), { target: { files: [new File([JSON.stringify(other)], 'outra (2).json')] } })
     fireEvent.click(screen.getByRole('button', { name: 'Substituir' }))
 
-    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull())
+    await waitFor(() => expect(screen.getByLabelText('Nome da campanha').value).toBe('Outra mesa'))
     fireEvent.click(screen.getByRole('button', { name: 'Baixar' }))
-    expect(saveFile.mock.calls[0][0]).toBe('noites.json')
+    expect(saveFile.mock.calls[0][0]).toBe('outra.json')
   })
 
   it('explains when the file from the computer is not readable JSON', async () => {
