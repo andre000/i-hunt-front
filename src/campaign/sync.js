@@ -1,5 +1,5 @@
 import { parseCampaign } from './parseCampaign'
-import { fetchCampaign } from './fetchCampaign'
+import { fetchCampaign, readPublished } from './fetchCampaign'
 import { attempt, safeStorage } from './storage'
 
 const CAMPAIGN_URL_KEY = 'ihunt.campaignUrl'
@@ -76,11 +76,7 @@ export function createSync({ fetch, storage }) {
     getHunterId: () => store.get(HUNTER_ID_KEY),
     setHunterId: (hunterId) => store.set(HUNTER_ID_KEY, hunterId),
     clearHunterId: () => store.remove(HUNTER_ID_KEY),
-    async readPublished(url = store.get(CAMPAIGN_URL_KEY)) {
-      const fetched = await fetchCampaign(fetch, url)
-      if (fetched.raw !== undefined) return { raw: fetched.raw, url }
-      return { error: fetched.error ?? fetched.errors[0].message }
-    },
+    readPublished: (url = store.get(CAMPAIGN_URL_KEY)) => readPublished(fetch, url),
     load() {
       const url = store.get(CAMPAIGN_URL_KEY)
       return url ? loadCampaign(fetch, store, url) : Promise.resolve({ status: 'no-campaign' })

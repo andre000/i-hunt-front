@@ -59,6 +59,23 @@ describe('Starting a Rascunho', () => {
     expect(await screen.findByText(/JSON inválido/)).toBeTruthy()
   })
 
+  it('explains when reading the published campaign fails', async () => {
+    const { sync } = await renderApp({ path: '/gm/editor', hunterId: null, campaignUrl: null })
+    sync.readPublished = async () => { throw new Error('boom') }
+
+    fireEvent.change(await screen.findByLabelText('Endereço do arquivo no R2'), { target: { value: 'https://pub-9.r2.dev/noites.json' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Carregar' }))
+
+    expect(await screen.findByText('Não foi possível carregar a campanha.')).toBeTruthy()
+    expect(screen.queryByText('Carregando campanha…')).toBeNull()
+  })
+
+  it('loads the example campaign in the demo', async () => {
+    await renderApp({ path: '/gm/editor', demo: {} })
+
+    expect((await screen.findByLabelText('Nome da campanha')).value).toBe('Noites de Porto Alegre')
+  })
+
   it('opens a campaign file from the computer', async () => {
     const { saveFile } = await renderApp({ path: '/gm/editor', hunterId: null, campaignUrl: null })
     const file = new File([JSON.stringify(validCampaign())], 'mesa.json', { type: 'application/json' })

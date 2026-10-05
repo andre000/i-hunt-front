@@ -108,6 +108,10 @@ const editorSlice = createSlice({
         if (payload.error) state.error = payload.error
         else open(state, draftFrom(payload.raw), draftFileName(payload.url))
       })
+      .addCase(openPublishedDraft.rejected, (state) => {
+        state.loading = false
+        state.error = 'Não foi possível carregar a campanha.'
+      })
       .addCase(openDraftFile.fulfilled, (state, { payload }) => {
         state.started = true
         if (payload.error) state.error = payload.error

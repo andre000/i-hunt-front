@@ -29,3 +29,9 @@ export async function fetchCampaign(fetch, url) {
     ? { raw: read.raw, campaign: result.campaign }
     : { failure: 'invalid', errors: result.errors, raw: read.raw }
 }
+
+export async function readPublished(fetch, url) {
+  const fetched = await fetchCampaign(fetch, url)
+  if (fetched.raw !== undefined) return { raw: fetched.raw, url }
+  return { error: fetched.error ?? fetched.errors[0].message }
+}

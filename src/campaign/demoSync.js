@@ -1,4 +1,4 @@
-import { fetchCampaign } from './fetchCampaign'
+import { fetchCampaign, readPublished } from './fetchCampaign'
 import { parseCampaign } from './parseCampaign'
 import { attempt, safeStorage } from './storage'
 
@@ -101,6 +101,7 @@ export function createDemoSync({ fetch, storage, origin }) {
     hasSeenIntro: () => store.get(KEYS.introSeen) === '1',
     markIntroSeen: () => store.set(KEYS.introSeen, '1'),
     getCampaignUrl: () => url,
+    readPublished: (target = url) => readPublished(fetch, target),
     offerInvite: () => 'accepted',
     acceptInvite() {},
     getHunterId: () => store.get(KEYS.hunterId),
