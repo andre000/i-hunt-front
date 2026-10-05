@@ -301,6 +301,95 @@ describe('NPCs', () => {
   })
 })
 
+describe('Missões', () => {
+  async function openMission(name, options = {}) {
+    const result = await renderApp({ path: '/gm/editor', hunterId: null, ...options })
+    const sections = await screen.findByRole('navigation', { name: 'Seções do rascunho' })
+    fireEvent.click(within(sections).getByRole('button', { name }))
+    return result
+  }
+
+  const missionInDraft = (store, index) => store.getState().editor.draft.missions[index]
+
+  it('adds a mission with name, location, value and risk', async () => {
+    const { store } = await renderApp({ path: '/gm/editor', hunterId: null })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Adicionar missão' }))
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Mula sem cabeça' } })
+    fireEvent.change(screen.getByLabelText('Local'), { target: { value: 'Menino Deus' } })
+    fireEvent.change(screen.getByLabelText('Valor (R$)'), { target: { value: '350' } })
+    fireEvent.change(screen.getByLabelText('Risco'), { target: { value: 'alto' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar' }))
+
+    expect(missionInDraft(store, 3)).toEqual({ id: 'mula-sem-cabeca', name: 'Mula sem cabeça', location: 'Menino Deus', value: 350, risk: 'alto' })
+    expect(screen.getByText('Disponível', { selector: '.editor__meta *' })).toBeTruthy()
+  })
+
+  it('edits the optional fields, with dates without a time zone', async () => {
+    const { store } = await openMission('Vampiro no bar')
+
+    fireEvent.change(screen.getByLabelText('Descrição'), { target: { value: 'Ele morde.' } })
+    fireEvent.change(screen.getByLabelText('Etiquetas (separadas por vírgula)'), { target: { value: 'vampiro, noite' } })
+    fireEvent.click(screen.getByLabelText('Em destaque'))
+    fireEvent.change(screen.getByLabelText('Prazo'), { target: { value: '2026-10-06T23:00' } })
+    fireEvent.change(screen.getByLabelText('Publicação'), { target: { value: '2026-10-04T20:00' } })
+
+    expect(missionInDraft(store, 2)).toMatchObject({
+      description: 'Ele morde.',
+      tags: ['vampiro', 'noite'],
+      featured: true,
+      deadline: '2026-10-06T23:00:00-03:00',
+      postedAt: '2026-10-04T20:00:00-03:00',
+    })
+    expect(screen.getByLabelText('Etiquetas (separadas por vírgula)').value).toBe('vampiro, noite')
+  })
+
+  it('picks hunters and "perto" from the hunters of the campaign', async () => {
+    const { store } = await openMission('Vampiro no bar')
+
+    fireEvent.click(within(screen.getByRole('group', { name: 'Hunters na missão' })).getByLabelText('Beto'))
+    fireEvent.click(within(screen.getByRole('group', { name: 'Aparece como perto para' })).getByLabelText('Ana'))
+
+    expect(missionInDraft(store, 2)).toMatchObject({ hunters: ['beto'], nearHunters: ['ana'] })
+    expect(screen.getByText('Em andamento', { selector: '.editor__meta *' })).toBeTruthy()
+  })
+
+  it('sets and clears the result', async () => {
+    const { store } = await openMission('Vampiro no bar')
+
+    fireEvent.change(screen.getByLabelText('Resultado'), { target: { value: 'concluída' } })
+    expect(missionInDraft(store, 2).result).toBe('concluída')
+    expect(screen.getByText('Concluída', { selector: '.editor__meta *' })).toBeTruthy()
+
+    fireEvent.change(screen.getByLabelText('Resultado'), { target: { value: '' } })
+    expect(missionInDraft(store, 2)).not.toHaveProperty('result')
+  })
+
+  it('shows Agendado in the form and the list until the date passes', async () => {
+    await openMission('Vampiro no bar')
+
+    fireEvent.change(screen.getByLabelText('Publicação'), { target: { value: '2026-10-04T22:00' } })
+
+    const sections = screen.getByRole('navigation', { name: 'Seções do rascunho' })
+    expect(within(sections).getByText('Agendado')).toBeTruthy()
+    expect(screen.getByText('Agendado', { selector: '.editor__meta *' })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Avançar até o próximo agendado' }))
+
+    expect(within(sections).queryByText('Agendado')).toBeNull()
+    expect(screen.queryByText('Agendado', { selector: '.editor__meta *' })).toBeNull()
+  })
+
+  it('deletes a mission after confirming', async () => {
+    const { store } = await openMission('Fantasma no ônibus T5')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar missão' }))
+    fireEvent.click(within(screen.getByRole('alertdialog', { name: 'Apagar Fantasma no ônibus T5?' })).getByRole('button', { name: 'Apagar' }))
+
+    expect(store.getState().editor.draft.missions.map(mission => mission.id)).toEqual(['m1', 'm3'])
+  })
+})
+
 describe('Editor da campanha', () => {
   it('opens the published campaign of the device as the draft', async () => {
     await renderApp({ path: '/gm/editor', hunterId: null })

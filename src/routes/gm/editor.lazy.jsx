@@ -8,6 +8,7 @@ import { CampaignStatus } from '../../components/CampaignStatus'
 import { HunterForm } from '../../components/editor/HunterForm'
 import { NewItemForm } from '../../components/editor/NewItemForm'
 import { NpcForm } from '../../components/editor/NpcForm'
+import { MissionBadge, MissionForm, NewMissionForm } from '../../components/editor/MissionForm'
 import { useDesktopWidth } from '../../components/useDesktopWidth'
 import { campaignDateAdvanced, campaignEdited, itemAdded, downloadDraft, draftDiscarded, draftOpened, openDraftFile, openPublishedDraft } from '../../store/editor'
 import { blankDraft, dateFromInput, dateToInput, draftErrors, nextScheduled } from '../../campaign/draft'
@@ -18,7 +19,15 @@ export const Route = createLazyFileRoute('/gm/editor')({
 
 const SECTIONS = [
   { key: 'hunters', title: 'Hunters', label: item => item.name, add: 'Adicionar hunter', newTitle: 'Novo hunter', Form: HunterForm },
-  { key: 'missions', title: 'Missões', label: item => item.name },
+  {
+    key: 'missions',
+    title: 'Missões',
+    label: item => item.name,
+    add: 'Adicionar missão',
+    NewForm: NewMissionForm,
+    Form: MissionForm,
+    Badge: MissionBadge,
+  },
   { key: 'npcs', title: 'NPCs', label: item => item.name, add: 'Adicionar NPC', newTitle: 'Novo NPC', Form: NpcForm },
   { key: 'messages', title: 'Mensagens', label: item => item.text },
 ]
@@ -65,6 +74,7 @@ function SectionList({ draft, selected, onSelect }) {
                 >
                   {itemLabel(section, item)}
                 </button>
+                {section.Badge && <section.Badge draft={draft} index={index} />}
               </li>
             ))}
           </ul>
@@ -106,16 +116,12 @@ function ItemPanel({ draft, selected, onSelect }) {
   if (selected.section === 'campaign') return <CampaignForm campaign={draft.campaign} />
   const section = SECTIONS.find(({ key }) => key === selected.section)
   if (selected.adding) {
-    return (
-      <NewItemForm
-        key={section.key}
-        title={section.newTitle}
-        onAdd={fields => {
-          dispatch(itemAdded({ section: section.key, fields }))
-          onSelect({ section: section.key, index: draft[section.key].length })
-        }}
-      />
-    )
+    const add = (fields) => {
+      dispatch(itemAdded({ section: section.key, fields }))
+      onSelect({ section: section.key, index: draft[section.key].length })
+    }
+    if (section.NewForm) return <section.NewForm key={section.key} onAdd={add} />
+    return <NewItemForm key={section.key} title={section.newTitle} onAdd={add} />
   }
   const item = draft[section.key][selected.index]
   if (!item) return <CampaignForm campaign={draft.campaign} />
@@ -570,6 +576,88 @@ const editorPage = css`
   .editor__warning {
     color: var(--aviso);
     font-weight: 600;
+  }
+
+  .editor__sections li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .editor__sections .editor__badge {
+    flex-shrink: 0;
+  }
+
+  .editor__badge {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background-color: var(--painel-2);
+    color: var(--apagado);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .editor__badge--scheduled {
+    background-color: var(--aviso-fundo);
+    color: var(--aviso);
+  }
+
+  .editor__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .editor__row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+
+  .editor__form select,
+  .editor__form textarea {
+    padding: 10px 12px;
+    border: 1px solid var(--linha);
+    border-radius: 10px;
+    background-color: var(--painel);
+    color: var(--texto);
+    font: inherit;
+    font-size: 15px;
+  }
+
+  .editor__form textarea {
+    resize: vertical;
+  }
+
+  .editor__form .editor__check,
+  .editor__picker label {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--texto);
+  }
+
+  .editor__picker {
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--linha);
+    border-radius: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+
+    legend {
+      padding: 0 6px;
+      font-size: 13px;
+      color: var(--apagado);
+    }
+
+    p {
+      font-size: 13px;
+      color: var(--apagado);
+    }
   }
 
   .editor__id {

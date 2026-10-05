@@ -1,5 +1,6 @@
 import { parseCampaign } from './parseCampaign'
 import { isAfterCampaignDate, time } from './time'
+import { isScheduled, missionView } from './missions'
 
 const SECTIONS = ['hunters', 'missions', 'npcs', 'messages']
 
@@ -86,6 +87,16 @@ export function removeHunter(draft, index) {
   })
   const messages = draft.messages.map(message => (includes(message.to, id) ? { ...message, to: without(message.to, id) } : message))
   return { ...removeItem(draft, 'hunters', index), missions, messages }
+}
+
+export function missionPreview(draft, index) {
+  const mission = { ...draft.missions[index] }
+  mission.hunters = Array.isArray(mission.hunters) ? mission.hunters : []
+  const campaign = { campaign: draft.campaign, hunters: draft.hunters }
+  return {
+    status: missionView(campaign, mission).status,
+    scheduled: isDate(mission.postedAt) && isDate(draft.campaign.date) && isScheduled(mission, draft.campaign.date),
+  }
 }
 
 export function draftErrors(draft) {

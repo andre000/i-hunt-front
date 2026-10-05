@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addItem, advanceToNextScheduled, blankDraft, hunterImpact, removeHunter, removeNpc, updateItem, dateFromInput, dateToInput, draftErrors, nextScheduled, draftFile, draftFileName, draftFrom, readDraftText, updateCampaign } from './draft'
+import { addItem, advanceToNextScheduled, blankDraft, hunterImpact, missionPreview, removeHunter, removeItem, removeNpc, updateItem, dateFromInput, dateToInput, draftErrors, nextScheduled, draftFile, draftFileName, draftFrom, readDraftText, updateCampaign } from './draft'
 import { validCampaign } from './fixtures'
 
 describe('draftFrom', () => {
@@ -288,5 +288,36 @@ describe('removing a NPC', () => {
 
     expect(result.ok).toBe(true)
     expect(result.draft.npcs.map(npc => npc.id)).toEqual(['dona-rosa', 'padre'])
+  })
+})
+
+describe('missionPreview', () => {
+  function draftWithMission(fields) {
+    return addItem(draftFrom(validCampaign()), 'missions', { name: 'Nova', location: 'Centro', value: 100, risk: 'baixo', ...fields })
+  }
+
+  it('is Disponível for a new mission', () => {
+    expect(missionPreview(draftWithMission({}), 3)).toEqual({ status: 'available', scheduled: false })
+  })
+
+  it('follows hunters, result and deadline like the app', () => {
+    expect(missionPreview(draftWithMission({ hunters: ['ana'] }), 3).status).toBe('in-progress')
+    expect(missionPreview(draftWithMission({ result: 'fracassada' }), 3).status).toBe('failed')
+    expect(missionPreview(draftWithMission({ deadline: '2026-10-04T20:00:00-03:00' }), 3).status).toBe('expired')
+  })
+
+  it('is Agendado until the campaign date passes the publication time', () => {
+    const draft = draftWithMission({ postedAt: '2026-10-04T22:00:00-03:00' })
+
+    expect(missionPreview(draft, 3).scheduled).toBe(true)
+    expect(missionPreview(advanceToNextScheduled(draft), 3).scheduled).toBe(false)
+  })
+})
+
+describe('removeItem', () => {
+  it('removes a mission', () => {
+    const draft = removeItem(draftFrom(validCampaign()), 'missions', 1)
+
+    expect(draft.missions.map(mission => mission.id)).toEqual(['m1', 'm3'])
   })
 })
