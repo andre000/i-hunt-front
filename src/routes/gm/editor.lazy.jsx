@@ -57,6 +57,16 @@ function followMove(selected, section, from, to) {
   return selected
 }
 
+function dragClass(drag, index) {
+  const over = drag?.over === index
+  return [
+    'editor__draggable',
+    drag?.from === index && 'editor__draggable--dragging',
+    over && drag.from > index && 'editor__draggable--above',
+    over && drag.from < index && 'editor__draggable--below',
+  ].filter(Boolean).join(' ')
+}
+
 function SectionList({ draft, selected, onSelect }) {
   const dispatch = useDispatch()
   const [drag, setDrag] = useState(null)
@@ -66,12 +76,7 @@ function SectionList({ draft, selected, onSelect }) {
     if (!section.reorder) return {}
     return {
       draggable: true,
-      className: [
-        'editor__draggable',
-        drag?.from === index && 'editor__draggable--dragging',
-        drag?.over === index && drag.from > index && 'editor__draggable--above',
-        drag?.over === index && drag.from < index && 'editor__draggable--below',
-      ].filter(Boolean).join(' '),
+      className: dragClass(drag, index),
       onDragStart: (e) => {
         e.dataTransfer.effectAllowed = 'move'
         e.dataTransfer.setData('text/plain', String(index))
@@ -329,9 +334,100 @@ Confirm.propTypes = {
   onCancel: PropTypes.func.isRequired,
 }
 
+function carryStep({ carriedDate, carriedReady, started, loading, draft, unsaved }) {
+  if (!carriedDate || !started || loading) return null
+  if (carriedReady) return 'apply'
+  return draft && unsaved ? 'ask' : 'open'
+}
+
+function useCarriedDate(ask, waiting) {
+  const dispatch = useDispatch()
+  const editor = useSelector(state => state.editor)
+  const step = waiting ? null : carryStep(editor)
+
+  useEffect(() => {
+    if (step === 'apply') dispatch(carriedDateApplied())
+    if (step === 'open') dispatch(openPublishedDraft())
+    if (step === 'ask') {
+      ask(
+        'Abrir a campanha publicada para levar a data? O rascunho atual tem mudanças não baixadas e será substituído.',
+        'Abrir a publicada',
+        () => dispatch(openPublishedDraft()),
+        () => dispatch(carriedDateDropped()),
+      )
+    }
+  })
+}
+
+function DraftBar({ draft, errors, unsaved, onChoose, onDiscard }) {
+  const dispatch = useDispatch()
+  const bad = errors.length > 0
+
+  return (
+    <>
+      <button type="button" className="editor__link" onClick={onChoose}>Trocar rascunho</button>
+      <button type="button" className="editor__link" onClick={onDiscard}>Descartar</button>
+      <span className="editor__spacer" />
+      <CampaignDate draft={draft} />
+      {unsaved && <span className="editor__unsaved">Mudanças não baixadas</span>}
+      <span className={bad ? 'editor__count editor__count--bad' : 'editor__count'}>{errorCount(errors.length)}</span>
+      <button type="button" className="button primary editor__download" disabled={bad} onClick={() => dispatch(downloadDraft())}>
+        Baixar
+      </button>
+    </>
+  )
+}
+
+DraftBar.propTypes = {
+  draft: PropTypes.object.isRequired,
+  errors: PropTypes.array.isRequired,
+  unsaved: PropTypes.bool.isRequired,
+  onChoose: PropTypes.func.isRequired,
+  onDiscard: PropTypes.func.isRequired,
+}
+
+function OpenError({ error }) {
+  if (!error) return null
+  return (
+    <section className="editor__errors" role="alert">
+      <h2>Não foi possível abrir a campanha</h2>
+      <p>{error}</p>
+    </section>
+  )
+}
+
+OpenError.propTypes = {
+  error: PropTypes.string,
+}
+
+function PendingConfirm({ confirm, onClose }) {
+  if (!confirm) return null
+  return (
+    <Confirm
+      question={confirm.question}
+      confirmLabel={confirm.confirmLabel}
+      onConfirm={confirm.run}
+      onCancel={() => {
+        confirm.cancel?.()
+        onClose()
+      }}
+    />
+  )
+}
+
+PendingConfirm.propTypes = {
+  confirm: PropTypes.shape({
+    question: PropTypes.string.isRequired,
+    confirmLabel: PropTypes.string.isRequired,
+    run: PropTypes.func.isRequired,
+    cancel: PropTypes.func,
+  }),
+  onClose: PropTypes.func.isRequired,
+}
+
 function Editor() {
   const dispatch = useDispatch()
-  const { started, draft, error, loading, unsaved, carriedDate, carriedReady } = useSelector(state => state.editor)
+  const { started, draft, error, loading, unsaved } = useSelector(state => state.editor)
   const campaignUrl = useSelector(state => state.campaign.campaignUrl)
   const [selected, setSelected] = useState({ section: 'campaign' })
   const [choosing, setChoosing] = useState(false)
@@ -341,22 +437,6 @@ function Editor() {
   useEffect(() => {
     if (!started && campaignUrl) dispatch(openPublishedDraft())
   }, [started, campaignUrl, dispatch])
-
-  useEffect(() => {
-    if (!carriedDate || !started || loading || confirm) return
-    if (carriedReady) {
-      dispatch(carriedDateApplied())
-    } else if (draft && unsaved) {
-      ask(
-        'Abrir a campanha publicada para levar a data? O rascunho atual tem mudanças não baixadas e será substituído.',
-        'Abrir a publicada',
-        () => dispatch(openPublishedDraft()),
-        () => dispatch(carriedDateDropped()),
-      )
-    } else {
-      dispatch(openPublishedDraft())
-    }
-  })
 
   const ask = (question, confirmLabel, action, cancel) => setConfirm({
     question,
@@ -370,10 +450,13 @@ function Editor() {
     },
   })
 
+  useCarriedDate(ask, Boolean(confirm))
+
   const replaceDraft = (action) => {
     if (draft) ask('Substituir o rascunho atual?', 'Substituir', action)
     else action()
   }
+  const editing = !loading && draft && !choosing
 
   return (
     <main className="gm-editor" css={editorPage}>
@@ -381,51 +464,19 @@ function Editor() {
         <span className="editor__brand"><span>i</span>Hunt <b>Editor</b></span>
         <Link className="editor__link" to="/gm">Visão do GM</Link>
         {draft && (
-          <>
-            <button type="button" className="editor__link" onClick={() => setChoosing(true)}>Trocar rascunho</button>
-            <button
-              type="button"
-              className="editor__link"
-              onClick={() => ask('Descartar o rascunho atual?', 'Descartar', () => dispatch(draftDiscarded()))}
-            >
-              Descartar
-            </button>
-            <span className="editor__spacer" />
-            <CampaignDate draft={draft} />
-            {unsaved && <span className="editor__unsaved">Mudanças não baixadas</span>}
-            <span className={errors.length > 0 ? 'editor__count editor__count--bad' : 'editor__count'}>
-              {errorCount(errors.length)}
-            </span>
-            <button
-              type="button"
-              className="button primary editor__download"
-              disabled={errors.length > 0}
-              onClick={() => dispatch(downloadDraft())}
-            >
-              Baixar
-            </button>
-          </>
+          <DraftBar
+            draft={draft}
+            errors={errors}
+            unsaved={unsaved}
+            onChoose={() => setChoosing(true)}
+            onDiscard={() => ask('Descartar o rascunho atual?', 'Descartar', () => dispatch(draftDiscarded()))}
+          />
         )}
       </div>
-      {confirm && (
-        <Confirm
-          question={confirm.question}
-          confirmLabel={confirm.confirmLabel}
-          onConfirm={confirm.run}
-          onCancel={() => {
-            confirm.cancel?.()
-            setConfirm(null)
-          }}
-        />
-      )}
-      {error && (
-        <section className="editor__errors" role="alert">
-          <h2>Não foi possível abrir a campanha</h2>
-          <p>{error}</p>
-        </section>
-      )}
+      <PendingConfirm confirm={confirm} onClose={() => setConfirm(null)} />
+      <OpenError error={error} />
       {loading && <p className="editor__loading">Carregando campanha…</p>}
-      {!loading && draft && !choosing && (
+      {editing && (
         <>
           <DraftErrors errors={errors} onSelect={setSelected} />
           <div className="editor__body">
@@ -434,7 +485,7 @@ function Editor() {
           </div>
         </>
       )}
-      {!loading && (!draft || choosing) && (
+      {!loading && !editing && (
         <DraftSources
           campaignUrl={campaignUrl}
           onPick={replaceDraft}

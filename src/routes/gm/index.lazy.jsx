@@ -168,28 +168,20 @@ function rehearsedCampaign(data, date) {
   return date ? { ...data, campaign: { ...data.campaign, date } } : data
 }
 
-function CampaignView({ data, desktop }) {
-  const [hunterId, setHunterId] = useState(null)
-  const [openId, setOpenId] = useState(null)
-  const [showEarlier, setShowEarlier] = useState(false)
-  const [showMap, setShowMap] = useState(false)
-  const [scrollTarget, setScrollTarget] = useState(null)
-  const campaignUrl = useSelector(state => state.campaign.campaignUrl)
-  const wide = useWideScreen()
+function rehearsalSpan(realDate, marks) {
+  return marks.length > 0 ? Math.ceil((time(marks.at(-1)) - time(realDate)) / MINUTE) : 0
+}
+
+function useRehearsal(data, hunterId, desktop) {
   const [offset, setOffset] = useState(0)
-  const dispatch = useDispatch()
   const realView = gmView(data, { hunterId })
   const marks = [...new Set(realView.timeline.upcoming.map(item => item.at))]
-  const realTime = time(realView.date)
-  const span = marks.length > 0 ? Math.ceil((time(marks.at(-1)) - realTime) / MINUTE) : 0
+  const span = rehearsalSpan(realView.date, marks)
   const minutes = Math.min(offset, span)
-  const rehearsalDate = minutes > 0 ? addMinutes(realView.date, minutes) : null
-  const view = rehearsalDate ? gmView(rehearsedCampaign(data, rehearsalDate), { hunterId }) : realView
-  const lastSeen = useLastSeenDate(realView.date, campaignUrl)
-  const freshSince = rehearsalDate ? realView.date : lastSeen
-  const hunterName = view.hunters.find(({ hunter }) => hunter.id === hunterId)?.hunter.name ?? null
-  const reached = at => marks.filter(mark => time(mark) <= realTime + at * MINUTE).length
-  const rehearse = next => {
+  const date = minutes > 0 ? addMinutes(realView.date, minutes) : null
+  const view = date ? gmView(rehearsedCampaign(data, date), { hunterId }) : realView
+  const reached = at => marks.filter(mark => time(mark) <= time(realView.date) + at * MINUTE).length
+  const move = next => {
     if (reached(next) === reached(minutes)) setOffset(next)
     else slideRows(() => setOffset(next))
   }
@@ -208,26 +200,101 @@ function CampaignView({ data, desktop }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [minutes])
 
+  const rehearsal = marks.length > 0 ? { realDate: realView.date, marks, span, minutes, onMove: move } : null
+  return { realView, view, date, rehearsal }
+}
+
+function useMissionFocus() {
+  const [openId, setOpenId] = useState(null)
+  const [showEarlier, setShowEarlier] = useState(false)
+  const [scrollTarget, setScrollTarget] = useState(null)
+
   useEffect(() => {
     if (!scrollTarget) return
     document.getElementById(`gm-${scrollTarget}`)?.scrollIntoView?.({ block: 'center', behavior: prefersCalm() ? 'auto' : 'smooth' })
     setScrollTarget(null)
   }, [scrollTarget])
 
-  const toggle = item => setOpenId(current => (current === item.id ? null : item.id))
-  const selectPin = missionId => {
-    setShowEarlier(true)
-    setOpenId(`mission:${missionId}`)
-    setScrollTarget(`mission:${missionId}`)
+  return {
+    openId,
+    showEarlier,
+    showAll: () => setShowEarlier(true),
+    toggle: item => setOpenId(current => (current === item.id ? null : item.id)),
+    selectPin: missionId => {
+      setShowEarlier(true)
+      setOpenId(`mission:${missionId}`)
+      setScrollTarget(`mission:${missionId}`)
+    },
+    selectedMission: openId?.startsWith('mission:') ? openId.slice('mission:'.length) : null,
   }
-  const selectedMission = openId?.startsWith('mission:') ? openId.slice('mission:'.length) : null
-  const map = <MapPanel missions={mapMissions(view.timeline)} selectedId={selectedMission} onSelect={selectPin} editable={desktop} />
-  const extra = (
+}
+
+function FeedHead({ hunterName, onClear }) {
+  return (
+    <div className="gm__feed-head">
+      <h2>{hunterName ? `O que chega para ${hunterName}` : 'Linha do tempo'}</h2>
+      {hunterName && <button type="button" className="gm__clear" onClick={onClear}>Ver todos</button>}
+    </div>
+  )
+}
+
+FeedHead.propTypes = {
+  hunterName: PropTypes.string,
+  onClear: PropTypes.func.isRequired,
+}
+
+function InlineMap({ children }) {
+  const [shown, setShown] = useState(false)
+
+  return (
+    <div className="gm__map gm__map--inline">
+      <button type="button" className="button secondary gm__map-toggle" aria-expanded={shown} onClick={() => setShown(open => !open)}>
+        {shown ? 'Esconder mapa' : 'Ver mapa'}
+      </button>
+      {shown && children}
+    </div>
+  )
+}
+
+InlineMap.propTypes = {
+  children: PropTypes.node.isRequired,
+}
+
+function CampaignExtras({ npcs }) {
+  const campaignUrl = useSelector(state => state.campaign.campaignUrl)
+
+  return (
     <>
-      <NpcList npcs={view.npcs} />
+      <NpcList npcs={npcs} />
       {campaignUrl && <InviteBox campaignUrl={campaignUrl} playable />}
     </>
   )
+}
+
+CampaignExtras.propTypes = {
+  npcs: PropTypes.array.isRequired,
+}
+
+function hunterNameOf(view, hunterId) {
+  return view.hunters.find(({ hunter }) => hunter.id === hunterId)?.hunter.name ?? null
+}
+
+function withCarry(rehearsal, carry) {
+  if (!rehearsal || !carry) return rehearsal
+  return { ...rehearsal, onCarry: carry }
+}
+
+function CampaignView({ data, desktop }) {
+  const dispatch = useDispatch()
+  const [hunterId, setHunterId] = useState(null)
+  const campaignUrl = useSelector(state => state.campaign.campaignUrl)
+  const wide = useWideScreen()
+  const { realView, view, date, rehearsal } = useRehearsal(data, hunterId, desktop)
+  const focus = useMissionFocus()
+  const lastSeen = useLastSeenDate(realView.date, campaignUrl)
+  const hunterName = hunterNameOf(view, hunterId)
+  const map = <MapPanel missions={mapMissions(view.timeline)} selectedId={focus.selectedMission} onSelect={focus.selectPin} editable={desktop} />
+  const carry = desktop ? () => dispatch(dateCarried(date)) : null
 
   return (
     <div className="gm__layout">
@@ -237,43 +304,24 @@ function CampaignView({ data, desktop }) {
           <SyncStatus />
         </div>
         <HunterFilter hunters={view.hunters} selectedId={hunterId} onSelect={setHunterId} compact={!desktop} />
-        {desktop && extra}
+        {desktop && <CampaignExtras npcs={view.npcs} />}
       </aside>
 
       <div className="gm__feed">
         <CampaignProblems editable={desktop} />
-        <div className="gm__feed-head">
-          <h2>{hunterName ? `O que chega para ${hunterName}` : 'Linha do tempo'}</h2>
-          {hunterName && <button type="button" className="gm__clear" onClick={() => setHunterId(null)}>Ver todos</button>}
-        </div>
-        {!wide && (
-          <div className="gm__map gm__map--inline">
-            <button type="button" className="button secondary gm__map-toggle" aria-expanded={showMap} onClick={() => setShowMap(shown => !shown)}>
-              {showMap ? 'Esconder mapa' : 'Ver mapa'}
-            </button>
-            {showMap && map}
-          </div>
-        )}
+        <FeedHead hunterName={hunterName} onClear={() => setHunterId(null)} />
+        {!wide && <InlineMap>{map}</InlineMap>}
         <Timeline
           timeline={view.timeline}
           date={view.date}
           hunterName={hunterName}
-          openId={openId}
-          freshSince={freshSince}
-          showEarlier={showEarlier}
-          onShowEarlier={() => setShowEarlier(true)}
-          onToggle={toggle}
+          openId={focus.openId}
+          freshSince={date ? realView.date : lastSeen}
+          showEarlier={focus.showEarlier}
+          onShowEarlier={focus.showAll}
+          onToggle={focus.toggle}
           editable={desktop}
-          rehearsal={marks.length > 0
-            ? {
-              realDate: realView.date,
-              marks,
-              span,
-              minutes,
-              onMove: rehearse,
-              onCarry: desktop ? () => dispatch(dateCarried(rehearsalDate)) : null,
-            }
-            : null}
+          rehearsal={withCarry(rehearsal, carry)}
         />
         <JumpToNow date={realView.date} />
       </div>
@@ -282,7 +330,7 @@ function CampaignView({ data, desktop }) {
 
       {!desktop && (
         <div className="gm__extra">
-          {extra}
+          <CampaignExtras npcs={view.npcs} />
           <p className="gm__note">Para editar a campanha, abra o Editor no computador.</p>
         </div>
       )}

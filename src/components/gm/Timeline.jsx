@@ -30,35 +30,57 @@ function names(list, open = true) {
   return `${list.slice(0, NAMES_SHOWN).join(', ')} +${list.length - NAMES_SHOWN}`
 }
 
+function Deadline({ deadline, date }) {
+  const clock = campaignClock(deadline)
+  const left = timeLeft(deadline, date)
+  return (
+    <span>
+      Prazo {clock.day} · <span className="num">{clock.hour}</span>
+      {left ? ` (faltam ${left})` : ' (passou)'}
+    </span>
+  )
+}
+
+Deadline.propTypes = {
+  deadline: PropTypes.string.isRequired,
+  date: PropTypes.string.isRequired,
+}
+
+function MissionMore({ mission, nearNames, date }) {
+  return (
+    <span className="row__more">
+      {mission.description && <span className="row__text">{mission.description}</span>}
+      <span className="row__facts">
+        <RiskChip risk={mission.risk} />
+        {mission.deadline && <Deadline deadline={mission.deadline} date={date} />}
+        {nearNames.length > 0 && <span>Perto de {names(nearNames)}</span>}
+        {!mission.position && <span>Sem posição no mapa</span>}
+      </span>
+    </span>
+  )
+}
+
+MissionMore.propTypes = {
+  mission: PropTypes.object.isRequired,
+  nearNames: PropTypes.arrayOf(PropTypes.string).isRequired,
+  date: PropTypes.string.isRequired,
+}
+
+const HUNTER_LINK = { with: 'com', near: 'perto de' }
+
 function MissionBody({ item, open, date, hunterName }) {
   const { mission, scheduled, nearNames, hunterLink } = item
-  const left = mission.deadline ? timeLeft(mission.deadline, date) : null
 
   return (
     <>
       <span className="row__title">{mission.name}</span>
-      {hunterLink && <span className="row__link">{hunterLink === 'with' ? 'com' : 'perto de'} {hunterName}</span>}
+      {hunterLink && <span className="row__link">{HUNTER_LINK[hunterLink]} {hunterName}</span>}
       <span className="row__meta">
         {scheduled ? <span className="row__scheduled">Agendada</span> : <StatusLabel status={mission.status} />}
         <span>{mission.location}</span>
         {mission.hunterNames.length > 0 && <span>com {names(mission.hunterNames, open)}</span>}
       </span>
-      {open && (
-        <span className="row__more">
-          {mission.description && <span className="row__text">{mission.description}</span>}
-          <span className="row__facts">
-            <RiskChip risk={mission.risk} />
-            {mission.deadline && (
-              <span>
-                Prazo {campaignClock(mission.deadline).day} · <span className="num">{campaignClock(mission.deadline).hour}</span>
-                {left ? ` (faltam ${left})` : ' (passou)'}
-              </span>
-            )}
-            {nearNames.length > 0 && <span>Perto de {names(nearNames)}</span>}
-            {!mission.position && <span>Sem posição no mapa</span>}
-          </span>
-        </span>
-      )}
+      {open && <MissionMore mission={mission} nearNames={nearNames} date={date} />}
     </>
   )
 }
@@ -100,25 +122,42 @@ Node.propTypes = {
   item: PropTypes.object.isRequired,
 }
 
+const CLOSED = ['completed', 'failed', 'expired']
+
+function rowClasses(item, open, fresh) {
+  const closed = item.kind === 'mission' && CLOSED.includes(item.mission.status) && !item.scheduled
+  return ['row', open && 'is-open', fresh && 'is-fresh', closed && 'is-closed'].filter(Boolean).join(' ')
+}
+
+function RowTime({ item, date }) {
+  return (
+    <span className="row__time num">
+      {item.at && campaignClock(item.at).hour}
+      {item.scheduled && <span className="row__left">em {timeLeft(item.at, date)}</span>}
+    </span>
+  )
+}
+
+RowTime.propTypes = {
+  item: PropTypes.object.isRequired,
+  date: PropTypes.string.isRequired,
+}
+
 function Row({ item, open, fresh, freshLabel, date, hunterName, onToggle }) {
-  const closed = item.kind === 'mission' && ['completed', 'failed', 'expired'].includes(item.mission.status) && !item.scheduled
-  const classes = ['row', open && 'is-open', fresh && 'is-fresh', closed && 'is-closed'].filter(Boolean).join(' ')
+  const mission = item.kind === 'mission'
 
   return (
-    <li className={classes} id={`gm-${item.id}`}>
+    <li className={rowClasses(item, open, fresh)} id={`gm-${item.id}`}>
       <button type="button" className="row__button" aria-expanded={open} onClick={() => onToggle(item)}>
-        <span className="row__time num">
-          {item.at && campaignClock(item.at).hour}
-          {item.scheduled && <span className="row__left">em {timeLeft(item.at, date)}</span>}
-        </span>
+        <RowTime item={item} date={date} />
         <Node item={item} />
         <span className="row__body">
           {fresh && <span className="row__fresh">{freshLabel}</span>}
-          {item.kind === 'mission'
+          {mission
             ? <MissionBody item={item} open={open} date={date} hunterName={hunterName} />
             : <MessageBody item={item} open={open} />}
         </span>
-        {item.kind === 'mission' && <span className="row__value num">{formatBRL(item.mission.value)}</span>}
+        {mission && <span className="row__value num">{formatBRL(item.mission.value)}</span>}
       </button>
     </li>
   )
@@ -230,12 +269,82 @@ Scrub.propTypes = {
   onMove: PropTypes.func.isRequired,
 }
 
-function NowBand({ date, next, fresh, hunterName, onReveal, rehearsal }) {
+function NowClock({ date, realDate }) {
   const clock = campaignClock(date)
-  const viewer = hunterName ? `${hunterName} vê` : 'Os jogadores veem'
+  const real = realDate && campaignClock(realDate)
+  return (
+    <p className="now__clock">
+      <span className="now__hour num">{clock.hour}</span>
+      <span className="now__day">{clock.day}</span>
+      {real && <span className="now__real">de verdade: {real.day} · <span className="num">{real.hour}</span></span>}
+    </p>
+  )
+}
+
+NowClock.propTypes = {
+  date: PropTypes.string.isRequired,
+  realDate: PropTypes.string,
+}
+
+function RehearsalHint({ onMove, onCarry }) {
+  return (
+    <p className="now__hint now__hint--rehearsal" role="status">
+      Os jogadores ainda não veem isto.
+      <button type="button" className="now__action" onClick={() => onMove(0)}>Voltar para agora</button>
+      {onCarry && <Link className="now__action" to="/gm/editor" onClick={onCarry}>Levar esta data pro Editor</Link>}
+    </p>
+  )
+}
+
+RehearsalHint.propTypes = {
+  onMove: PropTypes.func.isRequired,
+  onCarry: PropTypes.func,
+}
+
+function NowHint({ viewer, canRehearse }) {
+  const after = canRehearse
+    ? ' Arraste a bolinha na linha para ensaiar os próximos horários.'
+    : ' O que está abaixo entra quando a data da campanha avançar.'
+  return <p className="now__hint">{viewer} o que está acima.{after}</p>
+}
+
+NowHint.propTypes = {
+  viewer: PropTypes.string.isRequired,
+  canRehearse: PropTypes.bool.isRequired,
+}
+
+function Arrivals({ fresh, rehearsing }) {
+  if (fresh.length === 0) return null
+  return (
+    <p className="now__moved" role={rehearsing ? undefined : 'status'}>
+      {rehearsing ? 'Até aqui, saem' : 'Acabou de sair'}: {arrivals(fresh)}.
+    </p>
+  )
+}
+
+Arrivals.propTypes = {
+  fresh: PropTypes.array.isRequired,
+  rehearsing: PropTypes.bool.isRequired,
+}
+
+function NextUp({ next, date, onReveal }) {
+  if (!next) return null
+  return (
+    <button type="button" className="now__next" onClick={() => onReveal(next)}>
+      <span className="now__next-label">Próximo em {timeLeft(next.at, date)}</span> {itemLabel(next)}
+    </button>
+  )
+}
+
+NextUp.propTypes = {
+  next: PropTypes.object,
+  date: PropTypes.string.isRequired,
+  onReveal: PropTypes.func.isRequired,
+}
+
+function NowBand({ date, next, fresh, hunterName, onReveal, rehearsal }) {
   const rehearsing = rehearsal?.minutes > 0
   const classes = ['now', fresh.length > 0 && 'is-moved', rehearsing && 'is-rehearsal'].filter(Boolean).join(' ')
-  const real = rehearsal && campaignClock(rehearsal.realDate)
 
   return (
     <div className={classes} id="gm-agora">
@@ -243,37 +352,12 @@ function NowBand({ date, next, fresh, hunterName, onReveal, rehearsal }) {
         <span className="now__label"><span className="now__dot" aria-hidden="true" />{rehearsing ? 'Ensaio' : 'Agora'}</span>
         {rehearsal ? <Scrub {...rehearsal} /> : <span className="now__line" />}
       </div>
-      <p className="now__clock">
-        <span className="now__hour num">{clock.hour}</span>
-        <span className="now__day">{clock.day}</span>
-        {rehearsing && <span className="now__real">de verdade: {real.day} · <span className="num">{real.hour}</span></span>}
-      </p>
-      {fresh.length > 0 && (
-        <p className="now__moved" role={rehearsing ? undefined : 'status'}>
-          {rehearsing ? 'Até aqui, saem' : 'Acabou de sair'}: {arrivals(fresh)}.
-        </p>
-      )}
-      {next && (
-        <button type="button" className="now__next" onClick={() => onReveal(next)}>
-          <span className="now__next-label">Próximo em {timeLeft(next.at, date)}</span> {itemLabel(next)}
-        </button>
-      )}
+      <NowClock date={date} realDate={rehearsing ? rehearsal.realDate : null} />
+      <Arrivals fresh={fresh} rehearsing={rehearsing} />
+      <NextUp next={next} date={date} onReveal={onReveal} />
       {rehearsing
-        ? (
-          <p className="now__hint now__hint--rehearsal" role="status">
-            Os jogadores ainda não veem isto.
-            <button type="button" className="now__action" onClick={() => rehearsal.onMove(0)}>Voltar para agora</button>
-            {rehearsal.onCarry && (
-              <Link className="now__action" to="/gm/editor" onClick={rehearsal.onCarry}>Levar esta data pro Editor</Link>
-            )}
-          </p>
-        )
-        : (
-          <p className="now__hint">
-            {viewer} o que está acima.
-            {rehearsal ? ' Arraste a bolinha na linha para ensaiar os próximos horários.' : ' O que está abaixo entra quando a data da campanha avançar.'}
-          </p>
-        )}
+        ? <RehearsalHint onMove={rehearsal.onMove} onCarry={rehearsal.onCarry} />
+        : <NowHint viewer={hunterName ? `${hunterName} vê` : 'Os jogadores veem'} canRehearse={Boolean(rehearsal)} />}
     </div>
   )
 }

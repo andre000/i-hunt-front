@@ -69,7 +69,7 @@ PositionField.propTypes = {
   index: PropTypes.number.isRequired,
 }
 
-export function MissionFields({ mission, onChange }) {
+function MissionFields({ mission, onChange }) {
   return (
     <>
       <label>
