@@ -3,9 +3,8 @@ import { useEffect, useRef } from 'react'
 import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
 import 'leaflet/dist/leaflet.css'
+import { openTileMap } from '../tileMap'
 
-const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
-const ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 const PIN = '<span class="picker__pin"></span>'
 
 const isPoint = (position) => Number.isFinite(position?.lat) && Number.isFinite(position?.lng)
@@ -21,25 +20,20 @@ export function PositionPicker({ position, others, onPick }) {
   const start = useRef({ position, others })
 
   useEffect(() => {
-    let cancelled = false
-    import('leaflet').then(({ default: L }) => {
-      if (cancelled || !element.current) return
+    const close = openTileMap(element.current, { zoomControl: true }, (L, created) => {
       leaflet.current = L
-      map.current = L.map(element.current, { zoomControl: true })
-      L.tileLayer(TILES, { attribution: ATTRIBUTION, maxZoom: 19, crossOrigin: '' }).addTo(map.current)
-      map.current.attributionControl.setPrefix(false)
-      map.current.on('click', ({ latlng }) => pick.current({ lat: latlng.lat, lng: latlng.lng }))
+      map.current = created
+      created.on('click', ({ latlng }) => pick.current({ lat: latlng.lat, lng: latlng.lng }))
 
       const { position: first, others: nearby } = start.current
       const points = nearby.filter(isPoint).map(({ lat, lng }) => [lat, lng])
-      if (isPoint(first)) map.current.setView([first.lat, first.lng], 15)
-      else if (points.length > 0) map.current.fitBounds(points, { padding: [32, 32], maxZoom: 14 })
-      else map.current.setView([0, 0], 2)
+      if (isPoint(first)) created.setView([first.lat, first.lng], 15)
+      else if (points.length > 0) created.fitBounds(points, { padding: [32, 32], maxZoom: 14 })
+      else created.setView([0, 0], 2)
       place.current()
     })
     return () => {
-      cancelled = true
-      map.current?.remove()
+      close()
       map.current = null
       marker.current = null
     }

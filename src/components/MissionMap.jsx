@@ -3,9 +3,8 @@ import { useEffect, useRef } from 'react'
 import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
 import 'leaflet/dist/leaflet.css'
+import { openTileMap } from './tileMap'
 
-const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
-const ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 
 function markerHtml(mission, selected, revealDelay) {
   const revealing = revealDelay !== null
@@ -33,27 +32,22 @@ export function MissionMap({ missions, selectedId, onSelect, interactive = true,
   const draw = useRef(null)
 
   useEffect(() => {
-    let cancelled = false
-    import('leaflet').then(({ default: L }) => {
-      if (cancelled || !element.current) return
+    const close = openTileMap(element.current, {
+      zoomControl: false,
+      attributionControl: true,
+      dragging: interactive,
+      scrollWheelZoom: interactive,
+      doubleClickZoom: interactive,
+      touchZoom: interactive,
+      keyboard: interactive,
+    }, (L, created) => {
       leaflet.current = L
-      map.current = L.map(element.current, {
-        zoomControl: false,
-        attributionControl: true,
-        dragging: interactive,
-        scrollWheelZoom: interactive,
-        doubleClickZoom: interactive,
-        touchZoom: interactive,
-        keyboard: interactive,
-      })
-      L.tileLayer(TILES, { attribution: ATTRIBUTION, maxZoom: 19, crossOrigin: '' }).addTo(map.current)
-      map.current.attributionControl.setPrefix(false)
-      layer.current = L.layerGroup().addTo(map.current)
+      map.current = created
+      layer.current = L.layerGroup().addTo(created)
       draw.current()
     })
     return () => {
-      cancelled = true
-      map.current?.remove()
+      close()
       map.current = null
     }
   }, [interactive])
