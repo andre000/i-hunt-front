@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { renderApp } from '../../test/renderApp'
 import { validCampaign } from '../../campaign/fixtures'
-import { memoryStorage } from '../../test/fakes'
+import { memoryStorage, respondWith } from '../../test/fakes'
 
 afterEach(() => {
   cleanup()
@@ -152,26 +152,114 @@ describe('Replacing the Rascunho', () => {
   })
 })
 
-describe('Mudanças não baixadas', () => {
+describe('Mudanças não publicadas', () => {
   it('is not shown for a draft just loaded', async () => {
     await renderApp({ path: '/gm/editor', hunterId: null })
     await screen.findByLabelText('Nome da campanha')
 
-    expect(screen.queryByText('Mudanças não baixadas')).toBeNull()
+    expect(screen.queryByText('Mudanças não publicadas')).toBeNull()
   })
 
   it('shows after a change, survives a reload and goes away after downloading', async () => {
     const editorStorage = memoryStorage()
     await renderApp({ path: '/gm/editor', hunterId: null, editorStorage })
     fireEvent.change(await screen.findByLabelText('Nome da campanha'), { target: { value: 'Noite em Pelotas' } })
-    expect(screen.getByText('Mudanças não baixadas')).toBeTruthy()
+    expect(screen.getByText('Mudanças não publicadas')).toBeTruthy()
     cleanup()
 
     await renderApp({ path: '/gm/editor', hunterId: null, editorStorage })
-    expect(await screen.findByText('Mudanças não baixadas')).toBeTruthy()
+    expect(await screen.findByText('Mudanças não publicadas')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Baixar' }))
-    await waitFor(() => expect(screen.queryByText('Mudanças não baixadas')).toBeNull())
+    await waitFor(() => expect(screen.queryByText('Mudanças não publicadas')).toBeNull())
+  })
+})
+
+describe('Publicar', () => {
+  const TOKEN_KEY = 'ihunt.editor.publishToken'
+
+  async function publishWithPassword(password) {
+    fireEvent.click(await screen.findByRole('button', { name: 'Publicar' }))
+    const form = screen.getByRole('form', { name: 'Senha de publicação' })
+    fireEvent.change(within(form).getByLabelText('Senha de publicação'), { target: { value: password } })
+    fireEvent.click(within(form).getByRole('button', { name: 'Publicar com esta senha' }))
+  }
+
+  it('asks the password the first time and publishes a draft from the bucket under the same name', async () => {
+    const { publishFetch, editorStorage } = await renderApp({ path: '/gm/editor', hunterId: null })
+    await screen.findByLabelText('Nome da campanha')
+
+    await publishWithPassword('senha-do-gm')
+
+    expect(await screen.findByText('Publicado.')).toBeTruthy()
+    const [url, request] = publishFetch.mock.calls[0]
+    expect(url).toBe('/api/campanhas/campanha.json')
+    expect(request.method).toBe('PUT')
+    expect(request.headers.Authorization).toBe('Bearer senha-do-gm')
+    expect(editorStorage.getItem(TOKEN_KEY)).toBe('senha-do-gm')
+  })
+
+  it('publishes without asking again when the password is saved', async () => {
+    const { publishFetch } = await renderApp({ path: '/gm/editor', hunterId: null, editorStorage: memoryStorage({ [TOKEN_KEY]: 'guardada' }) })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Publicar' }))
+
+    expect(await screen.findByText('Publicado.')).toBeTruthy()
+    expect(screen.queryByRole('form', { name: 'Senha de publicação' })).toBeNull()
+    expect(publishFetch.mock.calls[0][1].headers.Authorization).toBe('Bearer guardada')
+  })
+
+  it('publishes the same file that Baixar makes', async () => {
+    const { publishFetch, saveFile } = await renderApp({ path: '/gm/editor', hunterId: null, editorStorage: memoryStorage({ [TOKEN_KEY]: 'guardada' }) })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Publicar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Baixar' }))
+
+    await screen.findByText('Publicado.')
+    expect(publishFetch.mock.calls[0][1].body).toBe(saveFile.mock.calls[0][1])
+  })
+
+  it('sends nothing when the GM cancels the password', async () => {
+    const { publishFetch, editorStorage } = await renderApp({ path: '/gm/editor', hunterId: null })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Publicar' }))
+    fireEvent.click(within(screen.getByRole('form', { name: 'Senha de publicação' })).getByRole('button', { name: 'Cancelar' }))
+
+    expect(screen.queryByRole('form', { name: 'Senha de publicação' })).toBeNull()
+    expect(publishFetch).not.toHaveBeenCalled()
+    expect(editorStorage.getItem(TOKEN_KEY)).toBeNull()
+  })
+
+  it('cannot publish a draft with errors', async () => {
+    await renderApp({ path: '/gm/editor', hunterId: null, campaignUrl: null })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Começar em branco' }))
+
+    expect(screen.getByRole('button', { name: 'Publicar' }).disabled).toBe(true)
+  })
+
+  it('clears Mudanças não publicadas after publishing', async () => {
+    await renderApp({ path: '/gm/editor', hunterId: null, editorStorage: memoryStorage({ [TOKEN_KEY]: 'guardada' }) })
+    fireEvent.change(await screen.findByLabelText('Nome da campanha'), { target: { value: 'Noite em Pelotas' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
+
+    await waitFor(() => expect(screen.queryByText('Mudanças não publicadas')).toBeNull())
+  })
+
+  it('keeps Mudanças não publicadas when publishing fails', async () => {
+    await renderApp({
+      path: '/gm/editor',
+      hunterId: null,
+      editorStorage: memoryStorage({ [TOKEN_KEY]: 'guardada' }),
+      publishFetch: respondWith('erro', 500),
+    })
+    fireEvent.change(await screen.findByLabelText('Nome da campanha'), { target: { value: 'Noite em Pelotas' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
+
+    expect(await screen.findByText('Não deu para publicar. O rascunho continua salvo.')).toBeTruthy()
+    expect(screen.getByText('Mudanças não publicadas')).toBeTruthy()
   })
 })
 
@@ -193,7 +281,7 @@ describe('Data da campanha', () => {
 
     expect(screen.getByLabelText('Data da campanha').value).toBe('2026-10-04T23:00')
     expect(store.getState().editor.draft.campaign.date).toBe('2026-10-04T23:00:00-03:00')
-    expect(screen.getByText('Mudanças não baixadas')).toBeTruthy()
+    expect(screen.getByText('Mudanças não publicadas')).toBeTruthy()
   })
 
   it('cannot advance when nothing is scheduled', async () => {

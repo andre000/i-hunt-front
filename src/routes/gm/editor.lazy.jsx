@@ -10,8 +10,9 @@ import { NewItemForm } from '../../components/editor/NewItemForm'
 import { NpcForm } from '../../components/editor/NpcForm'
 import { MissionBadge, MissionForm, NewMissionForm } from '../../components/editor/MissionForm'
 import { MessageBadge, MessageForm, NewMessageForm } from '../../components/editor/MessageForm'
+import { PublishPanel } from '../../components/editor/PublishPanel'
 import { useDesktopWidth } from '../../components/useDesktopWidth'
-import { campaignDateAdvanced, campaignEdited, carriedDateApplied, carriedDateDropped, itemAdded, itemMoved, messageAdded, downloadDraft, draftDiscarded, draftOpened, openDraftFile, openPublishedDraft } from '../../store/editor'
+import { campaignDateAdvanced, campaignEdited, carriedDateApplied, carriedDateDropped, itemAdded, itemMoved, messageAdded, downloadDraft, draftDiscarded, draftOpened, openDraftFile, openPublishedDraft, startPublishing } from '../../store/editor'
 import { blankDraft, messageOrder, nextScheduled } from '../../campaign/draft'
 import { dateFromInput, dateToInput } from '../../campaign/draftDates'
 import { explainErrors } from '../../campaign/explainErrors'
@@ -350,7 +351,7 @@ function useCarriedDate(ask, waiting) {
     if (step === 'open') dispatch(openPublishedDraft())
     if (step === 'ask') {
       ask(
-        'Abrir a campanha publicada para levar a data? O rascunho atual tem mudanças não baixadas e será substituído.',
+        'Abrir a campanha publicada para levar a data? O rascunho atual tem mudanças não publicadas e será substituído.',
         'Abrir a publicada',
         () => dispatch(openPublishedDraft()),
         () => dispatch(carriedDateDropped()),
@@ -361,6 +362,7 @@ function useCarriedDate(ask, waiting) {
 
 function DraftBar({ draft, errors, unsaved, onChoose, onDiscard }) {
   const dispatch = useDispatch()
+  const { target, publishing } = useSelector(state => state.editor)
   const bad = errors.length > 0
 
   return (
@@ -369,10 +371,18 @@ function DraftBar({ draft, errors, unsaved, onChoose, onDiscard }) {
       <button type="button" className="editor__link" onClick={onDiscard}>Descartar</button>
       <span className="editor__spacer" />
       <CampaignDate draft={draft} />
-      {unsaved && <span className="editor__unsaved">Mudanças não baixadas</span>}
+      {unsaved && <span className="editor__unsaved">Mudanças não publicadas</span>}
       <span className={bad ? 'editor__count editor__count--bad' : 'editor__count'}>{errorCount(errors.length)}</span>
-      <button type="button" className="button primary editor__download" disabled={bad} onClick={() => dispatch(downloadDraft())}>
+      <button type="button" className="button secondary editor__action" disabled={bad} onClick={() => dispatch(downloadDraft())}>
         Baixar
+      </button>
+      <button
+        type="button"
+        className="button primary editor__action"
+        disabled={bad || !target || publishing === 'sending'}
+        onClick={() => dispatch(startPublishing())}
+      >
+        Publicar
       </button>
     </>
   )
@@ -474,6 +484,7 @@ function Editor() {
         )}
       </div>
       <PendingConfirm confirm={confirm} onClose={() => setConfirm(null)} />
+      {draft && <PublishPanel />}
       <OpenError error={error} />
       {loading && <p className="editor__loading">Carregando campanha…</p>}
       {editing && (
@@ -917,6 +928,41 @@ const editorPage = css`
     }
   }
 
+  .editor__password {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--apagado);
+
+    input {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid var(--linha);
+      border-radius: 10px;
+      background-color: var(--asfalto);
+      color: var(--texto);
+      font: inherit;
+      font-size: 14px;
+    }
+  }
+
+  .editor__published,
+  .editor__publish-error {
+    margin: 12px 20px 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .editor__published {
+    color: var(--ok);
+  }
+
+  .editor__publish-error {
+    color: var(--perigo);
+  }
+
   .editor__unsaved {
     font-size: 13px;
     font-weight: 600;
@@ -1025,7 +1071,7 @@ const editorPage = css`
     font-weight: 600;
   }
 
-  .editor__download {
+  .editor__action {
     padding: 6px 14px;
     font-size: 14px;
 

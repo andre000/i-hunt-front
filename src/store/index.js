@@ -19,7 +19,7 @@ function saveToComputer(name, text) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-export function createAppStore({ sync, pendingInvite = null, leaveDemo = goHome, saveFile = saveToComputer, drafts = createDraftStorage(null) }) {
+export function createAppStore({ sync, pendingInvite = null, leaveDemo = goHome, saveFile = saveToComputer, publisher, drafts = createDraftStorage(null) }) {
   const store = configureStore({
     reducer: {
       campaign: campaignReducer,
@@ -36,7 +36,7 @@ export function createAppStore({ sync, pendingInvite = null, leaveDemo = goHome,
       editor: initialEditorState(drafts.load()),
     },
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({ thunk: { extraArgument: { sync, leaveDemo, saveFile } } }),
+      getDefaultMiddleware({ thunk: { extraArgument: { sync, leaveDemo, saveFile, publisher } } }),
   })
 
   let saved = store.getState().editor

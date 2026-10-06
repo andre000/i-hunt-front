@@ -9,10 +9,12 @@ import { createSync } from '../campaign/sync'
 import { createDemoSync } from '../campaign/demoSync'
 import { validCampaign } from '../campaign/fixtures'
 import { createDraftStorage } from '../campaign/draftStorage'
+import { createPublisher } from '../campaign/publisher'
 import { memoryStorage, respondWith } from './fakes'
 import example from '../../public/exemplo-campanha.json'
 
-const CAMPAIGN_URL = 'https://pub-123.r2.dev/campanha.json'
+const PUBLIC_BASE_URL = 'https://pub-123.r2.dev'
+const CAMPAIGN_URL = `${PUBLIC_BASE_URL}/campanha.json`
 
 function demoSetup({ hunterId, introSeen = true, night = 1, status = 200 }) {
   const storage = memoryStorage({
@@ -41,11 +43,13 @@ export async function renderApp({
   pendingInvite = null,
   demo = null,
   editorStorage = memoryStorage(),
+  publishFetch = vi.fn(respondWith({ url: CAMPAIGN_URL })),
 } = {}) {
   const sync = demo ? demoSetup(demo) : realSetup({ body, status, hunterId, campaignUrl })
   const leaveDemo = vi.fn()
   const saveFile = vi.fn()
-  const store = createAppStore({ sync, pendingInvite, leaveDemo, saveFile, drafts: createDraftStorage(editorStorage) })
+  const publisher = createPublisher({ fetch: publishFetch, storage: editorStorage, publicBaseUrl: PUBLIC_BASE_URL })
+  const store = createAppStore({ sync, pendingInvite, leaveDemo, saveFile, publisher, drafts: createDraftStorage(editorStorage) })
   store.dispatch(campaignLoaded(await sync.load()))
 
   const router = createRouter({ routeTree, history: createMemoryHistory({ initialEntries: [path] }) })
@@ -54,5 +58,5 @@ export async function renderApp({
       <RouterProvider router={router} />
     </Provider>,
   )
-  return { ...view, store, router, sync, leaveDemo, saveFile, editorStorage }
+  return { ...view, store, router, sync, leaveDemo, saveFile, publishFetch, editorStorage }
 }

@@ -1,9 +1,12 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import { createAsyncThunk, createSlice, original } from '@reduxjs/toolkit'
 import { addItem, addMessage, advanceToNextScheduled, moveItem, draftFile, draftFileName, draftFrom, localFileName, readDraftText, removeHunter, removeItem, removeNpc, setMissionPosition, updateCampaign, updateItem } from '../campaign/draft'
 
 export const openPublishedDraft = createAsyncThunk(
   'editor/openPublished',
-  (url, { extra }) => extra.sync.readPublished(url),
+  async (url, { extra }) => {
+    const result = await extra.sync.readPublished(url)
+    return { ...result, target: extra.publisher.targetOf(result.url) }
+  },
 )
 
 function readText(file) {
@@ -20,34 +23,55 @@ export const openDraftFile = createAsyncThunk(
   async (file) => ({ ...readDraftText(await readText(file)), fileName: localFileName(file.name) }),
 )
 
+const campaignFile = (draft) => draftFile(draft, { schemaUrl: `${window.location.origin}/campaign.schema.json` })
+
 export const downloadDraft = createAsyncThunk(
   'editor/download',
   (_, { extra, getState }) => {
     const { draft, fileName } = getState().editor
-    extra.saveFile(fileName, draftFile(draft, { schemaUrl: `${window.location.origin}/campaign.schema.json` }))
+    extra.saveFile(fileName, campaignFile(draft))
   },
 )
+
+export const publishDraft = createAsyncThunk(
+  'editor/publish',
+  async (token, { extra, getState }) => {
+    const { draft, target } = getState().editor
+    await extra.publisher.publish(target, campaignFile(draft), token)
+    return { sent: draft }
+  },
+)
+
+export function startPublishing() {
+  return (dispatch, _, { publisher }) => {
+    const token = publisher.savedToken()
+    dispatch(token ? publishDraft(token) : publishPasswordAsked())
+  }
+}
 
 export function initialEditorState(saved = null) {
   return {
     draft: saved?.draft ?? null,
     fileName: saved?.fileName ?? draftFileName(null),
+    target: saved?.target ?? null,
     unsaved: saved?.unsaved ?? false,
     started: Boolean(saved),
     loading: false,
     error: null,
     carriedDate: null,
     carriedReady: false,
+    publishing: null,
   }
 }
 
 function edit(state, change) {
   state.draft = change(state.draft)
   state.unsaved = true
+  if (state.publishing === 'done' || state.publishing === 'failed') state.publishing = null
 }
 
-function open(state, draft, fileName) {
-  Object.assign(state, { draft, fileName, unsaved: false, started: true, loading: false, error: null })
+function open(state, draft, fileName, target = null) {
+  Object.assign(state, { draft, fileName, target, unsaved: false, started: true, loading: false, error: null, publishing: null })
 }
 
 const editorSlice = createSlice({
@@ -105,6 +129,12 @@ const editorSlice = createSlice({
       state.carriedDate = null
       state.carriedReady = false
     },
+    publishPasswordAsked(state) {
+      state.publishing = 'password'
+    },
+    publishCancelled(state) {
+      state.publishing = null
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -116,7 +146,7 @@ const editorSlice = createSlice({
       .addCase(openPublishedDraft.fulfilled, (state, { payload }) => {
         state.loading = false
         if (payload.error) state.error = payload.error
-        else open(state, draftFrom(payload.raw), draftFileName(payload.url))
+        else open(state, draftFrom(payload.raw), draftFileName(payload.url), payload.target)
         if (payload.error) state.carriedDate = null
         state.carriedReady = Boolean(state.carriedDate)
       })
@@ -138,8 +168,18 @@ const editorSlice = createSlice({
       .addCase(downloadDraft.fulfilled, (state) => {
         state.unsaved = false
       })
+      .addCase(publishDraft.pending, (state) => {
+        state.publishing = 'sending'
+      })
+      .addCase(publishDraft.fulfilled, (state, { payload }) => {
+        state.publishing = 'done'
+        if (original(state).draft === payload.sent) state.unsaved = false
+      })
+      .addCase(publishDraft.rejected, (state) => {
+        state.publishing = 'failed'
+      })
   },
 })
 
-export const { campaignDateAdvanced, campaignEdited, carriedDateApplied, carriedDateDropped, dateCarried, draftDiscarded, draftOpened, hunterRemoved, itemAdded, itemMoved, itemRemoved, itemUpdated, messageAdded, missionPositioned, npcRemoved } = editorSlice.actions
+export const { campaignDateAdvanced, campaignEdited, carriedDateApplied, carriedDateDropped, dateCarried, draftDiscarded, draftOpened, hunterRemoved, itemAdded, itemMoved, itemRemoved, itemUpdated, messageAdded, missionPositioned, npcRemoved, publishCancelled, publishPasswordAsked } = editorSlice.actions
 export default editorSlice.reducer

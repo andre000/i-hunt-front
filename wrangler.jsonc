@@ -1,9 +1,17 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "i-hunt",
+  "main": "worker/index.js",
   "compatibility_date": "2026-10-05",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "r2_buckets": [
+    { "binding": "CAMPAIGNS", "bucket_name": "ihunt" }
+  ],
+  "vars": {
+    "PUBLIC_BASE_URL": "https://pub-CODIGO.r2.dev"
   }
 }

@@ -15,3 +15,18 @@ export function respondWith(body, status = 200) {
     text: async () => (typeof body === 'string' ? body : JSON.stringify(body)),
   })
 }
+
+export function memoryBucket(initial = {}) {
+  const objects = new Map(Object.entries(initial).map(([key, body]) => [key, { body, contentType: null }]))
+  return {
+    async put(key, body, options = {}) {
+      objects.set(key, { body: await new Response(body).text(), contentType: options.httpMetadata?.contentType ?? null })
+    },
+    async get(key) {
+      const object = objects.get(key)
+      if (!object) return null
+      return { text: async () => object.body, httpMetadata: { contentType: object.contentType } }
+    },
+    keys: () => [...objects.keys()],
+  }
+}

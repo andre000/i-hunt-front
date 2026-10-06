@@ -140,7 +140,7 @@ describe('GM view', () => {
     fireEvent.change(await screen.findByLabelText('Ensaiar a data da campanha'), { target: { value: '120' } })
     fireEvent.click(screen.getByRole('link', { name: 'Levar esta data pro Editor' }))
 
-    expect(await screen.findByText(/O rascunho atual tem mudanças não baixadas/)).toBeTruthy()
+    expect(await screen.findByText(/O rascunho atual tem mudanças não publicadas/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     expect(store.getState().editor.draft.campaign.name).toBe('Rascunho com mudanças')
     expect(store.getState().editor.carriedDate).toBeNull()

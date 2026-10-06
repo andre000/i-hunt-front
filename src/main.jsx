@@ -7,6 +7,7 @@ import { createAppStore } from './store'
 import { campaignLoaded } from './store/campaign'
 import { createSync } from './campaign/sync'
 import { createDraftStorage } from './campaign/draftStorage'
+import { createPublisher } from './campaign/publisher'
 import { createSyncLoop } from './campaign/syncLoop'
 import { readInvite } from './campaign/invite'
 import { createDemoSync } from './campaign/demoSync'
@@ -43,7 +44,12 @@ const invite = mode === 'demo' ? null : readInvite(window.location.search)
 const pendingInvite = invite && sync.offerInvite(invite) === 'needs-confirmation' ? invite : null
 if (invite) window.history.replaceState(null, '', window.location.pathname)
 
-const store = createAppStore({ sync, pendingInvite, drafts: createDraftStorage(browserStorage()) })
+const publisher = createPublisher({
+  fetch: window.fetch.bind(window),
+  storage: browserStorage(),
+  publicBaseUrl: import.meta.env.VITE_PUBLIC_BASE_URL,
+})
+const store = createAppStore({ sync, pendingInvite, publisher, drafts: createDraftStorage(browserStorage()) })
 
 function onReturn(run) {
   const onVisible = () => {
