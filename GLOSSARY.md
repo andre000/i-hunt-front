@@ -57,9 +57,13 @@ A tela onde o GM acompanha a campanha publicada, como os jogadores a recebem.
 _Avoid_: painel, admin, dashboard
 
 **Editor da campanha**:
-A tela onde o GM monta e altera o rascunho e o baixa como arquivo da campanha.
+A tela onde o GM monta e altera o rascunho, e o publica ou o baixa como arquivo da campanha.
 _Avoid_: admin, painel, CMS
 
 **Rascunho**:
 A versão da campanha que o GM está preparando no Editor da campanha, ainda não publicada.
 _Avoid_: edição, versão local
+
+**Publicar**:
+Gravar o Rascunho no bucket como a campanha que os jogadores leem, pelo botão **Publicar** do Editor da campanha ou subindo o arquivo à mão.
+_Avoid_: salvar, enviar, subir, deploy
