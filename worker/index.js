@@ -30,6 +30,17 @@ function isJson(text) {
   }
 }
 
+function historyPrefix(name) {
+  return `historico/${name.slice(0, -'.json'.length)}/`
+}
+
+async function keepPrevious(bucket, name) {
+  const previous = await bucket.get(name)
+  if (!previous) return
+  const copy = `${historyPrefix(name)}${new Date().toISOString()}.json`
+  await bucket.put(copy, await previous.text(), { httpMetadata: { contentType: 'application/json' } })
+}
+
 async function publishCampaign(request, env, name) {
   if (!(await authorized(request, env))) return json({ error: 'unauthorized' }, 401)
   if (!CAMPAIGN_NAME.test(name)) return json({ error: 'invalid' }, 400)
@@ -38,6 +49,7 @@ async function publishCampaign(request, env, name) {
   if (body.byteLength > MAX_BYTES) return json({ error: 'too large' }, 413)
   const text = new TextDecoder().decode(body)
   if (!isJson(text)) return json({ error: 'invalid' }, 400)
+  await keepPrevious(env.CAMPAIGNS, name)
   await env.CAMPAIGNS.put(name, text, { httpMetadata: { contentType: 'application/json' } })
   return json({ url: `${env.PUBLIC_BASE_URL}/${name}` })
 }

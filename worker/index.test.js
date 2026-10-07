@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import worker from './index'
 import { memoryBucket } from '../src/test/fakes'
@@ -120,6 +120,64 @@ describe('Publishing a campaign', () => {
     const other = await worker.fetch(new Request('https://ihunt.test/api/outra'), env)
     expect(other.status).toBe(404)
     expect(env.CAMPAIGNS.keys()).toEqual([])
+  })
+})
+
+describe('History before overwriting', () => {
+  const NOW = '2026-10-07T21:30:00.000Z'
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(NOW))
+  })
+
+  afterEach(() => vi.useRealTimers())
+
+  it('copies the previous version into the campaign history, dated, before replacing it', async () => {
+    const env = setup({ 'noites.json': '{"old":true}' })
+
+    const response = await publish(env, 'noites.json')
+
+    expect(response.status).toBe(200)
+    const copy = await env.CAMPAIGNS.get(`historico/noites/${NOW}.json`)
+    expect(await copy.text()).toBe('{"old":true}')
+    expect(copy.httpMetadata.contentType).toBe('application/json')
+    expect(await (await env.CAMPAIGNS.get('noites.json')).text()).toBe(CAMPAIGN)
+  })
+
+  it('creates no copy on the first publish of a new campaign', async () => {
+    const env = setup()
+
+    await publish(env, 'noites.json')
+
+    expect(env.CAMPAIGNS.keys()).toEqual(['noites.json'])
+  })
+
+  it.each([
+    ['a wrong password', { token: 'chute' }],
+    ['a body that is not JSON', { body: '<html>' }],
+    ['a body above 1 MB', { body: JSON.stringify({ notes: 'x'.repeat(1024 * 1024) }) }],
+  ])('creates no copy when publishing is refused for %s', async (_, options) => {
+    const env = setup({ 'noites.json': '{"old":true}' })
+
+    await publish(env, 'noites.json', options)
+
+    expect(env.CAMPAIGNS.keys()).toEqual(['noites.json'])
+  })
+
+  it('keeps the old campaign when the copy cannot be stored', async () => {
+    const env = setup({ 'noites.json': '{"old":true}' })
+    const put = env.CAMPAIGNS.put
+    env.CAMPAIGNS.put = async (key, ...rest) => {
+      if (key.startsWith('historico/')) throw new Error('falhou')
+      return put(key, ...rest)
+    }
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const response = await publish(env, 'noites.json')
+
+    expect(response.status).toBe(500)
+    expect(await (await env.CAMPAIGNS.get('noites.json')).text()).toBe('{"old":true}')
   })
 })
 
