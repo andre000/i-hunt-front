@@ -56,7 +56,7 @@ O que você edita é o **Rascunho**. Ele fica salvo no navegador a cada mudança
 
 **Publicar.** **Publicar** grava o Rascunho no bucket, e em cerca de 30 segundos os jogadores veem a mudança. Só funciona sem erros. O arquivo publicado é igual ao do **Baixar** (com a linha `$schema` e formatado). O editor nunca publica sozinho: só quando você clica.
 
-- **Nome do arquivo.** Se o Rascunho veio da campanha publicada, ele publica no mesmo arquivo, sem perguntar. Num Rascunho em branco ou aberto do computador, a primeira publicação pede o "Nome do arquivo no bucket", já preenchido com o nome do arquivo. Use só letras minúsculas, números e `-`, terminando em `.json` (ex.: `noites.json`). Se o nome for o da campanha que os jogadores leem, o editor avisa "Esse é o arquivo que os jogadores leem. Publicar vai substituir a campanha deles." e o botão vira **Substituir**; senão, é **Continuar**. Depois disso, esse Rascunho publica sempre nesse nome.
+- **Nome do arquivo.** Se o Rascunho veio da campanha publicada, ele publica no mesmo arquivo, sem perguntar. Num Rascunho em branco ou aberto do computador, a primeira publicação pede o "Nome do arquivo no bucket", já preenchido com o nome do arquivo. Use só letras minúsculas, números e `-`, terminando em `.json` (ex.: `noites.json`). Se o nome for o da campanha aberta neste aparelho, o editor avisa "Esse é o arquivo que os jogadores leem. Publicar vai substituir a campanha deles." e o botão vira **Substituir**; senão, é **Continuar**. Depois disso, esse Rascunho publica sempre nesse nome.
 - **Senha.** Na primeira vez, o editor pede a "Senha de publicação" (a do `PUBLISH_TOKEN`, seção 5). Use **Publicar com esta senha**. O navegador guarda a senha; nas próximas vezes, **Publicar** vai direto.
 - **Convite.** Depois de "Publicado.", o editor mostra o link de Convite da campanha, com **Copiar**. Mande esse link para os jogadores (seção 6).
 - **Mudanças não publicadas** aparece quando o Rascunho mudou depois da última publicação ou download.
@@ -70,7 +70,7 @@ Se der errado, o Rascunho continua salvo no navegador:
 | "Arquivo grande demais para publicar." | O limite é 1 MB. Apague mensagens ou missões antigas. |
 | "Não deu para publicar. O rascunho continua salvo." | Confira a internet e tente de novo. |
 
-**Baixar** também só funciona sem erros e salva o arquivo no computador, com o mesmo nome do publicado (ou `campanha.json`). Use para guardar uma cópia ou para subir à mão (seção 5).
+**Baixar** também só funciona sem erros e salva o arquivo no computador, com o nome do arquivo que você abriu (ou `campanha.json` num Rascunho em branco). Use para guardar uma cópia ou para subir à mão (seção 5).
 
 ## 3. Validar no editor de texto
 
