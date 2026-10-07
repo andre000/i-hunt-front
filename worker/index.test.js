@@ -10,6 +10,19 @@ function setup(objects) {
   return { CAMPAIGNS: memoryBucket(objects), PUBLISH_TOKEN: TOKEN, PUBLIC_BASE_URL: 'https://pub-123.r2.dev' }
 }
 
+function historyOf(campaign, count) {
+  return Object.fromEntries(
+    Array.from({ length: count }, (_, index) => [
+      `historico/${campaign}/2026-09-${String(index + 1).padStart(2, '0')}T00:00:00.000Z.json`,
+      `{"version":${index}}`,
+    ]),
+  )
+}
+
+function historyKeys(env, campaign) {
+  return env.CAMPAIGNS.keys().filter((key) => key.startsWith(`historico/${campaign}/`))
+}
+
 function publish(env, name, { token = TOKEN, body = CAMPAIGN, method = 'PUT' } = {}) {
   const headers = token ? { Authorization: `Bearer ${token}` } : {}
   return worker.fetch(new Request(`https://ihunt.test/api/campanhas/${name}`, { method, headers, body }), env)
@@ -178,6 +191,36 @@ describe('History before overwriting', () => {
 
     expect(response.status).toBe(500)
     expect(await (await env.CAMPAIGNS.get('noites.json')).text()).toBe('{"old":true}')
+  })
+  it('keeps only the 20 newest copies of the campaign', async () => {
+    const env = setup({ 'noites.json': '{"old":true}', ...historyOf('noites', 20) })
+
+    await publish(env, 'noites.json')
+
+    const keys = historyKeys(env, 'noites')
+    expect(keys).toHaveLength(20)
+    expect(keys).not.toContain('historico/noites/2026-09-01T00:00:00.000Z.json')
+    expect(keys).toContain('historico/noites/2026-09-02T00:00:00.000Z.json')
+    expect(keys).toContain(`historico/noites/${NOW}.json`)
+  })
+
+  it('deletes nothing while the campaign has fewer than 20 copies', async () => {
+    const env = setup({ 'noites.json': '{"old":true}', ...historyOf('noites', 5) })
+
+    await publish(env, 'noites.json')
+
+    expect(historyKeys(env, 'noites')).toHaveLength(6)
+  })
+
+  it('never touches another campaign or its history, even with a name that starts the same', async () => {
+    const other = { 'noites-2.json': '{"other":true}', ...historyOf('noites-2', 20) }
+    const env = setup({ 'noites.json': '{"old":true}', ...historyOf('noites', 20), ...other })
+
+    await publish(env, 'noites.json')
+
+    for (const [key, body] of Object.entries(other)) {
+      expect(await (await env.CAMPAIGNS.get(key)).text()).toBe(body)
+    }
   })
 })
 

@@ -27,6 +27,13 @@ export function memoryBucket(initial = {}) {
       if (!object) return null
       return { text: async () => object.body, httpMetadata: { contentType: object.contentType } }
     },
+    async list({ prefix = '' } = {}) {
+      const keys = [...objects.keys()].filter((key) => key.startsWith(prefix))
+      return { objects: keys.map((key) => ({ key })), truncated: false }
+    },
+    async delete(keys) {
+      for (const key of [keys].flat()) objects.delete(key)
+    },
     keys: () => [...objects.keys()],
   }
 }

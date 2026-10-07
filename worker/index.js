@@ -1,6 +1,7 @@
 const CAMPAIGN_PATH = '/api/campanhas/'
 const CAMPAIGN_NAME = /^[a-z0-9-]+\.json$/
 const MAX_BYTES = 1024 * 1024
+const HISTORY_LIMIT = 20
 
 async function digest(text) {
   return new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))
@@ -34,11 +35,18 @@ function historyPrefix(name) {
   return `historico/${name.slice(0, -'.json'.length)}/`
 }
 
+async function pruneHistory(bucket, prefix) {
+  const { objects } = await bucket.list({ prefix })
+  const stale = objects.map(({ key }) => key).sort().slice(0, -HISTORY_LIMIT)
+  if (stale.length > 0) await bucket.delete(stale)
+}
+
 async function keepPrevious(bucket, name) {
   const previous = await bucket.get(name)
   if (!previous) return
   const copy = `${historyPrefix(name)}${new Date().toISOString()}.json`
   await bucket.put(copy, await previous.text(), { httpMetadata: { contentType: 'application/json' } })
+  await pruneHistory(bucket, historyPrefix(name))
 }
 
 async function publishCampaign(request, env, name) {
