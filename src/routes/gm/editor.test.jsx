@@ -559,6 +559,30 @@ describe('Publicar', () => {
     })
   })
 
+  it('keeps a publish that ends after switching drafts away from the new draft', async () => {
+    let answer
+    await renderApp({
+      path: '/gm/editor',
+      hunterId: null,
+      editorStorage: memoryStorage({ [TOKEN_KEY]: 'guardada' }),
+      publishFetch: () => new Promise(resolve => { answer = resolve }),
+    })
+    fireEvent.click(await screen.findByRole('button', { name: 'Publicar' }))
+    await screen.findByRole('button', { name: 'Publicando…' })
+    const other = validCampaign()
+    other.campaign.name = 'Outra mesa'
+    fireEvent.click(screen.getByRole('button', { name: 'Trocar rascunho' }))
+    fireEvent.change(screen.getByLabelText('Abrir arquivo do computador'), { target: { files: [new File([JSON.stringify(other)], 'mesa.json')] } })
+    fireEvent.click(screen.getByRole('button', { name: 'Substituir' }))
+    await waitFor(() => expect(screen.getByLabelText('Nome da campanha').value).toBe('Outra mesa'))
+
+    await act(async () => answer(await respondWith({ url: 'https://pub-123.r2.dev/campanha.json' })()))
+
+    expect(screen.queryByText('Publicado.')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
+    expect(screen.getByRole('form', { name: 'Nome do arquivo publicado' })).toBeTruthy()
+  })
+
   it('shows the Convite after publishing a draft from the bucket', async () => {
     await renderApp({ path: '/gm/editor', hunterId: null, editorStorage: memoryStorage({ [TOKEN_KEY]: 'guardada' }) })
 

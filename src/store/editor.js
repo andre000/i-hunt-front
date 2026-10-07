@@ -36,13 +36,13 @@ export const downloadDraft = createAsyncThunk(
 export const publishDraft = createAsyncThunk(
   'editor/publish',
   async (token, { extra, getState, rejectWithValue }) => {
-    const { draft, target, publishName } = getState().editor
+    const { draft, target, publishName, opened } = getState().editor
     const name = target ?? publishName
     try {
       const { url } = await extra.publisher.publish(name, campaignFile(draft), token)
-      return { sent: draft, name, url }
+      return { sent: draft, name, url, opened }
     } catch (error) {
-      return rejectWithValue(error.status ?? null)
+      return rejectWithValue({ status: error.status ?? null, opened })
     }
   },
 )
@@ -83,6 +83,7 @@ export function initialEditorState(saved = null) {
     publishName: null,
     publishLive: null,
     publishedUrl: null,
+    opened: 0,
   }
 }
 
@@ -93,6 +94,7 @@ function edit(state, change) {
 }
 
 function open(state, draft, fileName, target = null) {
+  state.opened += 1
   Object.assign(state, { draft, fileName, target, unsaved: false, started: true, loading: false, error: null, publishing: null, publishFailure: null, publishName: null, publishedUrl: null })
 }
 
@@ -104,7 +106,7 @@ const editorSlice = createSlice({
       open(state, payload.draft, payload.fileName ?? draftFileName(null))
     },
     draftDiscarded(state) {
-      Object.assign(state, initialEditorState(), { started: true })
+      Object.assign(state, initialEditorState(), { started: true, opened: state.opened + 1 })
     },
     campaignDateAdvanced(state) {
       edit(state, draft => advanceToNextScheduled(draft))
@@ -205,14 +207,16 @@ const editorSlice = createSlice({
         state.publishFailure = null
       })
       .addCase(publishDraft.fulfilled, (state, { payload }) => {
+        if (payload.opened !== state.opened) return
         state.publishing = 'done'
         state.target = payload.name
         state.publishedUrl = payload.url
         if (original(state).draft === payload.sent) state.unsaved = false
       })
       .addCase(publishDraft.rejected, (state, { payload }) => {
-        state.publishing = payload === 401 ? 'password' : 'failed'
-        state.publishFailure = payload
+        if (payload.opened !== state.opened) return
+        state.publishing = payload.status === 401 ? 'password' : 'failed'
+        state.publishFailure = payload.status
       })
   },
 })
