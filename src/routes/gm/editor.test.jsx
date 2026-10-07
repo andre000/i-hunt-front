@@ -261,6 +261,96 @@ describe('Publicar', () => {
     expect(await screen.findByText('Não deu para publicar. O rascunho continua salvo.')).toBeTruthy()
     expect(screen.getByText('Mudanças não publicadas')).toBeTruthy()
   })
+
+  it.each([
+    [400, 'Nome ou arquivo inválido.'],
+    [413, 'Arquivo grande demais para publicar.'],
+    [500, 'Não deu para publicar. O rascunho continua salvo.'],
+  ])('shows the message for HTTP %s', async (status, message) => {
+    await renderApp({
+      path: '/gm/editor',
+      hunterId: null,
+      editorStorage: memoryStorage({ [TOKEN_KEY]: 'guardada' }),
+      publishFetch: respondWith({ error: 'x' }, status),
+    })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Publicar' }))
+
+    expect((await screen.findByRole('alert')).textContent).toBe(message)
+  })
+
+  it('explains when there is no network', async () => {
+    await renderApp({
+      path: '/gm/editor',
+      hunterId: null,
+      editorStorage: memoryStorage({ [TOKEN_KEY]: 'guardada' }),
+      publishFetch: async () => { throw new TypeError('Failed to fetch') },
+    })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Publicar' }))
+
+    expect((await screen.findByRole('alert')).textContent).toBe('Não deu para publicar. O rascunho continua salvo.')
+  })
+
+  it('forgets a wrong saved password and asks again', async () => {
+    const { editorStorage } = await renderApp({
+      path: '/gm/editor',
+      hunterId: null,
+      editorStorage: memoryStorage({ [TOKEN_KEY]: 'velha' }),
+      publishFetch: respondWith({ error: 'unauthorized' }, 401),
+    })
+    fireEvent.change(await screen.findByLabelText('Nome da campanha'), { target: { value: 'Noite em Pelotas' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
+
+    const form = await screen.findByRole('form', { name: 'Senha de publicação' })
+    expect(within(form).getByText('Senha errada.')).toBeTruthy()
+    expect(editorStorage.getItem(TOKEN_KEY)).toBeNull()
+    expect(screen.getByText('Mudanças não publicadas')).toBeTruthy()
+  })
+
+  it('does not keep a wrong typed password', async () => {
+    const { editorStorage } = await renderApp({
+      path: '/gm/editor',
+      hunterId: null,
+      publishFetch: respondWith({ error: 'unauthorized' }, 401),
+    })
+    await screen.findByLabelText('Nome da campanha')
+
+    await publishWithPassword('chute')
+
+    expect(await screen.findByText('Senha errada.')).toBeTruthy()
+    expect(editorStorage.getItem(TOKEN_KEY)).toBeNull()
+  })
+
+  it('opens a clean password form after a failure that was not the password', async () => {
+    await renderApp({ path: '/gm/editor', hunterId: null, publishFetch: respondWith({ error: 'too large' }, 413) })
+    await screen.findByLabelText('Nome da campanha')
+    await publishWithPassword('senha-do-gm')
+    await screen.findByText('Arquivo grande demais para publicar.')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
+
+    const form = screen.getByRole('form', { name: 'Senha de publicação' })
+    expect(within(form).queryByRole('alert')).toBeNull()
+  })
+
+  it('locks the button and shows it is publishing while it waits', async () => {
+    let answer
+    await renderApp({
+      path: '/gm/editor',
+      hunterId: null,
+      editorStorage: memoryStorage({ [TOKEN_KEY]: 'guardada' }),
+      publishFetch: () => new Promise(resolve => { answer = resolve }),
+    })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Publicar' }))
+
+    const button = await screen.findByRole('button', { name: 'Publicando…' })
+    expect(button.disabled).toBe(true)
+    await act(async () => answer(await respondWith({ url: 'x' })()))
+    expect(screen.getByRole('button', { name: 'Publicar' }).disabled).toBe(false)
+  })
 })
 
 describe('Data da campanha', () => {

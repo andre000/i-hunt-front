@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import worker from './index'
 import { memoryBucket } from '../src/test/fakes'
@@ -72,6 +72,45 @@ describe('Publishing a campaign', () => {
 
     expect(response.status).toBe(404)
     expect(env.CAMPAIGNS.keys()).toEqual([])
+  })
+
+  it('refuses a body above 1 MB and stores nothing', async () => {
+    const env = setup()
+    const body = JSON.stringify({ notes: 'x'.repeat(1024 * 1024) })
+
+    const response = await publish(env, 'noites.json', { body })
+
+    expect(response.status).toBe(413)
+    expect(env.CAMPAIGNS.keys()).toEqual([])
+  })
+
+  it('accepts a body of exactly 1 MB', async () => {
+    const env = setup()
+    const body = JSON.stringify('x'.repeat(1024 * 1024 - 2))
+
+    const response = await publish(env, 'noites.json', { body })
+
+    expect(response.status).toBe(200)
+  })
+
+  it('refuses a body that is not JSON and stores nothing', async () => {
+    const env = setup()
+
+    const response = await publish(env, 'noites.json', { body: '<html>' })
+
+    expect(response.status).toBe(400)
+    expect(env.CAMPAIGNS.keys()).toEqual([])
+  })
+
+  it('answers 500 without inner details when something unexpected breaks', async () => {
+    const env = setup()
+    env.CAMPAIGNS.put = async () => { throw new Error('bucket secreto caiu') }
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const response = await publish(env, 'noites.json')
+
+    expect(response.status).toBe(500)
+    expect(await response.text()).not.toContain('secreto')
   })
 
   it('answers 404 for another method or another route under /api', async () => {

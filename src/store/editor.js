@@ -35,9 +35,13 @@ export const downloadDraft = createAsyncThunk(
 
 export const publishDraft = createAsyncThunk(
   'editor/publish',
-  async (token, { extra, getState }) => {
+  async (token, { extra, getState, rejectWithValue }) => {
     const { draft, target } = getState().editor
-    await extra.publisher.publish(target, campaignFile(draft), token)
+    try {
+      await extra.publisher.publish(target, campaignFile(draft), token)
+    } catch (error) {
+      return rejectWithValue(error.status ?? null)
+    }
     return { sent: draft }
   },
 )
@@ -61,6 +65,7 @@ export function initialEditorState(saved = null) {
     carriedDate: null,
     carriedReady: false,
     publishing: null,
+    publishFailure: null,
   }
 }
 
@@ -71,7 +76,7 @@ function edit(state, change) {
 }
 
 function open(state, draft, fileName, target = null) {
-  Object.assign(state, { draft, fileName, target, unsaved: false, started: true, loading: false, error: null, publishing: null })
+  Object.assign(state, { draft, fileName, target, unsaved: false, started: true, loading: false, error: null, publishing: null, publishFailure: null })
 }
 
 const editorSlice = createSlice({
@@ -131,9 +136,11 @@ const editorSlice = createSlice({
     },
     publishPasswordAsked(state) {
       state.publishing = 'password'
+      state.publishFailure = null
     },
     publishCancelled(state) {
       state.publishing = null
+      state.publishFailure = null
     },
   },
   extraReducers: (builder) => {
@@ -170,13 +177,15 @@ const editorSlice = createSlice({
       })
       .addCase(publishDraft.pending, (state) => {
         state.publishing = 'sending'
+        state.publishFailure = null
       })
       .addCase(publishDraft.fulfilled, (state, { payload }) => {
         state.publishing = 'done'
         if (original(state).draft === payload.sent) state.unsaved = false
       })
-      .addCase(publishDraft.rejected, (state) => {
-        state.publishing = 'failed'
+      .addCase(publishDraft.rejected, (state, { payload }) => {
+        state.publishing = payload === 401 ? 'password' : 'failed'
+        state.publishFailure = payload
       })
   },
 })

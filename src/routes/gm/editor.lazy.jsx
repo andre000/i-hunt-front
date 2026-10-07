@@ -382,7 +382,7 @@ function DraftBar({ draft, errors, unsaved, onChoose, onDiscard }) {
         disabled={bad || !target || publishing === 'sending'}
         onClick={() => dispatch(startPublishing())}
       >
-        Publicar
+        {publishing === 'sending' ? 'Publicando…' : 'Publicar'}
       </button>
     </>
   )
@@ -961,6 +961,10 @@ const editorPage = css`
 
   .editor__publish-error {
     color: var(--perigo);
+  }
+
+  .editor__confirm .editor__publish-error {
+    margin: 0;
   }
 
   .editor__unsaved {

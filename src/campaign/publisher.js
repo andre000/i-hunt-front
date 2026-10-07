@@ -18,7 +18,8 @@ export function createPublisher({ fetch, storage, publicBaseUrl }) {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: text,
       })
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      if (response.status === 401) store.remove(TOKEN_KEY)
+      if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status}`), { status: response.status })
       store.set(TOKEN_KEY, token)
     },
   }
