@@ -12,6 +12,6 @@
     { "binding": "CAMPAIGNS", "bucket_name": "ihunt" }
   ],
   "vars": {
-    "PUBLIC_BASE_URL": "https://pub-CODIGO.r2.dev"
+    "PUBLIC_BASE_URL": "https://ihunt-data.4ndr.dev"
   }
 }
