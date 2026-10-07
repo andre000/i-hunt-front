@@ -362,7 +362,7 @@ function useCarriedDate(ask, waiting) {
 
 function DraftBar({ draft, errors, unsaved, onChoose, onDiscard }) {
   const dispatch = useDispatch()
-  const { target, publishing } = useSelector(state => state.editor)
+  const { publishing } = useSelector(state => state.editor)
   const bad = errors.length > 0
 
   return (
@@ -379,7 +379,7 @@ function DraftBar({ draft, errors, unsaved, onChoose, onDiscard }) {
       <button
         type="button"
         className="button primary editor__action"
-        disabled={bad || !target || publishing === 'sending'}
+        disabled={bad || publishing === 'sending'}
         onClick={() => dispatch(startPublishing())}
       >
         {publishing === 'sending' ? 'Publicando…' : 'Publicar'}

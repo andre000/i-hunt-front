@@ -36,20 +36,34 @@ export const downloadDraft = createAsyncThunk(
 export const publishDraft = createAsyncThunk(
   'editor/publish',
   async (token, { extra, getState, rejectWithValue }) => {
-    const { draft, target } = getState().editor
+    const { draft, target, publishName } = getState().editor
+    const name = target ?? publishName
     try {
-      await extra.publisher.publish(target, campaignFile(draft), token)
+      const { url } = await extra.publisher.publish(name, campaignFile(draft), token)
+      return { sent: draft, name, url }
     } catch (error) {
       return rejectWithValue(error.status ?? null)
     }
-    return { sent: draft }
   },
 )
 
+function askPasswordOrPublish(dispatch, publisher) {
+  const token = publisher.savedToken()
+  dispatch(token ? publishDraft(token) : publishPasswordAsked())
+}
+
 export function startPublishing() {
+  return (dispatch, getState, { publisher }) => {
+    const { editor, campaign } = getState()
+    if (editor.target) askPasswordOrPublish(dispatch, publisher)
+    else dispatch(publishNameAsked(publisher.targetOf(campaign.campaignUrl)))
+  }
+}
+
+export function choosePublishName(name) {
   return (dispatch, _, { publisher }) => {
-    const token = publisher.savedToken()
-    dispatch(token ? publishDraft(token) : publishPasswordAsked())
+    dispatch(publishNameChosen(name))
+    askPasswordOrPublish(dispatch, publisher)
   }
 }
 
@@ -66,6 +80,8 @@ export function initialEditorState(saved = null) {
     carriedReady: false,
     publishing: null,
     publishFailure: null,
+    publishName: null,
+    publishLive: null,
   }
 }
 
@@ -76,7 +92,7 @@ function edit(state, change) {
 }
 
 function open(state, draft, fileName, target = null) {
-  Object.assign(state, { draft, fileName, target, unsaved: false, started: true, loading: false, error: null, publishing: null, publishFailure: null })
+  Object.assign(state, { draft, fileName, target, unsaved: false, started: true, loading: false, error: null, publishing: null, publishFailure: null, publishName: null })
 }
 
 const editorSlice = createSlice({
@@ -138,6 +154,14 @@ const editorSlice = createSlice({
       state.publishing = 'password'
       state.publishFailure = null
     },
+    publishNameAsked(state, { payload }) {
+      state.publishing = 'name'
+      state.publishFailure = null
+      state.publishLive = payload ?? null
+    },
+    publishNameChosen(state, { payload }) {
+      state.publishName = payload
+    },
     publishCancelled(state) {
       state.publishing = null
       state.publishFailure = null
@@ -181,6 +205,7 @@ const editorSlice = createSlice({
       })
       .addCase(publishDraft.fulfilled, (state, { payload }) => {
         state.publishing = 'done'
+        state.target = payload.name
         if (original(state).draft === payload.sent) state.unsaved = false
       })
       .addCase(publishDraft.rejected, (state, { payload }) => {
@@ -190,5 +215,5 @@ const editorSlice = createSlice({
   },
 })
 
-export const { campaignDateAdvanced, campaignEdited, carriedDateApplied, carriedDateDropped, dateCarried, draftDiscarded, draftOpened, hunterRemoved, itemAdded, itemMoved, itemRemoved, itemUpdated, messageAdded, missionPositioned, npcRemoved, publishCancelled, publishPasswordAsked } = editorSlice.actions
+export const { campaignDateAdvanced, campaignEdited, carriedDateApplied, carriedDateDropped, dateCarried, draftDiscarded, draftOpened, hunterRemoved, itemAdded, itemMoved, itemRemoved, itemUpdated, messageAdded, missionPositioned, npcRemoved, publishCancelled, publishNameAsked, publishNameChosen, publishPasswordAsked } = editorSlice.actions
 export default editorSlice.reducer

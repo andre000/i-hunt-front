@@ -1,7 +1,9 @@
-import { safeStorage } from './storage'
+import { attempt, safeStorage } from './storage'
 
 const TOKEN_KEY = 'ihunt.editor.publishToken'
 const CAMPAIGN_NAME = /^[a-z0-9-]+\.json$/
+
+export const isCampaignName = (name) => CAMPAIGN_NAME.test(name)
 
 export function createPublisher({ fetch, storage, publicBaseUrl }) {
   const store = safeStorage(storage)
@@ -9,7 +11,7 @@ export function createPublisher({ fetch, storage, publicBaseUrl }) {
     targetOf(url) {
       if (!publicBaseUrl || !url?.startsWith(`${publicBaseUrl}/`)) return null
       const name = url.slice(publicBaseUrl.length + 1)
-      return CAMPAIGN_NAME.test(name) ? name : null
+      return isCampaignName(name) ? name : null
     },
     savedToken: () => store.get(TOKEN_KEY),
     async publish(name, text, token) {
@@ -21,6 +23,8 @@ export function createPublisher({ fetch, storage, publicBaseUrl }) {
       if (response.status === 401) store.remove(TOKEN_KEY)
       if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status}`), { status: response.status })
       store.set(TOKEN_KEY, token)
+      const reply = attempt(JSON.parse.bind(null, await response.text()))
+      return { url: typeof reply?.url === 'string' ? reply.url : null }
     },
   }
 }

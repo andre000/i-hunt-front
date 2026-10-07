@@ -351,6 +351,180 @@ describe('Publicar', () => {
     await act(async () => answer(await respondWith({ url: 'x' })()))
     expect(screen.getByRole('button', { name: 'Publicar' }).disabled).toBe(false)
   })
+
+  describe('a Rascunho that is not in the bucket', () => {
+    const nameForm = () => screen.getByRole('form', { name: 'Nome do arquivo publicado' })
+    const nameField = () => within(nameForm()).getByLabelText('Nome do arquivo no bucket')
+
+    async function openFromComputer(fileName, options = {}) {
+      const result = await renderApp({
+        path: '/gm/editor',
+        hunterId: null,
+        campaignUrl: null,
+        editorStorage: memoryStorage({ [TOKEN_KEY]: 'guardada' }),
+        ...options,
+      })
+      const file = new File([JSON.stringify(validCampaign())], fileName, { type: 'application/json' })
+      fireEvent.change(await screen.findByLabelText('Abrir arquivo do computador'), { target: { files: [file] } })
+      await screen.findByLabelText('Nome da campanha')
+      return result
+    }
+
+    function publishAs(name) {
+      fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
+      if (name) fireEvent.change(nameField(), { target: { value: name } })
+      fireEvent.click(within(nameForm()).getByRole('button', { name: 'Continuar' }))
+    }
+
+    it('asks the name of a draft from the computer, filled with the file name', async () => {
+      const { publishFetch } = await openFromComputer('mesa.json')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
+      expect(nameField().value).toBe('mesa.json')
+      fireEvent.click(within(nameForm()).getByRole('button', { name: 'Continuar' }))
+
+      expect(await screen.findByText('Publicado.')).toBeTruthy()
+      expect(publishFetch.mock.calls[0][0]).toBe('/api/campanhas/mesa.json')
+    })
+
+    it('asks the name of a blank draft', async () => {
+      const { publishFetch } = await renderApp({
+        path: '/gm/editor',
+        hunterId: null,
+        campaignUrl: null,
+        editorStorage: memoryStorage({ [TOKEN_KEY]: 'guardada' }),
+      })
+      fireEvent.click(await screen.findByRole('button', { name: 'Começar em branco' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Adicionar hunter' }))
+      fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Adicionar' }))
+
+      fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
+      expect(nameField().value).toBe('campanha.json')
+      fireEvent.change(nameField(), { target: { value: 'noites.json' } })
+      fireEvent.click(within(nameForm()).getByRole('button', { name: 'Continuar' }))
+
+      await screen.findByText('Publicado.')
+      expect(publishFetch.mock.calls[0][0]).toBe('/api/campanhas/noites.json')
+    })
+
+    it('asks the name of a draft loaded from an address outside the bucket', async () => {
+      await renderApp({ path: '/gm/editor', hunterId: null, campaignUrl: null })
+      fireEvent.change(await screen.findByLabelText('Endereço do arquivo no R2'), { target: { value: 'https://pub-9.r2.dev/noites.json' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Carregar' }))
+      await screen.findByLabelText('Nome da campanha')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
+
+      expect(nameField().value).toBe('noites.json')
+    })
+
+    it('asks the name before the password', async () => {
+      const { publishFetch } = await openFromComputer('mesa.json', { editorStorage: memoryStorage() })
+
+      publishAs('noites.json')
+      const form = screen.getByRole('form', { name: 'Senha de publicação' })
+      fireEvent.change(within(form).getByLabelText('Senha de publicação'), { target: { value: 'senha-do-gm' } })
+      fireEvent.click(within(form).getByRole('button', { name: 'Publicar com esta senha' }))
+
+      expect(await screen.findByText('Publicado.')).toBeTruthy()
+      expect(publishFetch.mock.calls[0][0]).toBe('/api/campanhas/noites.json')
+    })
+
+    it('sends nothing and keeps the draft when the GM cancels the name', async () => {
+      const { publishFetch } = await openFromComputer('mesa.json')
+      fireEvent.change(screen.getByLabelText('Nome da campanha'), { target: { value: 'Noite em Pelotas' } })
+
+      fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
+      fireEvent.click(within(nameForm()).getByRole('button', { name: 'Cancelar' }))
+
+      expect(screen.queryByRole('form', { name: 'Nome do arquivo publicado' })).toBeNull()
+      expect(publishFetch).not.toHaveBeenCalled()
+      expect(screen.getByLabelText('Nome da campanha').value).toBe('Noite em Pelotas')
+      expect(screen.getByText('Mudanças não publicadas')).toBeTruthy()
+    })
+
+    it('publishes again under the same name without asking', async () => {
+      const { publishFetch } = await openFromComputer('mesa.json')
+      publishAs('noites.json')
+      await screen.findByText('Publicado.')
+      fireEvent.change(screen.getByLabelText('Nome da campanha'), { target: { value: 'Noite em Pelotas' } })
+
+      fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
+
+      await screen.findByText('Publicado.')
+      expect(screen.queryByRole('form', { name: 'Nome do arquivo publicado' })).toBeNull()
+      expect(publishFetch.mock.calls[1][0]).toBe('/api/campanhas/noites.json')
+    })
+
+    it('remembers the name after reloading', async () => {
+      const editorStorage = memoryStorage({ [TOKEN_KEY]: 'guardada' })
+      await openFromComputer('mesa.json', { editorStorage })
+      publishAs('noites.json')
+      await screen.findByText('Publicado.')
+      cleanup()
+
+      const { publishFetch } = await renderApp({ path: '/gm/editor', hunterId: null, campaignUrl: null, editorStorage })
+      fireEvent.click(await screen.findByRole('button', { name: 'Publicar' }))
+
+      await screen.findByText('Publicado.')
+      expect(publishFetch.mock.calls[0][0]).toBe('/api/campanhas/noites.json')
+    })
+
+    it('does not accept a name the bucket would refuse', async () => {
+      await openFromComputer('Mesa Nova.json')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
+
+      expect(nameField().value).toBe('Mesa Nova.json')
+      expect(within(nameForm()).getByText('Use só letras minúsculas, números e -, terminando em .json.')).toBeTruthy()
+      expect(within(nameForm()).getByRole('button', { name: 'Continuar' }).disabled).toBe(true)
+      fireEvent.change(nameField(), { target: { value: 'mesa-nova.json' } })
+      expect(within(nameForm()).getByRole('button', { name: 'Continuar' }).disabled).toBe(false)
+    })
+
+    it('asks the name again, with the last choice, after a failed first publish', async () => {
+      await openFromComputer('mesa.json', { publishFetch: respondWith('erro', 500) })
+      publishAs('noites.json')
+      await screen.findByText('Não deu para publicar. O rascunho continua salvo.')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
+
+      expect(nameField().value).toBe('noites.json')
+    })
+
+    it('warns before replacing the campaign the players read', async () => {
+      const { publishFetch } = await renderApp({ path: '/gm/editor', hunterId: null, editorStorage: memoryStorage({ [TOKEN_KEY]: 'guardada' }) })
+      fireEvent.click(await screen.findByRole('button', { name: 'Trocar rascunho' }))
+      const other = validCampaign()
+      other.campaign.name = 'Outra mesa'
+      const file = new File([JSON.stringify(other)], 'campanha.json', { type: 'application/json' })
+      fireEvent.change(screen.getByLabelText('Abrir arquivo do computador'), { target: { files: [file] } })
+      fireEvent.click(screen.getByRole('button', { name: 'Substituir' }))
+      await waitFor(() => expect(screen.getByLabelText('Nome da campanha').value).toBe('Outra mesa'))
+
+      fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
+
+      const warning = 'Esse é o arquivo que os jogadores leem. Publicar vai substituir a campanha deles.'
+      expect(within(nameForm()).getByText(warning)).toBeTruthy()
+      fireEvent.change(nameField(), { target: { value: 'teste.json' } })
+      expect(within(nameForm()).queryByText(warning)).toBeNull()
+      expect(within(nameForm()).getByRole('button', { name: 'Continuar' })).toBeTruthy()
+      fireEvent.change(nameField(), { target: { value: 'campanha.json' } })
+      fireEvent.click(within(nameForm()).getByRole('button', { name: 'Substituir' }))
+
+      await screen.findByText('Publicado.')
+      expect(publishFetch.mock.calls[0][0]).toBe('/api/campanhas/campanha.json')
+    })
+
+    it('does not warn when the players read a campaign outside the bucket', async () => {
+      await renderApp({ path: '/gm/editor', hunterId: null, campaignUrl: 'https://pub-9.r2.dev/campanha.json' })
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Publicar' }))
+
+      expect(within(nameForm()).queryByText(/jogadores leem/)).toBeNull()
+    })
+  })
 })
 
 describe('Data da campanha', () => {
