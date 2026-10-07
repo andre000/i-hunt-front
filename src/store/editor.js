@@ -82,6 +82,7 @@ export function initialEditorState(saved = null) {
     publishFailure: null,
     publishName: null,
     publishLive: null,
+    publishedUrl: null,
   }
 }
 
@@ -92,7 +93,7 @@ function edit(state, change) {
 }
 
 function open(state, draft, fileName, target = null) {
-  Object.assign(state, { draft, fileName, target, unsaved: false, started: true, loading: false, error: null, publishing: null, publishFailure: null, publishName: null })
+  Object.assign(state, { draft, fileName, target, unsaved: false, started: true, loading: false, error: null, publishing: null, publishFailure: null, publishName: null, publishedUrl: null })
 }
 
 const editorSlice = createSlice({
@@ -206,6 +207,7 @@ const editorSlice = createSlice({
       .addCase(publishDraft.fulfilled, (state, { payload }) => {
         state.publishing = 'done'
         state.target = payload.name
+        state.publishedUrl = payload.url
         if (original(state).draft === payload.sent) state.unsaved = false
       })
       .addCase(publishDraft.rejected, (state, { payload }) => {

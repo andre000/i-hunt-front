@@ -963,6 +963,18 @@ const editorPage = css`
     color: var(--perigo);
   }
 
+  .editor__done {
+    margin: 12px 20px 0;
+    max-width: 640px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .editor__done .editor__published {
+    margin: 0;
+  }
+
   .editor__confirm .editor__publish-error {
     margin: 0;
   }

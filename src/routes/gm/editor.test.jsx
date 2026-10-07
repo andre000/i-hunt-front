@@ -524,6 +524,47 @@ describe('Publicar', () => {
 
       expect(within(nameForm()).queryByText(/jogadores leem/)).toBeNull()
     })
+
+    it('shows the Convite of the published address, ready to copy', async () => {
+      await openFromComputer('mesa.json', { publishFetch: respondWith({ url: 'https://pub-123.r2.dev/noites.json' }) })
+
+      publishAs('noites.json')
+
+      const invite = await screen.findByLabelText('Convite da campanha')
+      expect(invite.value).toBe(`${window.location.origin}/?campanha=${encodeURIComponent('https://pub-123.r2.dev/noites.json')}`)
+      expect(screen.getByRole('button', { name: 'Copiar' }).disabled).toBe(false)
+    })
+
+    it('hides the Convite after the next change', async () => {
+      await openFromComputer('mesa.json')
+      publishAs()
+      await screen.findByLabelText('Convite da campanha')
+
+      fireEvent.change(screen.getByLabelText('Nome da campanha'), { target: { value: 'Noite em Pelotas' } })
+
+      expect(screen.queryByLabelText('Convite da campanha')).toBeNull()
+      expect(screen.queryByText('Publicado.')).toBeNull()
+    })
+
+    it.each([
+      ['without an address', respondWith({})],
+      ['that is not JSON', respondWith('ok')],
+    ])('says it published, without a Convite, for an answer %s', async (_, publishFetch) => {
+      await openFromComputer('mesa.json', { publishFetch })
+
+      publishAs()
+
+      expect(await screen.findByText('Publicado.')).toBeTruthy()
+      expect(screen.queryByLabelText('Convite da campanha')).toBeNull()
+    })
+  })
+
+  it('shows the Convite after publishing a draft from the bucket', async () => {
+    await renderApp({ path: '/gm/editor', hunterId: null, editorStorage: memoryStorage({ [TOKEN_KEY]: 'guardada' }) })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Publicar' }))
+
+    expect((await screen.findByLabelText('Convite da campanha')).value).toContain(encodeURIComponent('https://pub-123.r2.dev/campanha.json'))
   })
 })
 

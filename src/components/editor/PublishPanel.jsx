@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { choosePublishName, publishCancelled, publishDraft } from '../../store/editor'
 import { isCampaignName } from '../../campaign/publisher'
+import { InviteBox } from '../gm/InviteBox'
 
 const FAILURES = {
   401: 'Senha errada.',
@@ -66,11 +67,18 @@ function NameForm() {
 }
 
 export function PublishPanel() {
-  const { publishing, publishFailure } = useSelector(state => state.editor)
+  const { publishing, publishFailure, publishedUrl } = useSelector(state => state.editor)
 
   if (publishing === 'name') return <NameForm />
   if (publishing === 'password') return <PasswordForm />
-  if (publishing === 'done') return <p className="editor__published" role="status">Publicado.</p>
+  if (publishing === 'done') {
+    return (
+      <div className="editor__done">
+        <p className="editor__published" role="status">Publicado.</p>
+        {publishedUrl && <InviteBox campaignUrl={publishedUrl} playable />}
+      </div>
+    )
+  }
   if (publishing === 'failed') {
     return <p className="editor__publish-error" role="alert">{failureMessage(publishFailure)}</p>
   }
